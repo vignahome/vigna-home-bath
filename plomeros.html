@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Plomeros Certificados VIGNA</title>
+  <link rel="stylesheet" href="plomeros.css">
+</head>
+<body>
+
+<header class="header">
+  <h1>Plomeros Certificados VIGNA</h1>
+  <p>Encuentra técnicos evaluados por nivel y experiencia.</p>
+</header>
+
+<section class="planes">
+  <h2>Planes para clientes</h2>
+
+  <div class="planes-grid">
+    <div class="plan">
+      <h3>Básico</h3>
+      <p>Acceso a plomeros nivel 1 y 2</p>
+      <strong>S/ 19.90 mensual</strong>
+    </div>
+
+    <div class="plan destacado">
+      <h3>Premium</h3>
+      <p>Acceso a plomeros nivel 1, 2 y 3</p>
+      <strong>S/ 39.90 mensual</strong>
+    </div>
+
+    <div class="plan">
+      <h3>Pro</h3>
+      <p>Acceso a todos los plomeros certificados</p>
+      <strong>S/ 69.90 mensual</strong>
+    </div>
+  </div>
+</section>
+
+<section class="registro">
+  <h2>Registro gratuito para plomeros</h2>
+  <p>Postula gratis, rinde 7 exámenes y sube de nivel cada mes.</p>
+
+  <form id="formPlomero">
+    <input type="text" id="nombre" placeholder="Nombre completo" required>
+    <input type="text" id="distrito" placeholder="Distrito" required>
+    <input type="tel" id="whatsapp" placeholder="WhatsApp" required>
+    <input type="number" id="experiencia" placeholder="Años de experiencia" required>
+    <input type="url" id="foto" placeholder="URL de fotografía">
+    <input type="text" id="especialidad" placeholder="Especialidad">
+    <input type="text" id="zona" placeholder="Zona de atención">
+    <button type="submit">Postular como plomero</button>
+  </form>
+</section>
+
+<section class="examenes">
+  <h2>Evaluación de ingreso</h2>
+
+  <div class="examen-box">
+    <h3 id="diaActual">Día 1</h3>
+
+    <p id="pregunta">
+      ¿Cuál es la presión promedio recomendada para una vivienda?
+    </p>
+
+    <div class="opciones">
+      <button id="opcion1" onclick="responder(0)">40 PSI</button>
+      <button id="opcion2" onclick="responder(1)">150 PSI</button>
+      <button id="opcion3" onclick="responder(2)">250 PSI</button>
+    </div>
+  </div>
+
+  <div id="resultadoExamen" class="resultado-examen"></div>
+</section>
+
+<section class="login-admin">
+
+<h2>Acceso Administrador</h2>
+
+<input type="password" id="claveAdmin" placeholder="Contraseña">
+
+<button onclick="ingresarAdmin()">
+Ingresar
+</button>
+
+</section>
+
+<section class="admin">
+  <h2>Panel de Administración VIGNA</h2>
+  <p>Aprueba o revisa plomeros antes de mostrarlos al público.</p>
+  <div id="listaAdmin" class="plomeros-grid"></div>
+</section>
+
+<section class="ranking">
+  <h2>Ranking de plomeros</h2>
+
+  <div class="filtros">
+    <input type="text" id="buscarDistrito" placeholder="Buscar por distrito">
+    <input type="text" id="buscarEspecialidad" placeholder="Buscar por especialidad">
+    <select id="buscarNivel">
+  <option value="">Todos los niveles</option>
+  <option value="1">Nivel 1</option>
+  <option value="2">Nivel 2</option>
+  <option value="3">Nivel 3</option>
+  <option value="4">Nivel 4</option>
+</select>
+    <button onclick="mostrarPlomeros()">Buscar</button>
+  </div>
+
+  <div id="listaPlomeros" class="plomeros-grid"></div>
+</section>
+
+<script src="plomeros.js"></script>
+</body>
+</html>

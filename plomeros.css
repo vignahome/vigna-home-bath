@@ -1,0 +1,260 @@
+body {
+margin: 0;
+font-family: Arial, sans-serif;
+background: #0f0f0f;
+color: white;
+}
+
+.header {
+text-align: center;
+padding: 60px 20px;
+background: linear-gradient(135deg, #111, #2a2118);
+}
+
+.header h1 {
+font-size: 42px;
+color: #d4af37;
+margin-bottom: 10px;
+}
+
+.header p {
+color: #ccc;
+}
+
+section {
+padding: 50px 8%;
+}
+
+h2 {
+color: #d4af37;
+text-align: center;
+margin-bottom: 40px;
+}
+
+.planes-grid,
+.plomeros-grid {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+gap: 25px;
+}
+
+.plan,
+.plomero-card {
+background: #181818;
+border: 1px solid #3a2f1f;
+border-radius: 18px;
+padding: 25px;
+text-align: center;
+transition: 0.3s;
+}
+
+.plomero-card:hover {
+transform: translateY(-5px);
+border-color: #d4af37;
+}
+
+.destacado {
+border: 2px solid #d4af37;
+transform: scale(1.03);
+}
+
+.registro form {
+max-width: 500px;
+margin: auto;
+display: grid;
+gap: 15px;
+}
+
+input {
+padding: 15px;
+border-radius: 10px;
+border: none;
+outline: none;
+}
+
+button {
+padding: 14px;
+background: #d4af37;
+color: black;
+border: none;
+border-radius: 10px;
+font-weight: bold;
+cursor: pointer;
+transition: 0.3s;
+}
+
+button:hover {
+background: #e5c14a;
+transform: scale(1.02);
+}
+
+.nivel {
+color: #d4af37;
+font-weight: bold;
+font-size: 18px;
+}
+
+.examen-box {
+max-width: 700px;
+margin: auto;
+padding: 30px;
+background: #181818;
+border-radius: 15px;
+text-align: center;
+}
+
+.opciones {
+display: flex;
+flex-direction: column;
+gap: 15px;
+margin-top: 20px;
+}
+
+.opciones button {
+width: 100%;
+}
+
+.resultado-examen {
+max-width: 700px;
+margin: 25px auto 0;
+padding: 25px;
+background: #111;
+border: 2px solid #d4af37;
+border-radius: 15px;
+text-align: center;
+display: none;
+}
+
+.resultado-examen h3 {
+color: #d4af37;
+margin-bottom: 15px;
+}
+
+.resultado-examen p {
+margin: 10px 0;
+font-size: 18px;
+}
+
+.foto-plomero {
+width: 120px;
+height: 120px;
+border-radius: 50%;
+object-fit: cover;
+border: 3px solid #d4af37;
+margin-bottom: 15px;
+}
+
+.plomero-card h3 {
+margin: 10px 0;
+color: white;
+}
+
+.plomero-card p {
+margin: 6px 0;
+}
+
+.estrellas {
+color: #d4af37;
+font-size: 20px;
+font-weight: bold;
+margin: 12px 0;
+}
+
+.btn-servicio {
+background: #25D366;
+color: white;
+margin-top: 10px;
+}
+
+.btn-servicio:hover {
+background: #1ebe5b;
+}
+
+.btn-calificar {
+background: #d4af37;
+color: #111;
+font-weight: bold;
+}
+
+.btn-calificar:hover {
+background: #f0c94a;
+}
+
+.plomero-card button {
+width: 100%;
+margin-top: 8px;
+}
+
+.plomero-card {
+display: flex;
+flex-direction: column;
+justify-content: flex-start;
+}
+
+.ranking h2 {
+margin-bottom: 30px;
+}
+
+/* FILTROS */
+
+.filtros {
+max-width: 900px;
+margin: 0 auto 40px auto;
+display: grid;
+grid-template-columns: 1fr 1fr 180px auto;
+gap: 15px;
+}
+
+.filtros input,
+.filtros select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.filtros button {
+min-width: 140px;
+}
+
+/* PANEL ADMIN */
+
+.admin {
+background: #141414;
+}
+
+.admin h2 {
+color: #d4af37;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 768px) {
+
+.header h1 {
+font-size: 30px;
+}
+
+section {
+padding: 30px 5%;
+}
+
+.planes-grid,
+.plomeros-grid {
+grid-template-columns: 1fr;
+}
+
+.filtros {
+grid-template-columns: 1fr;
+}
+
+.filtros button {
+width: 100%;
+}
+}
+
+.login-admin{
+max-width:400px;
+margin:40px auto;
+text-align:center;
+display:grid;
+gap:15px;
+}
