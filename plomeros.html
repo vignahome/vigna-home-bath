@@ -2,113 +2,164 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Plomeros Certificados VIGNA</title>
+  <title>VIGNAS Certificados</title>
   <link rel="stylesheet" href="plomeros.css">
+  <!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-8224EEW7ZP"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-8224EEW7ZP');
+</script>
 </head>
 <body>
 
 <header class="header">
-  <h1>Plomeros Certificados VIGNA</h1>
-  <p>Encuentra técnicos evaluados por nivel y experiencia.</p>
+  <h1>VIGNAS Certificados</h1>
+  <p>Encuentra profesionales evaluados por nivel, experiencia y especialidad.</p>
 </header>
 
 <section class="planes">
-  <h2>Planes para clientes</h2>
+  <h2>Plan VIGNA Profesional</h2>
+  <p>Los clientes buscan gratis. Los VIGNAS activan un plan para aparecer y destacar en el ranking.</p>
 
   <div class="planes-grid">
+
     <div class="plan">
-      <h3>Básico</h3>
-      <p>Acceso a plomeros nivel 1 y 2</p>
-      <strong>S/ 19.90 mensual</strong>
+      <h3>1 mes</h3>
+      <p>Perfil activo por 30 días</p>
+      <strong>S/ 39.90</strong>
+      <button onclick="suscribirseProfesional('VIGNA Profesional 1 mes', 39.90, 1)">
+        Activar 1 mes
+      </button>
     </div>
 
     <div class="plan destacado">
-      <h3>Premium</h3>
-      <p>Acceso a plomeros nivel 1, 2 y 3</p>
-      <strong>S/ 39.90 mensual</strong>
+      <h3>6 meses</h3>
+      <p>Descuento por pago semestral</p>
+      <strong>S/ 199.90</strong>
+      <button onclick="suscribirseProfesional('VIGNA Profesional 6 meses', 199.90, 6)">
+        Activar 6 meses
+      </button>
     </div>
 
     <div class="plan">
-      <h3>Pro</h3>
-      <p>Acceso a todos los plomeros certificados</p>
-      <strong>S/ 69.90 mensual</strong>
+      <h3>1 año</h3>
+      <p>Mayor descuento por pago anual</p>
+      <strong>S/ 349.90</strong>
+      <button onclick="suscribirseProfesional('VIGNA Profesional 1 año', 349.90, 12)">
+        Activar 1 año
+      </button>
     </div>
-  </div>
-</section>
 
-<section class="registro">
-  <h2>Registro gratuito para plomeros</h2>
-  <p>Postula gratis, rinde 7 exámenes y sube de nivel cada mes.</p>
-
-  <form id="formPlomero">
-    <input type="text" id="nombre" placeholder="Nombre completo" required>
-    <input type="text" id="distrito" placeholder="Distrito" required>
-    <input type="tel" id="whatsapp" placeholder="WhatsApp" required>
-    <input type="number" id="experiencia" placeholder="Años de experiencia" required>
-    <input type="url" id="foto" placeholder="URL de fotografía">
-    <input type="text" id="especialidad" placeholder="Especialidad">
-    <input type="text" id="zona" placeholder="Zona de atención">
-    <button type="submit">Postular como plomero</button>
-  </form>
-</section>
-
-<section class="examenes">
-  <h2>Evaluación de ingreso</h2>
-
-  <div class="examen-box">
-    <h3 id="diaActual">Día 1</h3>
-
-    <p id="pregunta">
-      ¿Cuál es la presión promedio recomendada para una vivienda?
-    </p>
-
-    <div class="opciones">
-      <button id="opcion1" onclick="responder(0)">40 PSI</button>
-      <button id="opcion2" onclick="responder(1)">150 PSI</button>
-      <button id="opcion3" onclick="responder(2)">250 PSI</button>
-    </div>
   </div>
 
-  <div id="resultadoExamen" class="resultado-examen"></div>
+  <div id="estadoSuscripcion"></div>
+</section>
+
+<section class="cta-vigna">
+  <h2>¿Eres profesional de construcción o buscas uno?</h2>
+  <p>Crea tu cuenta VIGNA, activa tu perfil y empieza a recibir solicitudes de clientes.</p>
+
+  <div class="cta-botones">
+  <a href="registro-vigna.html">Crear cuenta profesional</a>
+  <a href="login-vigna.html">Ingresar profesional</a>
+  <a href="registro-cliente.html">Crear cuenta cliente</a>
+  <a href="login-cliente.html">Ingresar cliente</a>
+</div>
 </section>
 
 <section class="login-admin">
+  <h2>Acceso Administrador</h2>
 
-<h2>Acceso Administrador</h2>
+  <input type="password" id="claveAdmin" placeholder="Contraseña">
 
-<input type="password" id="claveAdmin" placeholder="Contraseña">
-
-<button onclick="ingresarAdmin()">
-Ingresar
-</button>
-
+  <button onclick="ingresarAdmin()">
+    Ingresar
+  </button>
 </section>
 
 <section class="admin">
   <h2>Panel de Administración VIGNA</h2>
-  <p>Aprueba o revisa plomeros antes de mostrarlos al público.</p>
-  <div id="listaAdmin" class="plomeros-grid"></div>
+  <div class="dashboard-admin">
+
+  <div class="dashboard-card">
+    <h3 id="totalProfesionales">0</h3>
+    <p>Profesionales</p>
+  </div>
+
+  <div class="dashboard-card">
+    <h3 id="totalClientes">0</h3>
+    <p>Clientes</p>
+  </div>
+
+  <div class="dashboard-card">
+    <h3 id="totalSolicitudes">0</h3>
+    <p>Solicitudes</p>
+  </div>
+
+  <div class="dashboard-card">
+    <h3 id="trabajosFinalizados">0</h3>
+    <p>Trabajos finalizados</p>
+  </div>
+
+</div>
+
+  <p>Aprueba o revisa profesionales antes de mostrarlos al público.</p>
+
+  <h3>Profesionales pendientes</h3>
+  <div id="listaAdminPendientes" class="plomeros-grid"></div>
+
+  <div class="admin-filtros">
+    <button onclick="mostrarSolo('todos')">Todos</button>
+    <button onclick="mostrarSolo('aprobados')">Aprobados</button>
+    <button onclick="mostrarSolo('pendientes')">Pendientes</button>
+    <button onclick="mostrarSolo('rechazados')">Rechazados</button>
+  </div>
+
+  <h3>Profesionales aprobados</h3>
+  <div id="listaAdminAprobados" class="plomeros-grid"></div>
+
+  <h3>Profesionales rechazados</h3>
+  <div id="listaAdminRechazados" class="plomeros-grid"></div>
+
+  <section class="detalle-admin">
+    <h2>Ficha del profesional</h2>
+    <div id="detalleProfesional">
+      <p>Selecciona un profesional para ver su información.</p>
+    </div>
+  </section>
+
+  <h3>Solicitudes de servicio</h3>
+  <button onclick="cargarSolicitudes()">📋 Ver solicitudes</button>
+  <div id="listaSolicitudes" class="plomeros-grid"></div>
 </section>
 
 <section class="ranking">
-  <h2>Ranking de plomeros</h2>
+  <h2>Ranking de VIGNAS</h2>
 
   <div class="filtros">
     <input type="text" id="buscarDistrito" placeholder="Buscar por distrito">
     <input type="text" id="buscarEspecialidad" placeholder="Buscar por especialidad">
+
     <select id="buscarNivel">
-  <option value="">Todos los niveles</option>
-  <option value="1">Nivel 1</option>
-  <option value="2">Nivel 2</option>
-  <option value="3">Nivel 3</option>
-  <option value="4">Nivel 4</option>
-</select>
+      <option value="">Todos los niveles</option>
+      <option value="1">Nivel 1</option>
+      <option value="2">Nivel 2</option>
+      <option value="3">Nivel 3</option>
+      <option value="4">Nivel 4</option>
+    </select>
+
     <button onclick="mostrarPlomeros()">Buscar</button>
   </div>
 
   <div id="listaPlomeros" class="plomeros-grid"></div>
+  <div id="perfilVigna"></div>
 </section>
 
-<script src="plomeros.js"></script>
+<script type="module" src="./firebase.js?v=102"></script>
+<script src="./plomeros.js?v=102"></script>
 </body>
 </html>

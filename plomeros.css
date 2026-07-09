@@ -1,208 +1,209 @@
 body {
-margin: 0;
-font-family: Arial, sans-serif;
-background: #0f0f0f;
-color: white;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f0f0f;
+  color: white;
 }
 
 .header {
-text-align: center;
-padding: 60px 20px;
-background: linear-gradient(135deg, #111, #2a2118);
+  text-align: center;
+  padding: 60px 20px;
+  background: linear-gradient(135deg, #111, #2a2118);
 }
 
 .header h1 {
-font-size: 42px;
-color: #d4af37;
-margin-bottom: 10px;
+  font-size: 42px;
+  color: #d4af37;
+  margin-bottom: 10px;
 }
 
 .header p {
-color: #ccc;
+  color: #ccc;
 }
 
 section {
-padding: 50px 8%;
+  padding: 50px 8%;
 }
 
 h2 {
-color: #d4af37;
-text-align: center;
-margin-bottom: 40px;
+  color: #d4af37;
+  text-align: center;
+  margin-bottom: 40px;
 }
 
 .planes-grid,
 .plomeros-grid {
-display: grid;
-grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-gap: 25px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
 }
 
 .plan,
 .plomero-card {
-background: #181818;
-border: 1px solid #3a2f1f;
-border-radius: 18px;
-padding: 25px;
-text-align: center;
-transition: 0.3s;
+  background: #181818;
+  border: 1px solid #3a2f1f;
+  border-radius: 18px;
+  padding: 25px;
+  text-align: center;
+  transition: 0.3s;
 }
 
 .plomero-card:hover {
-transform: translateY(-5px);
-border-color: #d4af37;
+  transform: translateY(-5px);
+  border-color: #d4af37;
 }
 
 .destacado {
-border: 2px solid #d4af37;
-transform: scale(1.03);
+  border: 2px solid #d4af37;
+  transform: scale(1.03);
 }
 
 .registro form {
-max-width: 500px;
-margin: auto;
-display: grid;
-gap: 15px;
+  max-width: 500px;
+  margin: auto;
+  display: grid;
+  gap: 15px;
 }
 
-input {
-padding: 15px;
-border-radius: 10px;
-border: none;
-outline: none;
+input,
+select {
+  padding: 15px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
 }
 
 button {
-padding: 14px;
-background: #d4af37;
-color: black;
-border: none;
-border-radius: 10px;
-font-weight: bold;
-cursor: pointer;
-transition: 0.3s;
+  padding: 14px;
+  background: #d4af37;
+  color: black;
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
 button:hover {
-background: #e5c14a;
-transform: scale(1.02);
+  background: #e5c14a;
+  transform: scale(1.02);
 }
 
 .nivel {
-color: #d4af37;
-font-weight: bold;
-font-size: 18px;
+  color: #d4af37;
+  font-weight: bold;
+  font-size: 18px;
 }
 
 .examen-box {
-max-width: 700px;
-margin: auto;
-padding: 30px;
-background: #181818;
-border-radius: 15px;
-text-align: center;
+  max-width: 700px;
+  margin: auto;
+  padding: 30px;
+  background: #181818;
+  border-radius: 15px;
+  text-align: center;
 }
 
 .opciones {
-display: flex;
-flex-direction: column;
-gap: 15px;
-margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
 }
 
 .opciones button {
-width: 100%;
+  width: 100%;
 }
 
 .resultado-examen {
-max-width: 700px;
-margin: 25px auto 0;
-padding: 25px;
-background: #111;
-border: 2px solid #d4af37;
-border-radius: 15px;
-text-align: center;
-display: none;
+  max-width: 700px;
+  margin: 25px auto 0;
+  padding: 25px;
+  background: #111;
+  border: 2px solid #d4af37;
+  border-radius: 15px;
+  text-align: center;
+  display: none;
 }
 
 .resultado-examen h3 {
-color: #d4af37;
-margin-bottom: 15px;
+  color: #d4af37;
+  margin-bottom: 15px;
 }
 
 .resultado-examen p {
-margin: 10px 0;
-font-size: 18px;
+  margin: 10px 0;
+  font-size: 18px;
 }
 
 .foto-plomero {
-width: 120px;
-height: 120px;
-border-radius: 50%;
-object-fit: cover;
-border: 3px solid #d4af37;
-margin-bottom: 15px;
-}
-
-.plomero-card h3 {
-margin: 10px 0;
-color: white;
-}
-
-.plomero-card p {
-margin: 6px 0;
-}
-
-.estrellas {
-color: #d4af37;
-font-size: 20px;
-font-weight: bold;
-margin: 12px 0;
-}
-
-.btn-servicio {
-background: #25D366;
-color: white;
-margin-top: 10px;
-}
-
-.btn-servicio:hover {
-background: #1ebe5b;
-}
-
-.btn-calificar {
-background: #d4af37;
-color: #111;
-font-weight: bold;
-}
-
-.btn-calificar:hover {
-background: #f0c94a;
-}
-
-.plomero-card button {
-width: 100%;
-margin-top: 8px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #d4af37;
+  margin-bottom: 15px;
 }
 
 .plomero-card {
-display: flex;
-flex-direction: column;
-justify-content: flex-start;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.plomero-card h3 {
+  margin: 10px 0;
+  color: white;
+}
+
+.plomero-card p {
+  margin: 6px 0;
+}
+
+.plomero-card button {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.estrellas {
+  color: #d4af37;
+  font-size: 20px;
+  font-weight: bold;
+  margin: 12px 0;
+}
+
+.btn-servicio {
+  background: #25D366;
+  color: white;
+  margin-top: 10px;
+}
+
+.btn-servicio:hover {
+  background: #1ebe5b;
+}
+
+.btn-calificar {
+  background: #d4af37;
+  color: #111;
+  font-weight: bold;
+}
+
+.btn-calificar:hover {
+  background: #f0c94a;
 }
 
 .ranking h2 {
-margin-bottom: 30px;
+  margin-bottom: 30px;
 }
 
 /* FILTROS */
 
 .filtros {
-max-width: 900px;
-margin: 0 auto 40px auto;
-display: grid;
-grid-template-columns: 1fr 1fr 180px auto;
-gap: 15px;
+  max-width: 1000px;
+  margin: 0 auto 40px auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr 180px 160px;
+  gap: 15px;
 }
 
 .filtros input,
@@ -212,49 +213,655 @@ gap: 15px;
 }
 
 .filtros button {
-min-width: 140px;
+  min-width: 140px;
+}
+
+/* LOGIN ADMIN */
+
+.login-admin {
+  max-width: 420px;
+  margin: 40px auto;
+  padding: 30px;
+  background: #181818;
+  border: 1px solid #3a2f1f;
+  border-radius: 18px;
+  text-align: center;
+  display: grid;
+  gap: 15px;
+}
+
+.login-admin h2 {
+  color: #d4af37;
+  margin-bottom: 10px;
+}
+
+.login-admin input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.login-admin button {
+  width: 100%;
 }
 
 /* PANEL ADMIN */
 
 .admin {
-background: #141414;
+  background: #141414;
+  display: none;
 }
 
 .admin h2 {
-color: #d4af37;
+  color: #d4af37;
 }
 
 /* RESPONSIVE */
 
 @media (max-width: 768px) {
 
-.header h1 {
-font-size: 30px;
+  .header h1 {
+    font-size: 30px;
+  }
+
+  section {
+    padding: 30px 5%;
+  }
+
+  .planes-grid,
+  .plomeros-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filtros {
+    grid-template-columns: 1fr;
+  }
+
+  .filtros button {
+    width: 100%;
+  }
 }
 
-section {
-padding: 30px 5%;
+.comentario-box{
+  background:#1a1a1a;
+  border:1px solid #d4af37;
+  border-radius:10px;
+  padding:10px;
+  margin-top:8px;
+  font-size:13px;
+  color:white;
 }
 
-.planes-grid,
-.plomeros-grid {
-grid-template-columns: 1fr;
+.comentario-box small{
+  color:#ccc;
 }
 
-.filtros {
-grid-template-columns: 1fr;
+.trabajo-box {
+  margin-top: 15px;
+  padding: 15px;
+  border: 1px solid #d4af37;
+  border-radius: 12px;
+  background: #111;
 }
 
-.filtros button {
-width: 100%;
-}
+.trabajo-fotos {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
-.login-admin{
-max-width:400px;
-margin:40px auto;
+.foto-trabajo {
+  width: 180px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #d4af37;
+}
+
+.perfil-vigna {
+  margin-top: 40px;
+  padding: 35px;
+  background: #181818;
+  border: 1px solid #d4af37;
+  border-radius: 18px;
+  text-align: center;
+}
+
+.perfil-vigna h2,
+.perfil-vigna h3 {
+  color: #d4af37;
+}
+
+.perfil-vigna .foto-plomero {
+  width: 150px;
+  height: 150px;
+}
+
+.perfil-vigna .btn-servicio {
+  max-width: 280px;
+}
+
+/* ========================= */
+/* REGISTRO VIGNA PREMIUM */
+/* ========================= */
+
+.registro-header-premium{
+    background: linear-gradient(
+        90deg,
+        #050505,
+        #1a1208,
+        #050505
+    );
+
+    text-align:center;
+    padding:40px 20px;
+    position:relative;
+}
+
+.btn-volver-home{
+    position:absolute;
+    left:20px;
+    top:20px;
+
+    text-decoration:none;
+
+    background:#d4af37;
+    color:#000;
+
+    padding:12px 18px;
+    border-radius:10px;
+
+    font-weight:700;
+}
+
+.btn-volver-home:hover{
+    opacity:.9;
+}
+
+.registro-logo{
+    width:120px;
+    margin-bottom:15px;
+}
+
+.registro-logo-box h1{
+    color:#d4af37;
+    font-size:54px;
+    margin-bottom:10px;
+}
+
+.registro-logo-box p{
+    color:#fff;
+    font-size:18px;
+}
+
+.registro-premium{
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    gap:40px;
+
+    padding:60px 20px;
+
+    flex-wrap:wrap;
+}
+
+.registro-card,
+.beneficios-card{
+
+    width:420px;
+
+    background:#111;
+
+    border:1px solid #d4af37;
+
+    border-radius:20px;
+
+    padding:30px;
+
+    box-shadow:
+    0 0 25px rgba(212,175,55,.15);
+}
+
+.registro-card h2,
+.beneficios-card h2{
+
+    color:#d4af37;
+
+    margin-bottom:20px;
+
+    text-align:center;
+}
+
+.registro-card input,
+.registro-card select{
+
+    width:100%;
+
+    padding:14px;
+
+    margin-bottom:14px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:#1c1c1c;
+
+    color:#fff;
+
+    font-size:15px;
+}
+
+.btn-registro-premium{
+
+    width:100%;
+
+    padding:16px;
+
+    background:#d4af37;
+
+    color:#000;
+
+    font-weight:700;
+
+    border:none;
+
+    border-radius:12px;
+
+    cursor:pointer;
+
+    font-size:16px;
+}
+
+.btn-registro-premium:hover{
+
+    transform:translateY(-2px);
+
+    transition:.3s;
+}
+
+.login-link{
+
+    margin-top:20px;
+
+    text-align:center;
+
+    color:#fff;
+}
+
+.login-link a{
+
+    color:#d4af37;
+
+    text-decoration:none;
+
+    font-weight:bold;
+}
+
+.beneficios-card p{
+
+    color:white;
+
+    margin-bottom:16px;
+
+    font-size:16px;
+}
+
+.perfil-card{
+    width:100%;
+    max-width:700px;
+    margin:30px auto;
+    background:#111;
+    border:1px solid #d4af37;
+    border-radius:20px;
+    padding:30px;
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+.perfil-card input,
+.perfil-card textarea{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    background:#1c1c1c;
+    color:white;
+    box-sizing:border-box;
+}
+
+.perfil-card textarea{
+    min-height:120px;
+}
+
+.perfil-card button{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    background:#d4af37;
+    color:black;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.avatar-panel{
+    width:180px !important;
+    height:180px !important;
+    max-width:180px !important;
+    max-height:180px !important;
+    border-radius:50%;
+    object-fit:cover;
+    border:4px solid #d4af37;
+    display:block;
+    margin:0 auto 20px auto;
+}
+
+.cta-vigna{
+  max-width:900px;
+  margin:60px auto;
+  padding:50px 30px;
+  background:#111;
+  border:1px solid #d4af37;
+  border-radius:22px;
+  text-align:center;
+}
+
+.cta-vigna h2{
+  color:#d4af37;
+  font-size:32px;
+  margin-bottom:15px;
+}
+
+.cta-vigna p{
+  color:#ddd;
+  font-size:17px;
+  margin-bottom:30px;
+}
+
+.cta-botones{
+  display:flex;
+  justify-content:center;
+  gap:20px;
+  flex-wrap:wrap;
+}
+
+.cta-botones a{
+  background:#d4af37;
+  color:#000;
+  text-decoration:none;
+  padding:15px 24px;
+  border-radius:12px;
+  font-weight:bold;
+}
+
+.planes{
+  max-width:1200px;
+  margin:auto;
+}
+
+.planes-grid{
+  max-width:1100px;
+  margin:30px auto;
+}
+
+.ranking{
+  max-width:1200px;
+  margin:auto;
+}
+
+.separador-panel{
+  width:100%;
+  border:none;
+  border-top:1px solid #d4af37;
+  margin:25px 0;
+}
+
+.perfil-card label{
+  color:#d4af37;
+  font-weight:bold;
+}
+
+.perfil-vigna{
+  max-width:900px;
+  margin:40px auto;
+  padding:40px;
+  background:#111;
+  border:1px solid #d4af37;
+  border-radius:24px;
+  text-align:center;
+}
+
+.perfil-vigna .foto-plomero{
+  width:180px !important;
+  height:180px !important;
+  border-radius:50%;
+  object-fit:cover;
+  border:4px solid #d4af37;
+  margin-bottom:20px;
+}
+
+.perfil-vigna h2{
+  font-size:34px;
+  color:#d4af37;
+  margin-bottom:15px;
+}
+
+.perfil-vigna p{
+  font-size:16px;
+  color:#eee;
+}
+
+.perfil-vigna h3{
+  margin-top:35px;
+  color:#d4af37;
+}
+
+.perfil-vigna .btn-servicio{
+  display:inline-block;
+  margin-top:25px;
+  padding:16px 28px;
+  border-radius:12px;
+  background:#25D366;
+  color:white;
+  text-decoration:none;
+  font-weight:bold;
+}
+
+.trabajo-box{
+  margin-top:20px;
+  padding:22px;
+  background:#181818;
+  border:1px solid #3a2f1f;
+  border-radius:18px;
+}
+
+.trabajo-fotos{
+  display:flex;
+  justify-content:center;
+  gap:20px;
+  flex-wrap:wrap;
+  margin-top:15px;
+}
+
+.foto-trabajo{
+  width:300px;
+  height:220px;
+  object-fit:cover;
+  border-radius:14px;
+  border:2px solid #d4af37;
+}
+
+.insignia-ranking{
+  display:inline-block;
+  margin:10px auto 4px;
+  padding:8px 14px;
+  border:1px solid #d4af37;
+  border-radius:999px;
+  color:#d4af37;
+  font-weight:bold;
+  background:rgba(212,175,55,.08);
+}
+
+.puesto-ranking{
+  color:#ccc;
+  font-size:14px;
+  margin-bottom:10px;
+}
+
+.insignia-vigna{
+  width:120px;
+  height:auto;
+  display:block;
+  margin:15px auto;
+}
+
+.puesto-ranking{
+  color:#d4af37;
+  font-weight:bold;
+  font-size:16px;
+  margin-bottom:10px;
+}
+
+.plomero-card{
+    position: relative;
+
+}
+
+.card-top-vigna{
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  margin-bottom:18px;
+}
+
+.card-top-vigna .foto-plomero{
+  width:110px;
+  height:110px;
+  margin:0;
+}
+
+.card-top-vigna .insignia-vigna{
+  width:120px;
+  height:120px;
+  margin:0;
+  object-fit:contain;
+  filter:drop-shadow(0 0 12px rgba(212,175,55,.6));
+}
+
+.top-vigna{
 text-align:center;
-display:grid;
-gap:15px;
+margin:40px auto;
+}
+
+#topVignaMes{
+display:flex;
+justify-content:center;
+gap:30px;
+flex-wrap:wrap;
+}
+
+.top-card{
+width:280px;
+background:#111;
+border:2px solid #d4af37;
+border-radius:20px;
+padding:20px;
+text-align:center;
+}
+
+.top-avatar{
+width:120px;
+height:120px;
+border-radius:50%;
+object-fit:cover;
+margin-top:10px;
+}
+
+.top-insignia{
+width:90px;
+display:block;
+margin:auto;
+}
+
+.verificacion-vigna{
+  margin:12px auto;
+  padding:12px;
+  border:1px solid #d4af37;
+  border-radius:12px;
+  background:rgba(212,175,55,.06);
+  color:#e8e8e8;
+  font-size:13px;
+}
+
+.verificacion-vigna p{
+  margin:5px 0;
+}
+
+.detalle-card-admin{
+  max-width:1000px;
+  margin:30px auto;
+  padding:25px;
+  background:#111;
+  border:1px solid #d4af37;
+  border-radius:22px;
+}
+
+.detalle-header-admin{
+  display:flex;
+  gap:25px;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-bottom:25px;
+}
+
+.foto-detalle-admin{
+  width:150px;
+  height:150px;
+  border-radius:50%;
+  object-fit:cover;
+  border:2px solid #d4af37;
+}
+
+.detalle-grid-admin{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:12px;
+  margin:20px 0;
+}
+
+.acciones-admin{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:10px;
+  margin-top:20px;
+}
+
+.dashboard-admin{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:20px;
+    margin:30px 0;
+}
+
+.dashboard-card{
+    background:#1d1d1d;
+    border:1px solid #d4af37;
+    border-radius:12px;
+    padding:25px;
+    text-align:center;
+}
+
+.dashboard-card h3{
+    font-size:38px;
+    color:#d4af37;
+    margin-bottom:10px;
+}
+
+.dashboard-card p{
+    color:white;
+    font-size:15px;
 }

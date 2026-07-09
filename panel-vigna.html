@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Panel VIGNA</title>
+<link rel="stylesheet" href="plomeros.css">
+</head>
+<body>
+
+<header class="header">
+  <h1>Panel VIGNA</h1>
+  <p>Gestiona tu perfil profesional</p>
+</header>
+
+<section class="registro">
+
+  <h2>Mi cuenta</h2>
+  <div id="datosUsuario"></div>
+
+  <section class="planes">
+  <h2>Activar plan VIGNA Profesional</h2>
+  <p>Activa tu perfil para aparecer en el ranking y recibir solicitudes.</p>
+
+  <div class="planes-grid">
+
+    <div class="plan">
+      <h3>1 mes</h3>
+      <p>Perfil activo por 30 días</p>
+      <strong>S/ 39.90</strong>
+      <button onclick="suscribirseProfesionalPanel('VIGNA Profesional 1 mes', 39.90, 1)">
+        Activar 1 mes
+      </button>
+    </div>
+
+    <div class="plan destacado">
+      <h3>6 meses</h3>
+      <p>Descuento por pago semestral</p>
+      <strong>S/ 199.90</strong>
+      <button onclick="suscribirseProfesionalPanel('VIGNA Profesional 6 meses', 199.90, 6)">
+        Activar 6 meses
+      </button>
+    </div>
+
+    <div class="plan">
+      <h3>1 año</h3>
+      <p>Mayor descuento por pago anual</p>
+      <strong>S/ 349.90</strong>
+      <button onclick="suscribirseProfesionalPanel('VIGNA Profesional 1 año', 349.90, 12)">
+        Activar 1 año
+      </button>
+    </div>
+
+  </div>
+
+  <div id="estadoPlanVigna"></div>
+</section>
+
+  <h2>Mi perfil profesional</h2>
+
+  <div class="perfil-card">
+
+    <img
+      id="fotoVista"
+      src="images/avatar-default.png"
+      class="avatar-panel"
+      alt="Foto de perfil">
+
+    <input type="file" id="fotoPerfil" accept="image/*">
+
+    <input
+      type="text"
+      id="telefonoPerfil"
+      placeholder="WhatsApp">
+
+    <input
+      type="text"
+      id="especialidadPerfil"
+      placeholder="Especialidad">
+
+    <input
+      type="text"
+      id="departamentoPerfil"
+      placeholder="Departamento">
+
+    <input
+      type="text"
+      id="provinciaPerfil"
+      placeholder="Provincia">
+
+    <input
+      type="text"
+      id="distritoPerfil"
+      placeholder="Distrito">
+
+    <textarea
+      id="descripcionPerfil"
+      placeholder="Descripción profesional"></textarea>
+
+    <button onclick="guardarPerfil()">
+      Guardar perfil
+    </button>
+
+    <hr class="separador-panel">
+
+<h2>Subir trabajo realizado</h2>
+
+<input
+  type="text"
+  id="trabajoTitulo"
+  placeholder="Título del trabajo">
+
+<textarea
+  id="trabajoDescripcion"
+  placeholder="Descripción del trabajo"></textarea>
+
+<label>Foto antes</label>
+<input type="file" id="fotoAntes" accept="image/*">
+
+<label>Foto después</label>
+<input type="file" id="fotoDespues" accept="image/*">
+
+<button onclick="subirTrabajoVigna()">
+  Subir trabajo
+</button>
+
+<section class="solicitudes-disponibles">
+  <h2>Solicitudes disponibles</h2>
+  <p>Trabajos publicados por clientes que coinciden con tu especialidad o zona.</p>
+
+  <div id="listaSolicitudesDisponibles">
+    <p>Cargando solicitudes disponibles...</p>
+  </div>
+</section>
+
+<h2>Solicitudes recibidas</h2>
+
+<div id="listaSolicitudesVigna">
+  Cargando solicitudes...
+</div>
+
+    <button onclick="cerrarSesionVigna()">
+      Cerrar sesión
+    </button>
+
+  </div>
+
+</section>
+
+<script type="module" src="./firebase.js?v=20"></script>
+<script src="./panel-vigna.js?v=20"></script>
+
+</body>
+</html>

@@ -91,17 +91,18 @@ async function cargarCSV(archivo, contenedor, carpetaBase) {
       `;
 
       boton.addEventListener("click", () => {
-        abrirProducto(
-          nombre,
-          "S/ " + precio,
-          ruta,
-          descripcion,
-          c1,
-          c2,
-          c3,
-          c4
-        );
-      });
+
+    const idProducto = datos[0]?.trim();
+
+const url =
+  "producto.html?" +
+  "id=" + encodeURIComponent(idProducto) +
+  "&archivo=" + encodeURIComponent(archivo) +
+  "&carpetaBase=" + encodeURIComponent(carpetaBase);
+
+    window.location.href = url;
+
+});
 
       grid.appendChild(boton);
 
@@ -163,3 +164,18 @@ function iniciarCategoryCarousel(carousel) {
 document.addEventListener("DOMContentLoaded", () => {
   cargarCategorias("data/categorias.csv");
 });
+
+function irACategorias() {
+  const productos = document.getElementById("productos");
+
+  if (productos) {
+    const posicion = productos.getBoundingClientRect().top + window.pageYOffset - 110;
+
+    window.scrollTo({
+      top: posicion,
+      behavior: "smooth"
+    });
+  }
+}
+  
+window.irACategorias = irACategorias;

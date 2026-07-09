@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Registro Cliente VIGNA</title>
+<link rel="stylesheet" href="plomeros.css">
+</head>
+<body>
+
+<header class="header">
+  <h1>Registro Cliente</h1>
+  <p>Crea tu cuenta para solicitar servicios VIGNA</p>
+</header>
+
+<section class="registro">
+  <input type="text" id="nombreCliente" placeholder="Nombre completo">
+  <input type="email" id="correoCliente" placeholder="Correo electrónico">
+  <input type="password" id="passwordCliente" placeholder="Contraseña">
+  <input type="text" id="whatsappCliente" placeholder="WhatsApp">
+  <input type="text" id="distritoCliente" placeholder="Distrito">
+
+  <button onclick="registrarCliente()">
+    Crear cuenta cliente
+  </button>
+
+  <p>¿Ya tienes cuenta? <a href="login-cliente.html">Ingresar</a></p>
+</section>
+
+<script type="module" src="./firebase.js?v=60"></script>
+<script src="./registro-cliente.js?v=60"></script>
+
+</body>
+</html>

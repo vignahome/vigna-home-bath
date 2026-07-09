@@ -17,8 +17,15 @@ function mostrarCategoria(id, mover = true) {
   if (box) {
     box.classList.add("active");
 
-    if (false) {
-      box.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (mover) {
+      setTimeout(() => {
+        const posicion = box.getBoundingClientRect().top + window.pageYOffset - 120;
+
+window.scrollTo({
+    top: posicion,
+    behavior: "smooth"
+});
+      }, 150);
     }
   }
 }
@@ -55,7 +62,7 @@ function abrirProducto(nombre, precio, carpeta, descripcion, c1, c2, c3, c4) {
   video.load();
 
   document.getElementById("modalWhatsapp").href =
-    "https://wa.me/51991718386?text=" +
+    "https://wa.me/51973108121?text=" +
     encodeURIComponent("Hola VIGNA, quiero cotizar " + nombre + " con precio " + precio);
 
   document.getElementById("productModal").classList.add("open");
@@ -115,18 +122,109 @@ if (heroCarousel) {
     heroCarousel.appendChild(img);
   }
 
-  setTimeout(() => {
-    const slides = heroCarousel.querySelectorAll(".hero-slide");
+  function renderTrabajos(plomeroId) {
+  const trabajos = trabajosVigna.filter(
+    (t) => String(t.plomeroId || "").trim() === String(plomeroId || "").trim()
+  );
 
-    if (slides.length > 1) {
-      let actual = 0;
+  if (trabajos.length === 0) {
+    return "<small>Sin trabajos cargados</small>";
+  }
 
-      setInterval(() => {
-        slides[actual].classList.remove("active");
-        actual = (actual + 1) % slides.length;
-        slides[actual].classList.add("active");
-      }, 3000);
-    }
-  }, 500);
+  let html = "<h4>Trabajos realizados</h4>";
+
+  trabajos.forEach((t) => {
+    html += `
+      <div class="trabajo-box">
+        <h5>${t.titulo || "Trabajo realizado"}</h5>
+        <p>${t.descripcion || ""}</p>
+
+        <div class="trabajo-fotos">
+          <div>
+            <p>Antes</p>
+            <img src="${t.fotoAntes}" class="foto-trabajo">
+          </div>
+
+          <div>
+            <p>Después</p>
+            <img src="${t.fotoDespues}" class="foto-trabajo">
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  return html;
 }
+
+function renderComentarios(plomeroId) {
+  const comentariosFiltrados = comentariosVigna.filter((c) => {
+    return String(c.plomeroId || "").trim() === String(plomeroId || "").trim();
+  });
+
+  if (comentariosFiltrados.length === 0) {
+    return "<small>Sin comentarios</small>";
+  }
+
+  let html = "";
+
+  comentariosFiltrados.forEach((c) => {
+    html += `
+      <div class="comentario-box">
+        ⭐ ${c.estrellas}<br>
+        "${c.comentario}"
+      </div>
+    `;
+  });
+
+  return html;
+}
+
+  const slides = heroCarousel.querySelectorAll(".hero-slide");
+
+  if (slides.length > 1) {
+    let actual = 0;
+
+    setInterval(() => {
+      slides[actual].classList.remove("active");
+
+      actual = (actual + 1) % slides.length;
+
+      slides[actual].classList.add("active");
+    }, 3000);
+  }
+}
+
+window.mostrarCategoria = mostrarCategoria;
+window.abrirProducto = abrirProducto;
+window.abrirImagenCompleta = abrirImagenCompleta;
+window.abrirImagenCompleta = abrirImagenCompleta;
+
+// ==========================
+// BOTÓN VOLVER ARRIBA
+// ==========================
+
+const btnSubir = document.getElementById("btnSubir");
+
+window.addEventListener("scroll", () => {
+
+  if (window.scrollY > 600) {
+    btnSubir.classList.add("visible");
+  } else {
+    btnSubir.classList.remove("visible");
+  }
+
+});
+
+function volverArriba() {
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+
+}
+
+window.volverArriba = volverArriba;
+
 });

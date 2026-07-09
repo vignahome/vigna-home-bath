@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Producto VIGNA</title>
+
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/producto.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="index.html" class="brand">
+      <img src="images/logo/ChatGPT Image 26 may 2026, 11_05_03 p.m..png" alt="VIGNA" class="brand-logo">
+    </a>
+
+    <nav class="main-nav">
+      <a href="index.html">Inicio</a>
+      <a href="index.html#productos">Productos</a>
+      <a href="index.html#contacto">Contacto</a>
+    </nav>
+  </div>
+</header>
+
+<main class="producto-page">
+  <section class="producto-hero container">
+
+    <div class="producto-galeria">
+
+  <div class="zoom-container">
+
+    <img
+        id="productoImagen"
+        src=""
+        alt="Producto VIGNA"
+        class="producto-img-principal">
+
+    <video
+        id="productoVideoPrincipal"
+        class="producto-video-principal"
+        controls
+        muted
+        loop
+        playsinline>
+
+        <source
+            id="productoVideoPrincipalSource"
+            src=""
+            type="video/mp4">
+
+    </video>
+
+    <button class="galeria-flecha flecha-izq" id="flechaIzq">‹</button>
+<button class="galeria-flecha flecha-der" id="flechaDer">›</button>
+
+</div>
+
+  <div class="producto-miniaturas">
+  <img id="mini1" src="" alt="">
+  <img id="mini2" src="" alt="">
+  <img id="mini3" src="" alt="">
+
+  <button id="miniVideo" class="mini-video-btn">
+    ▶
+  </button>
+</div>
+
+</div>
+
+    <div class="producto-info">
+      <p class="producto-marca">VIGNA HOME & BATH</p>
+
+      <h1 id="productoNombre">Cargando producto...</h1>
+
+      <p id="productoPrecio" class="producto-precio"></p>
+
+      <p id="productoDescripcion" class="producto-descripcion"></p>
+
+      <ul id="productoCaracteristicas" class="producto-caracteristicas"></ul>
+
+      <section class="producto-especificaciones">
+
+    <h2>Especificaciones técnicas</h2>
+
+    <table class="tabla-especificaciones">
+
+        <tr>
+            <td>Material</td>
+            <td id="espMaterial"></td>
+        </tr>
+
+        <tr>
+            <td>Color</td>
+            <td id="espColor"></td>
+        </tr>
+
+        <tr>
+            <td>Acabado</td>
+            <td id="espAcabado"></td>
+        </tr>
+
+        <tr>
+            <td>Garantía</td>
+            <td id="espGarantia"></td>
+        </tr>
+
+        <tr>
+            <td>Alto</td>
+            <td id="espAlto"></td>
+        </tr>
+
+        <tr>
+            <td>Ancho</td>
+            <td id="espAncho"></td>
+        </tr>
+
+        <tr>
+            <td>Profundidad</td>
+            <td id="espProfundidad"></td>
+        </tr>
+
+        <tr>
+            <td>Presión</td>
+            <td id="espPresion"></td>
+        </tr>
+
+    </table>
+
+    <a
+        id="descargarManual"
+        class="btn btn-secondary"
+        target="_blank">
+        Descargar ficha técnica
+    </a>
+
+</section>
+
+      <a id="productoWhatsapp" class="btn btn-primary" href="#" target="_blank">
+        Cotizar por WhatsApp
+      </a>
+
+      <button class="btn btn-secondary" onclick="history.back()">
+        Volver
+      </button>
+    </div>
+
+  </section>
+
+  <section class="relacionados container">
+
+    <div class="section-title">
+        <span>VIGNA HOME & BATH</span>
+        <h2>También te puede interesar</h2>
+    </div>
+
+    <div id="productosRelacionados" class="model-grid">
+
+    </div>
+
+</section>
+<section class="producto-video container">
+  <div class="section-title">
+    <span>VIGNA HOME & BATH</span>
+    <h2>Video del producto</h2>
+  </div>
+
+  <video id="productoVideo" controls muted loop playsinline>
+    <source id="productoVideoSource" src="" type="video/mp4">
+  </video>
+</section>
+</main>
+
+<div class="visor-producto" id="visorProducto">
+  <button class="visor-cerrar" id="visorCerrar">×</button>
+  <img id="visorImagen" src="" alt="Imagen producto VIGNA">
+</div>
+
+<script src="./js/producto.js?v=2"></script>
+
+</body>
+</html>

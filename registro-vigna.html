@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Registro VIGNA</title>
+<link rel="stylesheet" href="plomeros.css">
+</head>
+<body>
+
+<header class="registro-header-premium">
+  <a href="index.html" class="btn-volver-home">← Volver a VIGNA Home</a>
+
+  <div class="registro-logo-box">
+    <img src="images/logo/logo-vigna.png" class="registro-logo" onerror="this.style.display='none'">
+    <h1>Únete a la Red VIGNA</h1>
+    <p>Conecta con clientes, recibe solicitudes y construye tu reputación profesional.</p>
+  </div>
+</header>
+
+<section class="registro-premium">
+
+  <div class="registro-card">
+    <h2>Crear cuenta profesional</h2>
+
+    <input type="text" id="nombreRegistro" placeholder="Nombre completo">
+    <input type="email" id="correoRegistro" placeholder="Correo electrónico">
+    <input type="password" id="passwordRegistro" placeholder="Contraseña">
+    <input type="tel" id="telefonoRegistro" placeholder="WhatsApp">
+
+    <select id="especialidadRegistro">
+      <option value="">Selecciona especialidad</option>
+      <option value="Plomería">Plomería</option>
+      <option value="Gasfitería">Gasfitería</option>
+      <option value="Electricista">Electricista</option>
+      <option value="Albañilería">Albañilería</option>
+      <option value="Drywall">Drywall</option>
+      <option value="Pintura">Pintura</option>
+      <option value="Enchapador">Enchapador</option>
+      <option value="Porcelanato">Porcelanato</option>
+      <option value="Herrería">Herrería</option>
+      <option value="Soldadura">Soldadura</option>
+      <option value="Carpintería metálica">Carpintería metálica</option>
+      <option value="Carpintería de madera">Carpintería de madera</option>
+      <option value="Melamina">Melamina</option>
+      <option value="Vidriería">Vidriería</option>
+      <option value="Aluminio y mamparas">Aluminio y mamparas</option>
+      <option value="Maestro de obra">Maestro de obra</option>
+      <option value="Arquitecto">Arquitecto</option>
+      <option value="Ingeniero civil">Ingeniero civil</option>
+      <option value="Ingeniero sanitario">Ingeniero sanitario</option>
+      <option value="Ingeniero eléctrico">Ingeniero eléctrico</option>
+      <option value="Topógrafo">Topógrafo</option>
+      <option value="Diseñador de interiores">Diseñador de interiores</option>
+      <option value="Remodelación de baños">Remodelación de baños</option>
+      <option value="Remodelación de cocinas">Remodelación de cocinas</option>
+      <option value="Construcción general">Construcción general</option>
+    </select>
+
+    <input type="text" id="departamentoRegistro" placeholder="Departamento">
+    <input type="text" id="provinciaRegistro" placeholder="Provincia">
+    <input type="text" id="distritoRegistro" placeholder="Distrito">
+
+    <button onclick="registrarVigna()" class="btn-registro-premium">
+      Crear cuenta profesional
+    </button>
+
+    <p class="login-link">
+      ¿Ya tienes cuenta?
+      <a href="login-vigna.html">Ingresar</a>
+    </p>
+  </div>
+
+  <div class="beneficios-card">
+    <h2>Beneficios VIGNA</h2>
+    <p>✓ Perfil profesional público</p>
+    <p>✓ Aparece en VIGNAS Certificados</p>
+    <p>✓ Recibe solicitudes de clientes</p>
+    <p>✓ Ranking profesional</p>
+    <p>✓ Sistema de calificaciones</p>
+    <p>✓ Portafolio de trabajos realizados</p>
+  </div>
+
+</section>
+
+<script type="module" src="./registro-vigna.js?v=2"></script>
+
+</body>
+</html>

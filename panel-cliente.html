@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Panel Cliente VIGNA</title>
+<link rel="stylesheet" href="plomeros.css">
+</head>
+<body>
+
+<header class="header">
+  <h1>Panel Cliente</h1>
+  <p>Revisa tus solicitudes y califica servicios finalizados</p>
+</header>
+
+<section class="registro">
+  <h2>Mi cuenta</h2>
+  <section class="notificaciones-vigna">
+  <h2>Notificaciones</h2>
+
+  <div id="notificacionesCliente">
+    <p>No tienes notificaciones nuevas.</p>
+  </div>
+</section>
+  <div id="datosCliente"></div>
+
+  <section class="nueva-solicitud">
+  <h2>Nueva solicitud de servicio</h2>
+
+  <select id="especialidadSolicitud">
+    <option value="">Selecciona especialidad</option>
+    <option value="Construcción general">Construcción general</option>
+    <option value="Gasfitería">Gasfitería</option>
+    <option value="Electricidad">Electricidad</option>
+    <option value="Pintura">Pintura</option>
+    <option value="Remodelación">Remodelación</option>
+  </select>
+
+  <input type="text" id="distritoSolicitud" placeholder="Distrito del servicio">
+
+  <textarea id="descripcionSolicitud" placeholder="Describe el servicio que necesitas"></textarea>
+
+  <button onclick="crearSolicitudCliente()">
+    Publicar solicitud
+  </button>
+</section>
+
+  <h2>Mis solicitudes</h2>
+  <div id="listaSolicitudesCliente">
+    Cargando solicitudes...
+  </div>
+
+  <button onclick="cerrarSesionCliente()">
+    Cerrar sesión
+  </button>
+</section>
+
+<script type="module" src="./firebase.js?v=80"></script>
+<script src="./panel-cliente.js?v=80"></script>
+
+</body>
+</html>

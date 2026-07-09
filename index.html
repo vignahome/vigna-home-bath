@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-8224EEW7ZP"></script>
 <script>
@@ -19,9 +20,24 @@
 </script>
 </head>
 <body>
-  <a class="whatsapp-float" href="https://wa.me/51991718386?text=Hola%20VIGNA%2C%20quiero%20cotizar%20productos%20para%20mi%20ba%C3%B1o." target="_blank" rel="noreferrer noopener">
-    <span>WhatsApp</span>
+
+<div class="social-float">
+  <a href="https://www.facebook.com/profile.php?id=61591143137568" target="_blank" class="social-btn facebook">
+    <i class="fa-brands fa-facebook-f"></i>
   </a>
+
+  <a href="https://www.tiktok.com/@vigna552?_r=1&_t=ZS-97iTGWOAgRm" target="_blank" class="social-btn tiktok">
+    <i class="fa-brands fa-tiktok"></i>
+  </a>
+
+  <a href="https://wa.me/51973108121" target="_blank" class="social-btn whatsapp">
+    <i class="fa-brands fa-whatsapp"></i>
+  </a>
+</div>
+
+<button class="btn-categorias-fijo" onclick="irACategorias()">
+  Categorías
+</button>
 
   <header class="site-header">
     <div class="container header-inner">
@@ -47,20 +63,38 @@
   </header>
 
   <main>
-    <section class="hero" id="inicio">
-      <div class="hero-overlay"></div>
-      <div class="container hero-content">
-        <p class="eyebrow">Diseño de espacios premium</p>
-        <h1> El lujo en cada detalle.</h1>
-        <p class="hero-copy">Griferías, espejos LED, accesorios y soluciones premium para transformar tu hogar con estilo moderno.</p>
-        <div class="hero-actions">
-          <a class="btn btn-primary smooth-scroll" href="#productos">Ver catálogo</a>
-          <a class="btn btn-secondary" href="https://wa.me/51991718386?text=Hola%20VIGNA%2C%20quiero%20cotizar%20productos%20para%20mi%20ba%C3%B1o." target="_blank" rel="noreferrer noopener">Cotizar por WhatsApp</a>
-        </div>
-      </div>
+    <section class="hero-luxury" id="inicio">
+  <div class="hero-luxury-bg"></div>
+  <div class="hero-luxury-overlay"></div>
 
-      <div class="hero-carousel" id="heroCarousel"></div>
-    </section>
+  <div class="container hero-luxury-content">
+    <div class="hero-luxury-text">
+      <p class="eyebrow">VIGNA HOME & BATH</p>
+
+      <h1>
+        El lujo<br>
+        en cada<br>
+        <span>detalle.</span>
+      </h1>
+
+      <div class="hero-line"></div>
+
+      <p>
+        Diseñamos espacios exclusivos con acabados premium, grifería elegante, espejos LED y accesorios de alto valor para baños y cocinas.
+      </p>
+
+      <div class="hero-actions">
+        <button class="btn btn-primary" onclick="irACategorias()">
+          Ver catálogo →
+        </button>
+
+        <a class="btn btn-secondary" href="#nosotros">
+          Conocer más
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
 
     <section class="benefits section" aria-labelledby="beneficios-title">
       <div class="container">
@@ -251,7 +285,12 @@
   <button class="image-viewer-close" id="imageViewerClose">×</button>
   <img id="imageViewerImg" src="" alt="Imagen completa">
 </div>
-<script src="js/script.js?v=45"></script>
-<script src="js/productos.js?v=47"></script>
+<script src="./js/script.js?v=91"></script>
+<script src="./js/productos.js?v=91"></script>
+
+<button id="btnSubir" class="btn-subir" onclick="volverArriba()">
+    ↑
+</button>
+
 </body>
 </html>

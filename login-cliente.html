@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Login Cliente VIGNA</title>
+<link rel="stylesheet" href="plomeros.css">
+</head>
+<body>
+
+<header class="header">
+  <h1>Acceso Cliente</h1>
+  <p>Ingresa para ver tus solicitudes y calificar servicios</p>
+</header>
+
+<section class="registro">
+  <input type="email" id="correoClienteLogin" placeholder="Correo electrónico">
+  <input type="password" id="passwordClienteLogin" placeholder="Contraseña">
+
+  <button onclick="loginCliente()">
+    Ingresar
+  </button>
+
+  <p>¿No tienes cuenta? <a href="registro-cliente.html">Crear cuenta cliente</a></p>
+</section>
+
+<script type="module" src="./firebase.js?v=70"></script>
+<script src="./login-cliente.js?v=70"></script>
+
+</body>
+</html>
