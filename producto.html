@@ -137,6 +137,13 @@
 
 </section>
 
+<button
+  id="productoAgregarCarrito"
+  class="btn btn-primary"
+  type="button">
+  Agregar al carrito
+</button>
+
       <a id="productoWhatsapp" class="btn btn-primary" href="#" target="_blank">
         Cotizar por WhatsApp
       </a>
@@ -178,6 +185,27 @@
 </div>
 
 <script src="./js/producto.js?v=2"></script>
+<script src="./js/productos.js?v=92"></script>
+
+<button id="btnCarrito" class="btn-carrito" onclick="abrirCarrito()">
+  🛒 <span id="contadorCarrito">0</span>
+</button>
+
+<div id="panelCarrito" class="panel-carrito">
+  <button class="cerrar-carrito" onclick="cerrarCarrito()">×</button>
+
+  <h2>Carrito VIGNA</h2>
+
+  <div id="listaCarrito"></div>
+
+  <div class="carrito-total">
+    Total: S/ <span id="totalCarrito">0</span>
+  </div>
+
+  <button class="btn btn-primary" onclick="enviarCarritoWhatsApp()">
+    Enviar pedido por WhatsApp
+  </button>
+</div>
 
 </body>
 </html>

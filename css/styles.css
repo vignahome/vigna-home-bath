@@ -1986,24 +1986,6 @@ button,
   font-weight:800 !important;
 }
 
-.model-card::after{
-  content:"Ver detalles →";
-  display:block;
-  margin-top:16px;
-  padding:12px 18px;
-  border-radius:999px;
-  background:rgba(212,175,55,.12);
-  border:1px solid rgba(212,175,55,.35);
-  color:#f3cf5b;
-  font-weight:700;
-  transition:.3s ease;
-}
-
-.model-card:hover::after{
-  background:#d4af37;
-  color:#111;
-}
-
 /* ===========================
    MODAL PRODUCTO PREMIUM
 =========================== */
@@ -2129,4 +2111,239 @@ button,
   .main-modal-img{
     height:330px !important;
   }
+}
+
+/* ===========================
+   BUSCADOR VIGNA
+=========================== */
+
+.buscador-vigna{
+  width:min(760px, 100%);
+  margin:0 auto 35px;
+}
+
+.buscador-vigna input{
+  width:100%;
+  padding:18px 26px;
+  border-radius:999px;
+  border:1px solid rgba(212,175,55,.35);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  font-size:1rem;
+  outline:none;
+  box-shadow:0 20px 70px rgba(0,0,0,.35);
+}
+
+.buscador-vigna input::placeholder{
+  color:rgba(255,255,255,.55);
+}
+
+.buscador-vigna input:focus{
+  border-color:#d4af37;
+  background:rgba(255,255,255,.09);
+}
+
+.filtros-vigna{
+  width:min(900px, 100%);
+  margin:0 auto 45px;
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:14px;
+}
+
+@media(max-width:700px){
+  .filtros-vigna{
+    grid-template-columns:1fr;
+  }
+}
+
+.filtros-vigna select{
+  width:100%;
+  padding:16px 24px;
+  border-radius:999px;
+  border:1px solid rgba(212,175,55,.35);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  font-size:1rem;
+  outline:none;
+}
+
+.filtros-vigna option{
+  background:#111;
+  color:#fff;
+}
+
+.btn-carrito{
+  position:fixed;
+  right:20px;
+  bottom:300px;
+  width:58px;
+  height:58px;
+  border-radius:50%;
+  background:#d4af37;
+  color:#111;
+  font-size:22px;
+  font-weight:800;
+  z-index:9999;
+  box-shadow:0 8px 25px rgba(0,0,0,.45);
+}
+
+.btn-carrito span{
+  font-size:14px;
+}
+
+.panel-carrito{
+  position:fixed;
+  top:0;
+  right:-420px;
+  width:min(400px, 92vw);
+  height:100vh;
+  background:#0b0b0b;
+  border-left:1px solid rgba(212,175,55,.35);
+  z-index:20000;
+  padding:28px;
+  transition:.35s ease;
+  box-shadow:-30px 0 90px rgba(0,0,0,.6);
+}
+
+.panel-carrito.open{
+  right:0;
+}
+
+.cerrar-carrito{
+  position:absolute;
+  top:18px;
+  right:18px;
+  background:#d4af37;
+  color:#111;
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  font-size:28px;
+  font-weight:900;
+}
+
+.panel-carrito h2{
+  font-family:"Cinzel", serif;
+  color:#fff;
+  margin-bottom:28px;
+}
+
+.item-carrito{
+  border-bottom:1px solid rgba(255,255,255,.1);
+  padding:14px 0;
+}
+
+.item-carrito strong{
+  display:block;
+  color:#fff;
+}
+
+.item-carrito span{
+  color:#d4af37;
+}
+
+.carrito-total{
+  margin:25px 0;
+  font-size:1.4rem;
+  color:#d4af37;
+  font-weight:900;
+}
+
+.btn-mini-carrito{
+  width:100%;
+  margin-top:14px;
+  padding:12px 16px;
+  border-radius:999px;
+  background:#d4af37;
+  color:#111;
+  font-weight:800;
+}
+
+.btn-mini-carrito:hover{
+  background:#f3cf5b;
+}
+
+/* ===========================
+   CONTROLES CARRITO VIGNA
+=========================== */
+
+.carrito-controles{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:12px;
+}
+
+.carrito-controles button{
+  width:34px;
+  height:34px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:9px;
+  border:1px solid rgba(212,175,55,.35);
+  background:#d4af37;
+  color:#111;
+  font-size:18px;
+  font-weight:800;
+  cursor:pointer;
+  transition:.2s ease;
+}
+
+.carrito-controles button:hover{
+  transform:scale(1.08);
+  background:#f3cf5b;
+}
+
+.cantidad-carrito{
+  min-width:32px;
+  text-align:center;
+  color:#fff !important;
+  font-weight:800;
+}
+
+.btn-trash{
+  margin-left:auto;
+  background:#222 !important;
+  color:#d4af37 !important;
+}
+
+.btn-trash:hover{
+  background:#b22222 !important;
+  color:#fff !important;
+}
+
+.precio-carrito{
+  display:block;
+  margin-top:4px;
+  color:#d4af37;
+}
+
+.subtotal-carrito{
+  display:block;
+  margin-top:10px;
+  color:rgba(255,255,255,.72);
+}
+
+.carrito-vacio{
+  color:rgba(255,255,255,.65);
+}
+
+.btn-ver-detalles{
+  width:100%;
+  margin-top:14px;
+  padding:12px 18px;
+  border-radius:999px;
+  background:rgba(212,175,55,.12);
+  border:1px solid rgba(212,175,55,.35);
+  color:#f3cf5b;
+  font-weight:700;
+  cursor:pointer;
+  transition:.25s ease;
+}
+
+.btn-ver-detalles:hover{
+  background:#d4af37;
+  color:#111;
 }

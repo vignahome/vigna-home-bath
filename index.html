@@ -58,7 +58,7 @@
         <a href="#contacto" class="smooth-scroll">Contacto</a>
         <a href="plomeros.html">Plomeros certificados</a>
       </nav>
-      <a class="btn btn-outline" href="https://wa.me/51991718386?text=Hola%20VIGNA%2C%20quiero%20cotizar%20productos%20para%20mi%20ba%C3%B1o." target="_blank" rel="noreferrer noopener">Cotizar por WhatsApp</a>
+      <a class="btn btn-outline" href="https://wa.me/51973108121?text=Hola%20VIGNA%2C%20quiero%20cotizar%20productos%20para%20mi%20ba%C3%B1o." target="_blank" rel="noreferrer noopener">Cotizar por WhatsApp</a>
     </div>
   </header>
 
@@ -127,6 +127,39 @@
       <h2>Productos destacados</h2>
     </div>
 
+    <div class="buscador-vigna">
+  <input
+    type="text"
+    id="buscadorProductos"
+    placeholder="Buscar productos, colores, códigos..."
+  >
+</div>
+
+<div class="filtros-vigna">
+  <select id="filtroColor">
+    <option value="">Todos los colores</option>
+    <option value="cromado">Cromado</option>
+    <option value="negro">Negro mate</option>
+    <option value="acero">Acero</option>
+  </select>
+
+  <select id="filtroPrecio">
+    <option value="">Todos los precios</option>
+    <option value="0-100">Hasta S/100</option>
+    <option value="100-200">S/100 a S/200</option>
+    <option value="200-300">S/200 a S/300</option>
+    <option value="300-9999">Más de S/300</option>
+  </select>
+
+  <select id="ordenProductos">
+    <option value="">Ordenar</option>
+    <option value="menor">Menor precio</option>
+    <option value="mayor">Mayor precio</option>
+    <option value="az">A - Z</option>
+    <option value="za">Z - A</option>
+  </select>
+</div>
+
     <div id="categoriasGrid" class="category-grid"></div>
 
 <div id="categoriasProductos"></div>
@@ -149,7 +182,7 @@
               <li>Accesorios básicos</li>
               <li>Asesoría</li>
             </ul>
-            <a class="btn btn-primary" href="https://wa.me/51991718386?text=Hola%20VIGNA%2C%20quiero%20cotizar%20el%20Combo%20Ba%C3%B1o%20Moderno%20B%C3%A1sico." target="_blank" rel="noreferrer noopener">Cotizar combo</a>
+            <a class="btn btn-primary" href="https://wa.me/51973108121?text=Hola%20VIGNA%2C%20quiero%20cotizar%20el%20Combo%20Ba%C3%B1o%20Moderno%20B%C3%A1sico." target="_blank" rel="noreferrer noopener">Cotizar combo</a>
           </article>
           <article class="combo-card reveal">
             <h3>Baño Premium</h3>
@@ -160,7 +193,7 @@
               <li>Ducha moderna</li>
               <li>Accesorios</li>
             </ul>
-            <a class="btn btn-primary" href="https://wa.me/51991718386?text=Hola%20VIGNA%2C%20quiero%20cotizar%20el%20Combo%20Ba%C3%B1o%20Premium." target="_blank" rel="noreferrer noopener">Cotizar combo</a>
+            <a class="btn btn-primary" href="https://wa.me/51973108121?text=Hola%20VIGNA%2C%20quiero%20cotizar%20el%20Combo%20Ba%C3%B1o%20Premium." target="_blank" rel="noreferrer noopener">Cotizar combo</a>
           </article>
           <article class="combo-card reveal">
             <h3>Baño Tipo Hotel</h3>
@@ -172,7 +205,7 @@
               <li>Sanitario moderno</li>
               <li>Accesorios completos</li>
             </ul>
-            <a class="btn btn-primary" href="https://wa.me/51991718386?text=Hola%20VIGNA%2C%20quiero%20cotizar%20el%20Combo%20Ba%C3%B1o%20Tipo%20Hotel." target="_blank" rel="noreferrer noopener">Cotizar combo</a>
+            <a class="btn btn-primary" href="https://wa.me/51973108121?text=Hola%20VIGNA%2C%20quiero%20cotizar%20el%20Combo%20Ba%C3%B1o%20Tipo%20Hotel." target="_blank" rel="noreferrer noopener">Cotizar combo</a>
           </article>
         </div>
       </div>
@@ -214,7 +247,7 @@
       <p>Cotiza productos, combos o proyectos completos con asesoría personalizada.</p>
     </div>
 
-    <a class="btn btn-primary btn-large" href="https://wa.me/51991718386?text=Hola%20VIGNA%2C%20quiero%20cotizar%20productos%2C%20combos%20o%20proyectos." target="_blank" rel="noreferrer noopener">
+    <a class="btn btn-primary btn-large" href="https://wa.me/51973108121?text=Hola%20VIGNA%2C%20quiero%20cotizar%20productos%2C%20combos%20o%20proyectos." target="_blank" rel="noreferrer noopener">
       Hablar por WhatsApp
     </a>
   </div>
@@ -229,7 +262,7 @@
       </div>
       <div>
         <p><strong>WhatsApp</strong></p>
-        <a href="https://wa.me/51991718386?text=Hola%20VIGNA%2C%20quiero%20cotizar%20productos%20para%20mi%20ba%C3%B1o." target="_blank" rel="noreferrer noopener">+51 991 718 386</a>
+        <a href="https://wa.me/51973108121?text=Hola%20VIGNA%2C%20quiero%20cotizar%20productos%20para%20mi%20ba%C3%B1o." target="_blank" rel="noreferrer noopener">+51 973 108 121</a>
       </div>
       <div>
         <p><strong>Instagram</strong></p>
@@ -291,6 +324,26 @@
 <button id="btnSubir" class="btn-subir" onclick="volverArriba()">
     ↑
 </button>
+
+<button id="btnCarrito" class="btn-carrito" onclick="abrirCarrito()">
+  🛒 <span id="contadorCarrito">0</span>
+</button>
+
+<div id="panelCarrito" class="panel-carrito">
+  <button class="cerrar-carrito" onclick="cerrarCarrito()">×</button>
+
+  <h2>Carrito VIGNA</h2>
+
+  <div id="listaCarrito"></div>
+
+  <div class="carrito-total">
+    Total: S/ <span id="totalCarrito">0</span>
+  </div>
+
+  <button class="btn btn-primary" onclick="enviarCarritoWhatsApp()">
+    Enviar pedido por WhatsApp
+  </button>
+</div>
 
 </body>
 </html>

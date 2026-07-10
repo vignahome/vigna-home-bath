@@ -127,8 +127,16 @@ if (videoPrincipal && videoPrincipalSource && miniVideo && imagen && video) {
 }
 
   document.getElementById("productoWhatsapp").href =
-    "https://wa.me/51991718386?text=" +
+    "https://wa.me/51973108121?text=" +
     encodeURIComponent("Hola VIGNA, deseo cotizar el producto: " + nombre);
+
+    const botonAgregarCarrito = document.getElementById("productoAgregarCarrito");
+
+if (botonAgregarCarrito) {
+  botonAgregarCarrito.onclick = () => {
+    agregarAlCarrito(nombre, precio);
+  };
+}
 
   const relacionados = document.getElementById("productosRelacionados");
   relacionados.innerHTML = "";
@@ -149,12 +157,33 @@ if (videoPrincipal && videoPrincipalSource && miniVideo && imagen && video) {
     const rutaRel = carpetaBase + carpetaRel + "/";
 
     relacionados.innerHTML += `
-      <button class="model-card" onclick="window.location.href='producto.html?id=${idRel}&archivo=${encodeURIComponent(archivo)}&carpetaBase=${encodeURIComponent(carpetaBase)}'">
-        <img src="${rutaRel}portada.png" class="product-cover" alt="${nombreRel}">
-        <strong>${nombreRel}</strong>
-        <span>S/ ${precioRel}</span>
-      </button>
-    `;
+  <div class="model-card">
+
+    <img
+      src="${rutaRel}portada.png"
+      class="product-cover"
+      alt="${nombreRel}"
+      onclick="window.location.href='producto.html?id=${idRel}&archivo=${encodeURIComponent(archivo)}&carpetaBase=${encodeURIComponent(carpetaBase)}'">
+
+    <strong>${nombreRel}</strong>
+    <span>S/ ${precioRel}</span>
+
+    <button
+      type="button"
+      class="btn-mini-carrito"
+      onclick="agregarAlCarrito('${nombreRel}', '${precioRel}')">
+      Agregar al carrito
+    </button>
+
+    <button
+      type="button"
+      class="btn-ver-detalles"
+      onclick="window.location.href='producto.html?id=${idRel}&archivo=${encodeURIComponent(archivo)}&carpetaBase=${encodeURIComponent(carpetaBase)}'">
+      Ver detalles →
+    </button>
+
+  </div>
+`;
 
     cantidad++;
   });
