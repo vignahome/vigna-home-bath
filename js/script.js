@@ -12,6 +12,13 @@ function mostrarCategoria(id, mover = true) {
     box.classList.remove("active");
   });
 
+  document.querySelectorAll(".category-card").forEach((button) => {
+    const estaActiva = button.getAttribute("aria-controls") === id;
+
+    button.classList.toggle("active", estaActiva);
+    button.setAttribute("aria-pressed", String(estaActiva));
+  });
+
   const box = document.getElementById(id);
 
   if (box) {
