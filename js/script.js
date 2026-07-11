@@ -122,64 +122,6 @@ if (heroCarousel) {
     heroCarousel.appendChild(img);
   }
 
-  function renderTrabajos(plomeroId) {
-  const trabajos = trabajosVigna.filter(
-    (t) => String(t.plomeroId || "").trim() === String(plomeroId || "").trim()
-  );
-
-  if (trabajos.length === 0) {
-    return "<small>Sin trabajos cargados</small>";
-  }
-
-  let html = "<h4>Trabajos realizados</h4>";
-
-  trabajos.forEach((t) => {
-    html += `
-      <div class="trabajo-box">
-        <h5>${t.titulo || "Trabajo realizado"}</h5>
-        <p>${t.descripcion || ""}</p>
-
-        <div class="trabajo-fotos">
-          <div>
-            <p>Antes</p>
-            <img src="${t.fotoAntes}" class="foto-trabajo">
-          </div>
-
-          <div>
-            <p>Después</p>
-            <img src="${t.fotoDespues}" class="foto-trabajo">
-          </div>
-        </div>
-      </div>
-    `;
-  });
-
-  return html;
-}
-
-function renderComentarios(plomeroId) {
-  const comentariosFiltrados = comentariosVigna.filter((c) => {
-    return String(c.plomeroId || "").trim() === String(plomeroId || "").trim();
-  });
-
-  if (comentariosFiltrados.length === 0) {
-    return "<small>Sin comentarios</small>";
-  }
-
-  let html = "";
-
-  comentariosFiltrados.forEach((c) => {
-    html += `
-      <div class="comentario-box">
-        ⭐ ${c.estrellas}<br>
-        "${c.comentario}"
-      </div>
-    `;
-  });
-
-  return html;
-}
-
   const slides = heroCarousel.querySelectorAll(".hero-slide");
 
   if (slides.length > 1) {
@@ -198,7 +140,6 @@ function renderComentarios(plomeroId) {
 window.mostrarCategoria = mostrarCategoria;
 window.abrirProducto = abrirProducto;
 window.abrirImagenCompleta = abrirImagenCompleta;
-window.abrirImagenCompleta = abrirImagenCompleta;
 
 // ==========================
 // BOTÓN VOLVER ARRIBA
@@ -206,15 +147,15 @@ window.abrirImagenCompleta = abrirImagenCompleta;
 
 const btnSubir = document.getElementById("btnSubir");
 
-window.addEventListener("scroll", () => {
-
-  if (window.scrollY > 600) {
-    btnSubir.classList.add("visible");
-  } else {
-    btnSubir.classList.remove("visible");
-  }
-
-});
+if (btnSubir) {
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 600) {
+      btnSubir.classList.add("visible");
+    } else {
+      btnSubir.classList.remove("visible");
+    }
+  });
+}
 
 function volverArriba() {
 

@@ -139,6 +139,29 @@
   .producto-miniaturas img{
     height:90px;
   }
+
+  .producto-video-principal{
+  height:380px;
+}
+
+.mini-video-btn{
+  height:90px;
+}
+
+.galeria-flecha{
+  width:42px;
+  height:42px;
+  font-size:30px;
+}
+
+.flecha-izq{
+  left:10px;
+}
+
+.flecha-der{
+  right:10px;
+}
+
 }
 
 /* ===========================
@@ -166,20 +189,6 @@
   font-size:clamp(2rem, 4vw, 3.4rem);
   margin:12px 0 0;
   color:#fff;
-}
-
-.producto-video{
-  margin-top:80px;
-}
-
-.producto-video video{
-  width:100%;
-  max-height:620px;
-  object-fit:cover;
-  border-radius:38px;
-  border:1px solid rgba(212,175,55,.28);
-  box-shadow:0 40px 120px rgba(0,0,0,.45);
-  background:#000;
 }
 
 .producto-video{
@@ -242,51 +251,18 @@ ZOOM PREMIUM
 ====================================*/
 
 .zoom-container{
-
-    overflow:hidden;
-
-    border-radius:32px;
-
-    cursor:zoom-in;
-
+  position:relative;
+  overflow:hidden;
+  border-radius:32px;
+  cursor:zoom-in;
 }
 
 .zoom-container img{
-
-    transition:.45s ease;
-
+  transition:.45s ease;
 }
 
 .zoom-container:hover img{
-
-    transform:scale(1.35);
-
-}
-
-/*====================================
-ZOOM PREMIUM
-====================================*/
-
-.zoom-container{
-
-    overflow:hidden;
-
-    border-radius:32px;
-
-    cursor:zoom-in;
-
-}
-
-.zoom-container img{
-
-    transition:.45s ease;
-
-}
-
-.zoom-container:hover img{
-
-    transform:scale(1.35);
-
+  transform:scale(1.35);
 }
 
 /* ===========================
@@ -356,10 +332,6 @@ ZOOM PREMIUM
   color:#111;
 }
 
-.zoom-container{
-  position:relative;
-}
-
 .galeria-flecha{
   position:absolute;
   top:50%;
@@ -386,5 +358,52 @@ ZOOM PREMIUM
 .galeria-flecha:hover{
   background:#d4af37;
   color:#111;
+}
+
+@media(max-width:580px){
+  .producto-page{
+    padding-top:120px;
+  }
+
+  .producto-galeria{
+    padding:14px;
+    border-radius:24px;
+  }
+
+  .producto-img-principal,
+  .producto-video-principal{
+    height:300px;
+    border-radius:20px;
+  }
+
+  .producto-miniaturas{
+    gap:8px;
+  }
+
+  .producto-miniaturas img,
+  .mini-video-btn{
+    height:70px;
+    border-radius:12px;
+  }
+
+  .producto-info{
+    padding:24px;
+    border-radius:26px;
+  }
+
+  .producto-especificaciones{
+    padding:18px;
+  }
+
+  .tabla-especificaciones td{
+    padding:10px 0;
+    font-size:.9rem;
+  }
+}
+
+@media (hover:none){
+  .zoom-container:hover img{
+    transform:none;
+  }
 }
 

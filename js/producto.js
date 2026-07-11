@@ -12,8 +12,29 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  const respuesta = await fetch(archivo);
-  const texto = await respuesta.text();
+  let respuesta;
+let texto;
+
+try {
+  respuesta = await fetch(archivo);
+
+  if (!respuesta.ok) {
+    throw new Error(`No se pudo cargar ${archivo}`);
+  }
+
+  texto = await respuesta.text();
+} catch (error) {
+  console.error("Error cargando el producto:", error);
+
+  const titulo = document.getElementById("productoNombre");
+
+  if (titulo) {
+    titulo.textContent = "No se pudo cargar el producto";
+  }
+
+  return;
+}
+
   const filas = texto.trim().split("\n").slice(1);
 
   const fila = filas.find((f) => f.split(";")[0]?.trim() === id);
@@ -62,15 +83,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("espPresion").textContent = presion;
 
   const manual = document.getElementById("descargarManual");
-  if (manualPDF) {
-    manual.href = ruta + manualPDF;
-    manual.style.display = "inline-flex";
-  } else {
-    manual.style.display = "none";
-  }
+
+if (manual) {
+
+    if (manualPDF) {
+        manual.href = ruta + manualPDF;
+        manual.style.display = "inline-flex";
+    } else {
+        manual.style.display = "none";
+    }
+
+}
 
   const imagen = document.getElementById("productoImagen");
+
+if (imagen) {
   imagen.src = ruta + "portada.png";
+}
 
   for (let i = 1; i <= 3; i++) {
   const mini = document.getElementById("mini" + i);
@@ -98,10 +127,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 }
 
   const lista = document.getElementById("productoCaracteristicas");
+
+if (lista) {
   lista.innerHTML = "";
+
   [c1, c2, c3, c4].forEach((c) => {
-    if (c) lista.innerHTML += `<li>${c}</li>`;
+    if (c) {
+      lista.innerHTML += `<li>${c}</li>`;
+    }
   });
+}
 
   const videoEl = document.getElementById("productoVideo");
   const videoSource = document.getElementById("productoVideoSource");
@@ -126,20 +161,38 @@ if (videoPrincipal && videoPrincipalSource && miniVideo && imagen && video) {
   };
 }
 
-  document.getElementById("productoWhatsapp").href =
+  const btnWhatsapp = document.getElementById("productoWhatsapp");
+
+if (btnWhatsapp) {
+  btnWhatsapp.href =
     "https://wa.me/51973108121?text=" +
-    encodeURIComponent("Hola VIGNA, deseo cotizar el producto: " + nombre);
+    encodeURIComponent(
+      "Hola VIGNA, deseo cotizar el producto: " + nombre
+    );
+}
 
     const botonAgregarCarrito = document.getElementById("productoAgregarCarrito");
 
 if (botonAgregarCarrito) {
   botonAgregarCarrito.onclick = () => {
-    agregarAlCarrito(nombre, precio);
+    const enlaceProducto =
+      "producto.html?" +
+      "id=" + encodeURIComponent(id) +
+      "&archivo=" + encodeURIComponent(archivo) +
+      "&carpetaBase=" + encodeURIComponent(carpetaBase);
+
+    agregarAlCarrito(nombre, precio, enlaceProducto);
   };
 }
 
   const relacionados = document.getElementById("productosRelacionados");
-  relacionados.innerHTML = "";
+
+if (!relacionados) {
+  console.warn("No existe el contenedor productosRelacionados.");
+  return;
+}
+
+relacionados.innerHTML = "";
 
   let cantidad = 0;
 
@@ -156,34 +209,73 @@ if (botonAgregarCarrito) {
 
     const rutaRel = carpetaBase + carpetaRel + "/";
 
-    relacionados.innerHTML += `
-  <div class="model-card">
+    const enlaceRelacionado =
+  "producto.html?" +
+  "id=" + encodeURIComponent(idRel) +
+  "&archivo=" + encodeURIComponent(archivo) +
+  "&carpetaBase=" + encodeURIComponent(carpetaBase);
 
-    <img
-      src="${rutaRel}portada.png"
-      class="product-cover"
-      alt="${nombreRel}"
-      onclick="window.location.href='producto.html?id=${idRel}&archivo=${encodeURIComponent(archivo)}&carpetaBase=${encodeURIComponent(carpetaBase)}'">
+const tarjetaRelacionada = document.createElement("div");
+tarjetaRelacionada.className = "model-card";
+tarjetaRelacionada.setAttribute("role", "button");
+tarjetaRelacionada.setAttribute("tabindex", "0");
 
-    <strong>${nombreRel}</strong>
-    <span>S/ ${precioRel}</span>
+tarjetaRelacionada.innerHTML = `
+  <img
+    src="${rutaRel}portada.png"
+    class="product-cover"
+    alt="${nombreRel}">
 
-    <button
-      type="button"
-      class="btn-mini-carrito"
-      onclick="agregarAlCarrito('${nombreRel}', '${precioRel}')">
-      Agregar al carrito
-    </button>
+  <strong>${nombreRel}</strong>
+  <span>S/ ${precioRel}</span>
 
-    <button
-      type="button"
-      class="btn-ver-detalles"
-      onclick="window.location.href='producto.html?id=${idRel}&archivo=${encodeURIComponent(archivo)}&carpetaBase=${encodeURIComponent(carpetaBase)}'">
-      Ver detalles →
-    </button>
+  <button
+    type="button"
+    class="btn-mini-carrito">
+    Agregar al carrito
+  </button>
 
-  </div>
+  <button
+    type="button"
+    class="btn-ver-detalles">
+    Ver detalles →
+  </button>
 `;
+
+const imagenRelacionada =
+  tarjetaRelacionada.querySelector(".product-cover");
+
+const botonCarritoRelacionado =
+  tarjetaRelacionada.querySelector(".btn-mini-carrito");
+
+const botonDetalles =
+  tarjetaRelacionada.querySelector(".btn-ver-detalles");
+
+imagenRelacionada.addEventListener("click", () => {
+  window.location.href = enlaceRelacionado;
+});
+
+botonDetalles.addEventListener("click", () => {
+  window.location.href = enlaceRelacionado;
+});
+
+botonCarritoRelacionado.addEventListener("click", (e) => {
+  e.stopPropagation();
+
+  agregarAlCarrito(
+    nombreRel,
+    precioRel,
+    enlaceRelacionado
+  );
+});
+
+tarjetaRelacionada.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") {
+    window.location.href = enlaceRelacionado;
+  }
+});
+
+relacionados.appendChild(tarjetaRelacionada);
 
     cantidad++;
   });
@@ -235,6 +327,8 @@ function mostrarImagenGaleria(indice) {
     videoPrincipal.currentTime = 0;
     videoPrincipal.style.display = "none";
   }
+
+if (!imagen) return;
 
   imagen.style.display = "block";
   imagen.src = imagenesGaleria[indice];

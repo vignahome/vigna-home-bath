@@ -81,8 +81,10 @@ async function cargarCSV(archivo, contenedor, carpetaBase) {
 
       const ruta = `${carpetaBase}${carpeta}/`;
 
-      const boton = document.createElement("button");
-      boton.className = "model-card";
+      const boton = document.createElement("div");
+boton.className = "model-card";
+boton.setAttribute("role", "button");
+boton.setAttribute("tabindex", "0");
       boton.dataset.precio = Number(precio);
 boton.dataset.nombre = nombre.toLowerCase();
 
@@ -112,16 +114,26 @@ const url =
 
   <button
     type="button"
-    class="btn-mini-carrito"
-    onclick="event.stopPropagation(); agregarAlCarrito('${nombre}', '${precio}', '${url}')">
+    class="btn-mini-carrito">
     Agregar al carrito
   </button>
 `;
 
-      boton.addEventListener("click", () => {
+const botonCarrito = boton.querySelector(".btn-mini-carrito");
 
+botonCarrito.addEventListener("click", (e) => {
+  e.stopPropagation();
+  agregarAlCarrito(nombre, precio, url);
+});
+
+      boton.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") {
     window.location.href = url;
+  }
+});
 
+boton.addEventListener("click", () => {
+  window.location.href = url;
 });
 
       grid.appendChild(boton);
@@ -283,7 +295,8 @@ let carritoVigna = JSON.parse(localStorage.getItem("carritoVigna")) || [];
 carritoVigna = carritoVigna.map((item) => ({
   nombre: item.nombre,
   precio: Number(item.precio) || 0,
-  cantidad: Number(item.cantidad) || 1
+  cantidad: Number(item.cantidad) || 1,
+  enlace: item.enlace || ""
 }));
 
 function guardarCarrito() {
@@ -442,9 +455,9 @@ function enviarCarritoWhatsApp() {
 
     if (item.enlace) {
       const enlaceCompleto = new URL(
-        item.enlace,
-        window.location.origin + window.location.pathname
-      ).href;
+  item.enlace,
+  window.location.origin + "/"
+).href;
 
       mensaje += `Producto: ${enlaceCompleto}\n`;
     }

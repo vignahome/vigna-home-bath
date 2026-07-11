@@ -2515,60 +2515,13 @@ button,
   }
 
   .cards-grid,
-.product-grid,
-.combo-grid,
-.projects-grid,
-.category-grid{
-  grid-template-columns:1fr !important;
-}
-
+  .product-grid,
+  .combo-grid,
+  .projects-grid,
+  .category-grid,
   .model-grid{
-  display:grid !important;
-  grid-template-columns:repeat(3, minmax(0, 1fr)) !important;
-  gap:8px !important;
-}
-
-.model-card{
-  min-width:0;
-  padding:6px !important;
-  border-radius:14px !important;
-}
-
-.model-card img,
-.model-card .product-cover{
-  width:100% !important;
-  height:110px !important;
-  margin-bottom:7px !important;
-  object-fit:cover !important;
-  border-radius:10px !important;
-}
-
-.model-card strong{
-  margin-top:4px !important;
-  margin-bottom:2px !important;
-  font-size:.65rem !important;
-  line-height:1.2 !important;
-  letter-spacing:.02em !important;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-
-.model-card span{
-  margin-top:2px !important;
-  font-size:.76rem !important;
-  line-height:1.2 !important;
-}
-
-.model-card .btn-mini-carrito,
-.model-card .btn-ver-detalles{
-  min-height:34px !important;
-  margin-top:7px !important;
-  padding:6px 3px !important;
-  border-radius:10px !important;
-  font-size:.58rem !important;
-  line-height:1.1 !important;
-}
+    grid-template-columns:1fr !important;
+  }
 
   /* CATEGORÍAS */
 
@@ -2595,6 +2548,19 @@ button,
   .categoria-productos h3{
     font-size:1.65rem !important;
     line-height:1.1;
+  }
+
+  /* PRODUCTOS */
+
+  .model-card{
+    padding:13px !important;
+    border-radius:24px !important;
+  }
+
+  .model-card img,
+  .product-cover{
+    height:280px !important;
+    border-radius:20px !important;
   }
 
   /* BUSCADOR Y FILTROS */

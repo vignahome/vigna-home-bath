@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Producto VIGNA</title>
 
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/producto.css">
+  <link rel="stylesheet" href="css/styles.css?v=111">
+<link rel="stylesheet" href="css/producto.css?v=111">
 </head>
 <body>
 
@@ -52,8 +52,21 @@
 
     </video>
 
-    <button class="galeria-flecha flecha-izq" id="flechaIzq">‹</button>
-<button class="galeria-flecha flecha-der" id="flechaDer">›</button>
+    <button
+  type="button"
+  class="galeria-flecha flecha-izq"
+  id="flechaIzq"
+  aria-label="Imagen anterior">
+  ‹
+</button>
+
+<button
+  type="button"
+  class="galeria-flecha flecha-der"
+  id="flechaDer"
+  aria-label="Imagen siguiente">
+  ›
+</button>
 
 </div>
 
@@ -62,9 +75,13 @@
   <img id="mini2" src="" alt="">
   <img id="mini3" src="" alt="">
 
-  <button id="miniVideo" class="mini-video-btn">
-    ▶
-  </button>
+  <button
+  type="button"
+  id="miniVideo"
+  class="mini-video-btn"
+  aria-label="Ver video del producto">
+  ▶
+</button>
 </div>
 
 </div>
@@ -184,9 +201,6 @@
   <img id="visorImagen" src="" alt="Imagen producto VIGNA">
 </div>
 
-<script src="./js/producto.js?v=2"></script>
-<script src="./js/productos.js?v=92"></script>
-
 <button id="btnCarrito" class="btn-carrito" onclick="abrirCarrito()">
   🛒 <span id="contadorCarrito">0</span>
 </button>
@@ -206,6 +220,9 @@
     Enviar pedido por WhatsApp
   </button>
 </div>
+
+<script src="./js/productos.js?v=111"></script>
+<script src="./js/producto.js?v=111"></script>
 
 </body>
 </html>
