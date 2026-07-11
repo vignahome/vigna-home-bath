@@ -2683,7 +2683,7 @@ button,
   .section-products .category-grid{
     display:grid !important;
     grid-template-columns:repeat(3, minmax(0, 1fr)) !important;
-    gap:6px !important;
+    gap:8px !important;
     margin:20px 0 32px !important;
   }
 
@@ -2736,7 +2736,7 @@ button,
 
 @media(max-width:360px){
   .section-products .category-grid{
-    gap:8px !important;
+    gap:6px !important;
   }
 
   .section-products .category-card{
