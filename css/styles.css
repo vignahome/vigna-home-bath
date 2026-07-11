@@ -2682,16 +2682,16 @@ button,
 @media(max-width:700px){
   .section-products .category-grid{
     display:grid !important;
-    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
-    gap:10px !important;
+    grid-template-columns:repeat(3, minmax(0, 1fr)) !important;
+    gap:8px !important;
     margin:20px 0 32px !important;
   }
 
   .section-products .category-card{
     min-width:0 !important;
     min-height:0 !important;
-    aspect-ratio:1 / 1.06;
-    border-radius:18px !important;
+    aspect-ratio:1 / 1.08;
+    border-radius:14px !important;
     border:1px solid rgba(212,175,55,.3) !important;
     box-shadow:0 16px 42px rgba(0,0,0,.34) !important;
     touch-action:manipulation;
@@ -2702,7 +2702,7 @@ button,
     align-items:flex-end !important;
     justify-content:center !important;
     min-height:100% !important;
-    padding:12px 8px 14px !important;
+    padding:8px 4px 10px !important;
     background:linear-gradient(
       180deg,
       rgba(0,0,0,.03) 20%,
@@ -2710,9 +2710,9 @@ button,
       rgba(0,0,0,.92) 100%
     ) !important;
     color:#fff !important;
-    font-size:clamp(.68rem, 3.25vw, .88rem) !important;
-    line-height:1.2 !important;
-    letter-spacing:.055em !important;
+    font-size:clamp(.56rem, 2.55vw, .72rem) !important;
+    line-height:1.15 !important;
+    letter-spacing:.025em !important;
     text-align:center;
     overflow-wrap:anywhere;
   }
@@ -2736,16 +2736,16 @@ button,
 
 @media(max-width:360px){
   .section-products .category-grid{
-    gap:8px !important;
+    gap:6px !important;
   }
 
   .section-products .category-card{
-    border-radius:15px !important;
+    border-radius:12px !important;
   }
 
   .section-products .category-card span{
-    padding:10px 6px 12px !important;
-    font-size:.65rem !important;
+    padding:7px 3px 9px !important;
+    font-size:.53rem !important;
   }
 }
 
