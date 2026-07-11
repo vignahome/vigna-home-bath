@@ -25,7 +25,13 @@ async function cargarCategorias(archivo) {
     if (!id || !titulo || !archivoCSV || !grid || !carpetaBase) return;
 
     categoriasGrid.innerHTML += `
-      <button class="category-card" data-grid="${grid}" onclick="mostrarCategoria('${id}')">
+      <button
+        type="button"
+        class="category-card"
+        data-grid="${grid}"
+        aria-controls="${id}"
+        aria-pressed="false"
+        onclick="mostrarCategoria('${id}')">
         <div class="category-carousel"></div>
         <span>${titulo}</span>
       </button>
