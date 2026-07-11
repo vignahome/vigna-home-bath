@@ -2674,3 +2674,87 @@ button,
     text-align:center;
   }
 }
+
+/* =====================================
+   CATEGORÍAS COMPACTAS PARA TELÉFONOS
+===================================== */
+
+@media(max-width:700px){
+  .section-products .category-grid{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+    gap:10px !important;
+    margin:20px 0 32px !important;
+  }
+
+  .section-products .category-card{
+    min-width:0 !important;
+    min-height:0 !important;
+    aspect-ratio:1 / 1.06;
+    border-radius:18px !important;
+    border:1px solid rgba(212,175,55,.3) !important;
+    box-shadow:0 16px 42px rgba(0,0,0,.34) !important;
+    touch-action:manipulation;
+  }
+
+  .section-products .category-card span{
+    display:flex !important;
+    align-items:flex-end !important;
+    justify-content:center !important;
+    min-height:100% !important;
+    padding:12px 8px 14px !important;
+    background:linear-gradient(
+      180deg,
+      rgba(0,0,0,.03) 20%,
+      rgba(0,0,0,.28) 54%,
+      rgba(0,0,0,.92) 100%
+    ) !important;
+    color:#fff !important;
+    font-size:clamp(.68rem, 3.25vw, .88rem) !important;
+    line-height:1.2 !important;
+    letter-spacing:.055em !important;
+    text-align:center;
+    overflow-wrap:anywhere;
+  }
+
+  .section-products .category-slide.active{
+    opacity:.8 !important;
+    transform:scale(1.025) !important;
+  }
+
+  .section-products .category-card.active{
+    border-color:#d4af37 !important;
+    box-shadow:
+      0 0 0 1px rgba(212,175,55,.48),
+      0 18px 48px rgba(0,0,0,.48) !important;
+  }
+
+  .section-products .category-card.active span{
+    color:#f3cf5b !important;
+  }
+}
+
+@media(max-width:360px){
+  .section-products .category-grid{
+    gap:8px !important;
+  }
+
+  .section-products .category-card{
+    border-radius:15px !important;
+  }
+
+  .section-products .category-card span{
+    padding:10px 6px 12px !important;
+    font-size:.65rem !important;
+  }
+}
+
+@media(max-width:700px) and (hover:none){
+  .section-products .category-card:hover{
+    transform:none !important;
+  }
+
+  .section-products .category-card:active{
+    transform:scale(.98) !important;
+  }
+}
