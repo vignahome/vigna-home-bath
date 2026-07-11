@@ -73,15 +73,40 @@ try {
   document.getElementById("productoPrecio").textContent = "S/ " + precio;
   document.getElementById("productoDescripcion").textContent = descripcion;
 
-  document.getElementById("espMaterial").textContent = material;
-  document.getElementById("espColor").textContent = color;
-  document.getElementById("espAcabado").textContent = acabado;
-  document.getElementById("espGarantia").textContent = garantia;
-  document.getElementById("espAlto").textContent = alto;
-  document.getElementById("espAncho").textContent = ancho;
-  document.getElementById("espProfundidad").textContent = profundidad;
-  document.getElementById("espPresion").textContent = presion;
+  const especificaciones = [
+    ["espMaterial", material],
+    ["espColor", color],
+    ["espAcabado", acabado],
+    ["espGarantia", garantia],
+    ["espAlto", alto],
+    ["espAncho", ancho],
+    ["espProfundidad", profundidad],
+    ["espPresion", presion]
+  ];
 
+  let hayEspecificaciones = false;
+
+  especificaciones.forEach(([idEspecificacion, valor]) => {
+    const celda = document.getElementById(idEspecificacion);
+
+    if (!celda) return;
+
+    const filaEspecificacion = celda.closest("tr");
+
+    if (valor) {
+      celda.textContent = valor;
+      hayEspecificaciones = true;
+
+      if (filaEspecificacion) {
+        filaEspecificacion.hidden = false;
+      }
+    } else if (filaEspecificacion) {
+      filaEspecificacion.hidden = true;
+    }
+  });
+
+  const seccionEspecificaciones =
+    document.querySelector(".producto-especificaciones");
   const manual = document.getElementById("descargarManual");
 
 if (manual) {
@@ -90,9 +115,15 @@ if (manual) {
         manual.href = ruta + manualPDF;
         manual.style.display = "inline-flex";
     } else {
+        manual.removeAttribute("href");
         manual.style.display = "none";
     }
 
+}
+
+if (seccionEspecificaciones) {
+  seccionEspecificaciones.style.display =
+    hayEspecificaciones || manualPDF ? "" : "none";
 }
 
   const imagen = document.getElementById("productoImagen");
