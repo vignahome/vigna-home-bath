@@ -407,3 +407,205 @@ ZOOM PREMIUM
   }
 }
 
+/* ===========================
+   PRODUCTO MÓVIL VIGNA V2
+   Optimiza la ficha sin alterar escritorio
+=========================== */
+
+@media (max-width:700px){
+  .producto-body .site-header{
+    top:8px !important;
+    height:64px !important;
+  }
+
+  .producto-body .header-inner{
+    justify-content:center !important;
+  }
+
+  .producto-body .brand-logo{
+    height:88px !important;
+  }
+
+  .producto-body .main-nav{
+    display:none !important;
+  }
+
+  .producto-page{
+    padding:88px 0 46px;
+  }
+
+  .producto-hero{
+    gap:14px;
+  }
+
+  .producto-galeria{
+    padding:8px;
+    border-radius:20px;
+    box-shadow:0 20px 55px rgba(0,0,0,.38);
+  }
+
+  .zoom-container{
+    border-radius:16px;
+  }
+
+  .producto-img-principal,
+  .producto-video-principal{
+    height:auto;
+    aspect-ratio:1 / 1;
+    object-fit:cover;
+    border-radius:16px;
+  }
+
+  .producto-miniaturas{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:6px;
+    margin-top:8px;
+  }
+
+  .producto-miniaturas img,
+  .mini-video-btn{
+    width:100%;
+    height:auto;
+    aspect-ratio:1 / 1;
+    border-radius:10px;
+  }
+
+  .mini-video-btn{
+    font-size:1.35rem;
+  }
+
+  .galeria-flecha{
+    width:40px;
+    height:40px;
+    font-size:27px;
+    background:rgba(0,0,0,.7);
+  }
+
+  .flecha-izq{
+    left:7px;
+  }
+
+  .flecha-der{
+    right:7px;
+  }
+
+  .producto-info{
+    padding:18px 14px 16px;
+    border-radius:20px;
+    box-shadow:0 20px 55px rgba(0,0,0,.34);
+  }
+
+  .producto-marca{
+    margin:0;
+    font-size:.62rem;
+    letter-spacing:.2em;
+  }
+
+  .producto-info h1{
+    margin:10px 0 8px;
+    font-size:clamp(1.8rem,9vw,2.6rem);
+    line-height:1.05;
+  }
+
+  .producto-precio{
+    margin:0 0 14px;
+    font-size:1.45rem;
+  }
+
+  .producto-descripcion{
+    margin:0 0 16px;
+    font-size:.9rem;
+    line-height:1.55;
+  }
+
+  .producto-caracteristicas{
+    margin:0 0 16px;
+  }
+
+  .producto-caracteristicas li{
+    padding:9px 0 9px 26px;
+    font-size:.82rem;
+    line-height:1.35;
+  }
+
+  .producto-especificaciones{
+    margin:16px 0;
+    padding:12px;
+    border-radius:16px;
+  }
+
+  .producto-especificaciones h2{
+    margin:0 0 10px;
+    font-size:1.05rem;
+  }
+
+  .tabla-especificaciones{
+    table-layout:fixed;
+    margin-bottom:12px;
+  }
+
+  .tabla-especificaciones td{
+    padding:8px 0;
+    font-size:.78rem;
+    line-height:1.35;
+    overflow-wrap:anywhere;
+  }
+
+  .tabla-especificaciones td:first-child{
+    width:42%;
+    padding-right:10px;
+  }
+
+  .producto-info .btn{
+    min-height:46px;
+    margin-top:9px;
+    padding:12px 16px;
+    font-size:.82rem;
+  }
+
+  .relacionados{
+    margin-top:44px;
+  }
+
+  .section-title{
+    margin-bottom:22px;
+  }
+
+  .section-title span{
+    font-size:.58rem;
+    letter-spacing:.2em;
+  }
+
+  .section-title h2{
+    margin-top:8px;
+    font-size:1.65rem;
+    line-height:1.08;
+  }
+
+  .producto-video{
+    margin-top:44px;
+  }
+
+  .producto-video video{
+    max-height:none;
+    border-radius:20px;
+    object-fit:contain;
+  }
+
+  .producto-body .btn-carrito{
+    right:14px;
+    bottom:18px;
+  }
+
+  .producto-body .visor-producto{
+    padding:12px;
+  }
+
+  .producto-body .visor-cerrar{
+    top:14px;
+    right:14px;
+    width:44px;
+    height:44px;
+    font-size:28px;
+  }
+}
