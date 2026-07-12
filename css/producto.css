@@ -89,6 +89,17 @@
   margin:0 0 24px;
 }
 
+.producto-stock{
+  margin:-14px 0 20px;
+  color:#8fd49e;
+  font-size:.84rem;
+  font-weight:800;
+}
+
+.producto-stock.agotado{
+  color:#ff9494;
+}
+
 .producto-descripcion{
   color:rgba(255,255,255,.78);
   line-height:1.8;
@@ -419,15 +430,11 @@ ZOOM PREMIUM
   }
 
   .producto-body .header-inner{
-    justify-content:center !important;
+    justify-content:space-between !important;
   }
 
   .producto-body .brand-logo{
     height:88px !important;
-  }
-
-  .producto-body .main-nav{
-    display:none !important;
   }
 
   .producto-page{

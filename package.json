@@ -1,8 +1,13 @@
 {
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check firebase.js && node --check js/script.js && node --check js/productos.js && node --check js/producto.js && node --check js/checkout.js && node --check js/admin.js && node --check js/cuenta.js && node --check plomeros.js && node --check panel-vigna.js && node --check vigna-config.js"
+  },
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "firebase-admin": "^13.10.0",
     "mercadopago": "^3.1.0"
   }
 }

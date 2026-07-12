@@ -313,40 +313,44 @@ async function cargarSolicitudesDisponibles() {
   contenedor.innerHTML = html;
 }
 
-async function suscribirseProfesionalPanel(plan, precio, meses) {
+function obtenerApiPagosUrl() {
+  const urlConfigurada = String(window.VIGNA_CONFIG?.apiPagosUrl || "").trim();
+  if (urlConfigurada) return urlConfigurada.replace(/\/$/, "");
+  if (["localhost", "127.0.0.1"].includes(window.location.hostname)) return "http://localhost:3000";
+  return "";
+}
+
+async function suscribirseProfesionalPanel(planId) {
   if (!perfilActualId) {
     alert("No se encontró tu perfil profesional.");
     return;
   }
 
+  const apiPagosUrl = obtenerApiPagosUrl();
+  if (!apiPagosUrl) {
+    alert("El pago en línea está temporalmente en configuración.");
+    return;
+  }
+
   try {
-    const respuesta = await fetch("http://localhost:3000/crear-pago", {
+    const respuesta = await fetch(`${apiPagosUrl}/crear-pago`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        plan,
-        precio,
-        meses,
-        verificacion: "Plan Activo",
+        planId,
         plomeroId: perfilActualId
       })
     });
 
-    const data = await respuesta.json();
-
-    console.log("RESPUESTA DEL SERVIDOR:", data);
-
-    if (data.init_point) {
-      window.location.href = data.init_point;
-    } else {
-      alert("No se pudo crear el pago.");
-    }
+    const data = await respuesta.json().catch(() => ({}));
+    if (!respuesta.ok || !data.init_point) throw new Error(data.error || "No se pudo crear el pago.");
+    window.location.href = data.init_point;
 
   } catch (error) {
     console.error("ERROR FETCH:", error);
-    alert("No conecta con el servidor de pagos.");
+    alert(error.message || "No conecta con el servidor de pagos.");
   }
 }
 

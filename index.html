@@ -4,10 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VIGNA Home & Bath | Baños premium</title>
+  <meta name="description" content="Griferías, duchas, espejos LED, muebles y accesorios premium para baños y cocinas. Compra y cotiza productos VIGNA en Perú.">
+  <meta name="theme-color" content="#0d0d0d">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=113">
+  <link rel="stylesheet" href="css/styles.css?v=114">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-8224EEW7ZP"></script>
@@ -22,15 +24,15 @@
 <body>
 
 <div class="social-float">
-  <a href="https://www.facebook.com/profile.php?id=61591143137568" target="_blank" class="social-btn facebook">
+  <a href="https://www.facebook.com/profile.php?id=61591143137568" target="_blank" rel="noreferrer noopener" class="social-btn facebook" aria-label="Facebook de VIGNA">
     <i class="fa-brands fa-facebook-f"></i>
   </a>
 
-  <a href="https://www.tiktok.com/@vigna552?_r=1&_t=ZS-97iTGWOAgRm" target="_blank" class="social-btn tiktok">
+  <a href="https://www.tiktok.com/@vigna552?_r=1&_t=ZS-97iTGWOAgRm" target="_blank" rel="noreferrer noopener" class="social-btn tiktok" aria-label="TikTok de VIGNA">
     <i class="fa-brands fa-tiktok"></i>
   </a>
 
-  <a href="https://wa.me/51973108121" target="_blank" class="social-btn whatsapp">
+  <a href="https://wa.me/51973108121" target="_blank" rel="noreferrer noopener" class="social-btn whatsapp" aria-label="WhatsApp de VIGNA">
     <i class="fa-brands fa-whatsapp"></i>
   </a>
 </div>
@@ -44,7 +46,7 @@
       <a href="#inicio" class="brand">
         <img src="images/logo/ChatGPT Image 26 may 2026, 11_05_03 p.m..png" alt="VIGNA Home & Bath" class="brand-logo">
       </a>
-      <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú">
+      <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú" aria-controls="main-nav" aria-expanded="false">
         <span></span>
         <span></span>
         <span></span>
@@ -56,7 +58,9 @@
         <a href="#proyectos" class="smooth-scroll">Proyectos</a>
         <a href="#nosotros" class="smooth-scroll">Nosotros</a>
         <a href="#contacto" class="smooth-scroll">Contacto</a>
+        <a href="cuenta.html">Mi cuenta</a>
         <a href="plomeros.html">Plomeros certificados</a>
+        <a class="nav-whatsapp" href="https://wa.me/51973108121?text=Hola%20VIGNA%2C%20quiero%20cotizar%20productos%20para%20mi%20ba%C3%B1o." target="_blank" rel="noreferrer noopener">Cotizar por WhatsApp</a>
       </nav>
       <a class="btn btn-outline" href="https://wa.me/51973108121?text=Hola%20VIGNA%2C%20quiero%20cotizar%20productos%20para%20mi%20ba%C3%B1o." target="_blank" rel="noreferrer noopener">Cotizar por WhatsApp</a>
     </div>
@@ -132,18 +136,19 @@
     type="text"
     id="buscadorProductos"
     placeholder="Buscar productos, colores, códigos..."
+    aria-label="Buscar productos"
   >
 </div>
 
 <div class="filtros-vigna">
-  <select id="filtroColor">
+  <select id="filtroColor" aria-label="Filtrar por color">
     <option value="">Todos los colores</option>
     <option value="cromado">Cromado</option>
     <option value="negro">Negro mate</option>
     <option value="acero">Acero</option>
   </select>
 
-  <select id="filtroPrecio">
+  <select id="filtroPrecio" aria-label="Filtrar por precio">
     <option value="">Todos los precios</option>
     <option value="0-100">Hasta S/100</option>
     <option value="100-200">S/100 a S/200</option>
@@ -151,7 +156,7 @@
     <option value="300-9999">Más de S/300</option>
   </select>
 
-  <select id="ordenProductos">
+  <select id="ordenProductos" aria-label="Ordenar productos">
     <option value="">Ordenar</option>
     <option value="menor">Menor precio</option>
     <option value="mayor">Mayor precio</option>
@@ -159,6 +164,15 @@
     <option value="za">Z - A</option>
   </select>
 </div>
+
+<div class="catalogo-toolbar" aria-live="polite">
+  <p id="resultadoProductos">Cargando productos…</p>
+  <button id="limpiarFiltros" type="button">Limpiar filtros</button>
+</div>
+
+<p id="catalogoVacio" class="catalogo-vacio" hidden>
+  No encontramos productos con esos filtros. Prueba con otra búsqueda.
+</p>
 
     <div id="categoriasGrid" class="category-grid"></div>
 
@@ -219,9 +233,9 @@
         </div>
         <p class="section-text">Transformamos espacios comunes en baños con presencia, estilo y valor.</p>
         <div class="grid projects-grid">
-          <div class="project-card reveal" style="background-image:url('images/backgrounds/bathroom-1.png')"></div>
-          <div class="project-card reveal" style="background-image:url('images/backgrounds/bathroom-2.png')"></div>
-          <div class="project-card reveal" style="background-image:url('images/backgrounds/bathroom-3.png')"></div>
+          <div class="project-card reveal" role="img" aria-label="Proyecto de baño moderno VIGNA" style="background-image:url('images/backgrounds/bathroom-1.png')"></div>
+          <div class="project-card reveal" role="img" aria-label="Proyecto de baño premium VIGNA" style="background-image:url('images/backgrounds/bathroom-2.png')"></div>
+          <div class="project-card reveal" role="img" aria-label="Proyecto de baño tipo hotel VIGNA" style="background-image:url('images/backgrounds/bathroom-3.png')"></div>
         </div>
       </div>
     </section>
@@ -280,7 +294,7 @@
 
 <div class="product-modal" id="productModal">
   <div class="modal-content">
-    <button type="button" class="modal-close" id="modalClose">×</button>
+    <button type="button" class="modal-close" id="modalClose" aria-label="Cerrar producto">×</button>
 
     <div class="modal-gallery">
       <img id="modalImg" src="" alt="Producto seleccionado" class="main-modal-img">
@@ -315,22 +329,24 @@
   </div>
 </div>
 <div class="image-viewer" id="imageViewer">
-  <button class="image-viewer-close" id="imageViewerClose">×</button>
+  <button class="image-viewer-close" id="imageViewerClose" aria-label="Cerrar imagen">×</button>
   <img id="imageViewerImg" src="" alt="Imagen completa">
 </div>
 
-<button id="btnSubir" class="btn-subir" onclick="volverArriba()">
+<button id="btnSubir" class="btn-subir" onclick="volverArriba()" aria-label="Volver arriba">
     ↑
 </button>
 
-<button id="btnCarrito" class="btn-carrito" onclick="abrirCarrito()">
+<button id="btnCarrito" class="btn-carrito" onclick="abrirCarrito()" aria-label="Abrir carrito" aria-haspopup="dialog" aria-expanded="false">
   🛒 <span id="contadorCarrito">0</span>
 </button>
 
-<div id="panelCarrito" class="panel-carrito">
-  <button class="cerrar-carrito" onclick="cerrarCarrito()">×</button>
+<div id="carritoOverlay" class="carrito-overlay" onclick="cerrarCarrito()"></div>
 
-  <h2>Carrito VIGNA</h2>
+<div id="panelCarrito" class="panel-carrito" role="dialog" aria-modal="true" aria-labelledby="carritoTitulo" aria-hidden="true">
+  <button class="cerrar-carrito" onclick="cerrarCarrito()" aria-label="Cerrar carrito">×</button>
+
+  <h2 id="carritoTitulo">Carrito VIGNA</h2>
 
   <div id="listaCarrito"></div>
 
@@ -341,10 +357,19 @@
   <button class="btn btn-primary" onclick="enviarCarritoWhatsApp()">
     Enviar pedido por WhatsApp
   </button>
+
+  <button class="btn btn-comprar-directo" onclick="iniciarCompra()">
+    Continuar compra
+  </button>
+
+  <button class="btn btn-secondary btn-vaciar-carrito" onclick="vaciarCarrito()">
+    Vaciar carrito
+  </button>
 </div>
 
-<script src="./js/script.js?v=112"></script>
-<script src="./js/productos.js?v=112"></script>
+<script src="./vigna-config.js?v=1"></script>
+<script src="./js/script.js?v=113"></script>
+<script src="./js/productos.js?v=114"></script>
 
 </body>
 </html>

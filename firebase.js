@@ -6,6 +6,7 @@ import {
   addDoc,
   getDocs,
   getDoc,
+  setDoc,
   updateDoc,
   doc,
   query,
@@ -51,6 +52,7 @@ window.collection = collection;
 window.addDoc = addDoc;
 window.getDocs = getDocs;
 window.getDoc = getDoc;
+window.setDoc = setDoc;
 window.updateDoc = updateDoc;
 window.doc = doc;
 window.query = query;
@@ -67,3 +69,24 @@ window.signOut = signOut;
 window.onAuthStateChanged = onAuthStateChanged;
 
 console.log("Firebase conectado correctamente");
+
+export {
+  app,
+  db,
+  auth,
+  storage,
+  collection,
+  addDoc,
+  getDocs,
+  getDoc,
+  setDoc,
+  updateDoc,
+  doc,
+  query,
+  where,
+  onSnapshot,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+};

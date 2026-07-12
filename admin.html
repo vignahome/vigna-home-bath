@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administración comercial | VIGNA</title>
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0d0d0d">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css?v=1">
+</head>
+<body>
+  <section id="adminAcceso" class="admin-acceso">
+    <form id="adminLogin" class="admin-login">
+      <img src="images/logo/ChatGPT Image 26 may 2026, 11_05_03 p.m..png" alt="VIGNA Home & Bath">
+      <p>ADMINISTRACIÓN COMERCIAL</p>
+      <h1>Acceso seguro</h1>
+      <label for="adminEmail">Correo</label>
+      <input id="adminEmail" type="email" autocomplete="username" required>
+      <label for="adminPassword">Contraseña</label>
+      <input id="adminPassword" type="password" autocomplete="current-password" required>
+      <button id="adminIngresar" type="submit">Ingresar</button>
+      <span id="adminLoginEstado" role="alert"></span>
+      <a href="index.html">← Volver a la tienda</a>
+    </form>
+  </section>
+
+  <div id="adminApp" class="admin-app" hidden>
+    <aside class="admin-sidebar">
+      <a href="index.html" class="admin-logo">
+        <img src="images/logo/ChatGPT Image 26 may 2026, 11_05_03 p.m..png" alt="VIGNA">
+      </a>
+      <p>OPERACIÓN COMERCIAL</p>
+      <nav aria-label="Administración">
+        <button class="admin-nav activo" data-seccion="resumen">Resumen</button>
+        <button class="admin-nav" data-seccion="pedidos">Pedidos</button>
+        <button class="admin-nav" data-seccion="inventario">Inventario</button>
+      </nav>
+      <button id="adminSalir" class="admin-salir">Cerrar sesión</button>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div>
+          <span>VIGNA HOME & BATH</span>
+          <h1 id="adminTitulo">Resumen</h1>
+        </div>
+        <p id="adminUsuario"></p>
+      </header>
+
+      <section id="seccion-resumen" class="admin-seccion activo">
+        <div class="metricas-grid">
+          <article><span>Ventas aprobadas</span><strong id="metricaVentas">S/ 0.00</strong></article>
+          <article><span>Pedidos</span><strong id="metricaPedidos">0</strong></article>
+          <article><span>Ticket promedio</span><strong id="metricaTicket">S/ 0.00</strong></article>
+          <article><span>Stock bajo</span><strong id="metricaStockBajo">0</strong></article>
+        </div>
+
+        <div class="admin-panel">
+          <div class="admin-panel-titulo">
+            <div><span>ACTIVIDAD</span><h2>Pedidos recientes</h2></div>
+            <button data-ir="pedidos">Ver todos</button>
+          </div>
+          <div id="pedidosRecientes" class="tabla-contenedor"></div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="admin-panel">
+            <div class="admin-panel-titulo"><div><span>VENTAS</span><h2>Últimos 6 meses</h2></div></div>
+            <div id="graficoVentas" class="grafico-ventas"></div>
+          </div>
+          <div class="admin-panel">
+            <div class="admin-panel-titulo"><div><span>PRODUCTOS</span><h2>Más vendidos</h2></div></div>
+            <div id="productosMasVendidos" class="productos-top"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="seccion-pedidos" class="admin-seccion">
+        <div class="admin-panel">
+          <div class="admin-panel-titulo">
+            <div><span>VENTAS</span><h2>Gestión de pedidos</h2></div>
+            <select id="filtroEstadoPedido" aria-label="Filtrar pedidos por estado">
+              <option value="">Todos los estados</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="pagado">Pagado</option>
+              <option value="preparando">Preparando</option>
+              <option value="enviado">Enviado</option>
+              <option value="entregado">Entregado</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
+          <div id="tablaPedidos" class="tabla-contenedor"></div>
+        </div>
+      </section>
+
+      <section id="seccion-inventario" class="admin-seccion">
+        <div class="admin-panel">
+          <div class="admin-panel-titulo inventario-cabecera">
+            <div><span>CATÁLOGO</span><h2>Inventario</h2></div>
+            <div class="admin-acciones">
+              <input id="buscarInventario" type="search" placeholder="Buscar producto o código">
+              <button id="sincronizarCatalogo">Sincronizar catálogo</button>
+            </div>
+          </div>
+          <p class="admin-nota">La sincronización carga los productos actuales y permite controlar existencias y alertas.</p>
+          <div id="tablaInventario" class="tabla-contenedor"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="adminMensaje" class="admin-mensaje" hidden role="status"></div>
+  <script type="module" src="js/admin.js?v=1"></script>
+</body>
+</html>

@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Panel VIGNA</title>
 <link rel="stylesheet" href="plomeros.css">
 </head>
@@ -27,7 +28,7 @@
       <h3>1 mes</h3>
       <p>Perfil activo por 30 días</p>
       <strong>S/ 39.90</strong>
-      <button onclick="suscribirseProfesionalPanel('VIGNA Profesional 1 mes', 39.90, 1)">
+      <button onclick="suscribirseProfesionalPanel('mensual')">
         Activar 1 mes
       </button>
     </div>
@@ -36,7 +37,7 @@
       <h3>6 meses</h3>
       <p>Descuento por pago semestral</p>
       <strong>S/ 199.90</strong>
-      <button onclick="suscribirseProfesionalPanel('VIGNA Profesional 6 meses', 199.90, 6)">
+      <button onclick="suscribirseProfesionalPanel('semestral')">
         Activar 6 meses
       </button>
     </div>
@@ -45,7 +46,7 @@
       <h3>1 año</h3>
       <p>Mayor descuento por pago anual</p>
       <strong>S/ 349.90</strong>
-      <button onclick="suscribirseProfesionalPanel('VIGNA Profesional 1 año', 349.90, 12)">
+      <button onclick="suscribirseProfesionalPanel('anual')">
         Activar 1 año
       </button>
     </div>
@@ -146,8 +147,9 @@
 
 </section>
 
+<script src="./vigna-config.js?v=1"></script>
 <script type="module" src="./firebase.js?v=20"></script>
-<script src="./panel-vigna.js?v=20"></script>
+<script src="./panel-vigna.js?v=21"></script>
 
 </body>
 </html>

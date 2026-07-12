@@ -1,0 +1,73 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    function esAdmin() {
+      return autenticado() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    match /admins/{uid} {
+      allow read: if autenticado() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /clientes/{uid} {
+      allow create: if autenticado() && request.auth.uid == uid && request.resource.data.uid == uid;
+      allow read, update: if esAdmin() || (autenticado() && request.auth.uid == uid);
+      allow delete: if esAdmin();
+    }
+
+    match /pedidos/{pedidoId} {
+      allow read: if esAdmin() || (
+        autenticado() &&
+        resource.data.comprador.email == request.auth.token.email
+      );
+      allow write: if esAdmin();
+    }
+
+    match /inventario/{sku} {
+      allow read, write: if esAdmin();
+    }
+
+    // Compatibilidad de lectura con la demostración externa de profesionales.
+    match /plomeros/{perfilId} {
+      allow read: if true;
+      allow create: if autenticado() && request.resource.data.uid == request.auth.uid;
+      allow update: if esAdmin() || (autenticado() && resource.data.uid == request.auth.uid);
+      allow delete: if esAdmin();
+    }
+
+    match /usuarios/{usuarioId} {
+      allow create: if autenticado() && request.resource.data.uid == request.auth.uid;
+      allow read, update: if esAdmin() || (autenticado() && resource.data.uid == request.auth.uid);
+      allow delete: if esAdmin();
+    }
+
+    match /solicitudes/{solicitudId} {
+      allow create: if autenticado() && request.resource.data.clienteId == request.auth.uid;
+      allow read: if esAdmin() || autenticado();
+      allow update: if esAdmin() || (autenticado() && resource.data.clienteId == request.auth.uid);
+      allow delete: if esAdmin();
+    }
+
+    match /notificaciones/{notificacionId} {
+      allow read: if esAdmin() || (autenticado() && resource.data.usuarioId == request.auth.uid);
+      allow create: if autenticado();
+      allow update, delete: if esAdmin() || (autenticado() && resource.data.usuarioId == request.auth.uid);
+    }
+
+    match /comentarios/{comentarioId} {
+      allow read: if true;
+      allow create: if autenticado() && request.resource.data.clienteId == request.auth.uid;
+      allow update, delete: if esAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VIGNAS Certificados</title>
   <link rel="stylesheet" href="plomeros.css">
   <!-- Google Analytics -->
@@ -31,7 +32,7 @@
       <h3>1 mes</h3>
       <p>Perfil activo por 30 días</p>
       <strong>S/ 39.90</strong>
-      <button onclick="suscribirseProfesional('VIGNA Profesional 1 mes', 39.90, 1)">
+      <button onclick="suscribirseProfesional('mensual')">
         Activar 1 mes
       </button>
     </div>
@@ -40,7 +41,7 @@
       <h3>6 meses</h3>
       <p>Descuento por pago semestral</p>
       <strong>S/ 199.90</strong>
-      <button onclick="suscribirseProfesional('VIGNA Profesional 6 meses', 199.90, 6)">
+      <button onclick="suscribirseProfesional('semestral')">
         Activar 6 meses
       </button>
     </div>
@@ -49,7 +50,7 @@
       <h3>1 año</h3>
       <p>Mayor descuento por pago anual</p>
       <strong>S/ 349.90</strong>
-      <button onclick="suscribirseProfesional('VIGNA Profesional 1 año', 349.90, 12)">
+      <button onclick="suscribirseProfesional('anual')">
         Activar 1 año
       </button>
     </div>
@@ -159,7 +160,8 @@
   <div id="perfilVigna"></div>
 </section>
 
+<script src="./vigna-config.js?v=1"></script>
 <script type="module" src="./firebase.js?v=102"></script>
-<script src="./plomeros.js?v=102"></script>
+<script src="./plomeros.js?v=103"></script>
 </body>
 </html>

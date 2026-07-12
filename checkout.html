@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finalizar compra | VIGNA Home & Bath</title>
+  <meta name="description" content="Revisa tu pedido, completa los datos de entrega y realiza tu pago seguro en VIGNA Home & Bath.">
+  <meta name="theme-color" content="#0d0d0d">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=114">
+  <link rel="stylesheet" href="css/checkout.css?v=1">
+</head>
+<body class="checkout-body">
+  <header class="checkout-header">
+    <a href="index.html" class="checkout-brand" aria-label="Volver a VIGNA Home & Bath">
+      <img src="images/logo/ChatGPT Image 26 may 2026, 11_05_03 p.m..png" alt="VIGNA Home & Bath">
+    </a>
+    <a href="index.html#productos" class="checkout-volver">← Seguir comprando</a>
+  </header>
+
+  <main class="checkout-main">
+    <div class="checkout-intro">
+      <p>COMPRA SEGURA</p>
+      <h1>Finaliza tu pedido</h1>
+      <div class="checkout-pasos" aria-label="Proceso de compra">
+        <span class="activo">1. Entrega</span>
+        <span>2. Pago</span>
+        <span>3. Confirmación</span>
+      </div>
+    </div>
+
+    <div id="estadoPago" class="checkout-estado" hidden role="status" aria-live="polite"></div>
+
+    <div class="checkout-grid">
+      <section class="checkout-card">
+        <h2>Datos de entrega</h2>
+        <p class="checkout-ayuda">Usaremos estos datos únicamente para coordinar tu pedido.</p>
+
+        <form id="formCheckout" novalidate>
+          <div class="campo campo-completo">
+            <label for="nombre">Nombre y apellido</label>
+            <input id="nombre" name="nombre" type="text" autocomplete="name" minlength="3" maxlength="100" required>
+          </div>
+
+          <div class="campo">
+            <label for="email">Correo electrónico</label>
+            <input id="email" name="email" type="email" autocomplete="email" maxlength="120" required>
+          </div>
+
+          <div class="campo">
+            <label for="telefono">Celular</label>
+            <input id="telefono" name="telefono" type="tel" autocomplete="tel" inputmode="tel" placeholder="987 654 321" minlength="9" maxlength="15" required>
+          </div>
+
+          <div class="campo">
+            <label for="departamento">Departamento</label>
+            <input id="departamento" name="departamento" type="text" autocomplete="address-level1" value="Lima" maxlength="60" required>
+          </div>
+
+          <div class="campo">
+            <label for="distrito">Distrito</label>
+            <input id="distrito" name="distrito" type="text" autocomplete="address-level2" maxlength="60" required>
+          </div>
+
+          <div class="campo campo-completo">
+            <label for="direccion">Dirección de entrega</label>
+            <input id="direccion" name="direccion" type="text" autocomplete="street-address" maxlength="160" required>
+          </div>
+
+          <div class="campo campo-completo">
+            <label for="referencia">Referencia <span>(opcional)</span></label>
+            <textarea id="referencia" name="referencia" rows="3" maxlength="200"></textarea>
+          </div>
+
+          <label class="checkout-confirmacion">
+            <input id="confirmarDatos" type="checkbox" required>
+            <span>Confirmo que los datos de entrega y los productos seleccionados son correctos.</span>
+          </label>
+
+          <button id="botonPagar" class="btn checkout-pagar" type="submit">
+            Ir al pago seguro
+          </button>
+
+          <p class="checkout-seguridad">Serás dirigido al entorno seguro de Mercado Pago. VIGNA no almacena los datos de tu tarjeta.</p>
+        </form>
+      </section>
+
+      <aside class="checkout-card checkout-resumen" aria-labelledby="resumenTitulo">
+        <h2 id="resumenTitulo">Resumen del pedido</h2>
+        <div id="checkoutProductos"></div>
+        <div class="checkout-total">
+          <span>Total de productos</span>
+          <strong>S/ <span id="checkoutTotal">0.00</span></strong>
+        </div>
+        <p class="checkout-envio">El costo y horario de entrega se coordinarán según el distrito.</p>
+        <button id="checkoutWhatsapp" class="btn btn-secondary" type="button">Coordinar por WhatsApp</button>
+      </aside>
+    </div>
+  </main>
+
+  <script src="vigna-config.js?v=1"></script>
+  <script src="js/checkout.js?v=1"></script>
+</body>
+</html>

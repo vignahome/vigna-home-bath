@@ -106,6 +106,8 @@ boton.dataset.nombre = nombre.toLowerCase();
 ].join(" ").toLowerCase();
 
 const idProducto = datos[0]?.trim();
+const categoriaSku = archivo.split("/").pop().replace(/\.csv$/i, "");
+boton.dataset.sku = `${categoriaSku}:${idProducto}`;
 
 const url =
   "producto.html?" +
@@ -114,9 +116,10 @@ const url =
   "&carpetaBase=" + encodeURIComponent(carpetaBase);
 
       boton.innerHTML = `
-  <img src="${ruta}portada.png" class="product-cover" alt="${nombre}">
+  <img src="${ruta}portada.png" class="product-cover" alt="${nombre}" loading="lazy" decoding="async">
   <strong>${nombre}</strong>
   <span>S/ ${precio}</span>
+  <small class="stock-producto" hidden></small>
 
   <button
     type="button"
@@ -125,11 +128,18 @@ const url =
   </button>
 `;
 
+const portadaProducto = boton.querySelector(".product-cover");
+
+portadaProducto.addEventListener("error", () => {
+  portadaProducto.remove();
+  boton.classList.add("sin-imagen");
+}, { once: true });
+
 const botonCarrito = boton.querySelector(".btn-mini-carrito");
 
 botonCarrito.addEventListener("click", (e) => {
   e.stopPropagation();
-  agregarAlCarrito(nombre, precio, url);
+  agregarAlCarrito(nombre, precio, url, idProducto, archivo);
 });
 
       boton.addEventListener("keydown", (e) => {
@@ -146,6 +156,9 @@ boton.addEventListener("click", () => {
 
       agregarImagenACategoria(contenedor, `${ruta}portada.png`);
     });
+
+    filtrarProductos();
+    aplicarDisponibilidadCarrito();
 
   } catch (error) {
     console.error("Error cargando CSV:", archivo, error);
@@ -165,6 +178,9 @@ function agregarImagenACategoria(gridId, imagen) {
   const img = document.createElement("img");
   img.src = imagen;
   img.className = "category-slide";
+  img.loading = "lazy";
+  img.decoding = "async";
+  img.addEventListener("error", () => img.remove(), { once: true });
 
   if (carousel.children.length === 0) {
     img.classList.add("active");
@@ -199,6 +215,64 @@ function iniciarCategoryCarousel(carousel) {
   }, 2500);
 }
 
+let disponibilidadPromesa = null;
+
+function obtenerApiTiendaUrl() {
+  const configurada = String(window.VIGNA_CONFIG?.apiPagosUrl || "").trim();
+  if (configurada) return configurada.replace(/\/$/, "");
+  if (["localhost", "127.0.0.1"].includes(window.location.hostname)) return "http://localhost:3000";
+  return "";
+}
+
+async function obtenerDisponibilidad() {
+  const apiUrl = obtenerApiTiendaUrl();
+  if (!apiUrl) return null;
+
+  if (!disponibilidadPromesa) {
+    disponibilidadPromesa = fetch(`${apiUrl}/inventario`)
+      .then((respuesta) => respuesta.ok ? respuesta.json() : null)
+      .then((data) => {
+        if (!data?.activo) return null;
+        return new Map((data.productos || []).map((item) => [item.sku, item]));
+      })
+      .catch(() => null);
+  }
+
+  return disponibilidadPromesa;
+}
+
+async function consultarStockProducto(sku) {
+  const disponibilidad = await obtenerDisponibilidad();
+  return disponibilidad?.get(sku) || null;
+}
+
+async function aplicarDisponibilidadCarrito() {
+  const disponibilidad = await obtenerDisponibilidad();
+  if (!disponibilidad) return;
+
+  document.querySelectorAll(".model-card[data-sku]").forEach((card) => {
+    const stock = disponibilidad.get(card.dataset.sku);
+    if (!stock) return;
+
+    const boton = card.querySelector(".btn-mini-carrito");
+    const etiqueta = card.querySelector(".stock-producto");
+    const agotado = stock.activo === false || Number(stock.stock) <= 0;
+
+    card.classList.toggle("producto-agotado", agotado);
+    if (boton) {
+      boton.disabled = agotado;
+      boton.textContent = agotado ? "Agotado" : "Agregar al carrito";
+    }
+
+    if (etiqueta) {
+      etiqueta.hidden = false;
+      etiqueta.textContent = agotado
+        ? "Sin stock"
+        : Number(stock.stock) <= Number(stock.stockMinimo) ? "Últimas unidades" : "Disponible";
+    }
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   cargarCategorias("data/categorias.csv");
 });
@@ -218,19 +292,29 @@ function irACategorias() {
   
 window.irACategorias = irACategorias;
 
+function normalizarTexto(valor) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 function filtrarProductos() {
   const buscador = document.getElementById("buscadorProductos");
   const filtroColor = document.getElementById("filtroColor");
   const filtroPrecio = document.getElementById("filtroPrecio");
 
-  const texto = buscador ? buscador.value.toLowerCase().trim() : "";
-  const color = filtroColor ? filtroColor.value.toLowerCase().trim() : "";
+  const texto = normalizarTexto(buscador?.value);
+  const color = normalizarTexto(filtroColor?.value);
   const precioFiltro = filtroPrecio ? filtroPrecio.value : "";
+  const hayFiltros = Boolean(texto || color || precioFiltro);
+  let totalVisible = 0;
 
   document.querySelectorAll(".model-card").forEach((card) => {
-    const contenido = (
+    const contenido = normalizarTexto(
       card.textContent + " " + (card.dataset.search || "")
-    ).toLowerCase();
+    );
 
     const precio = Number(card.dataset.precio || 0);
 
@@ -244,9 +328,42 @@ function filtrarProductos() {
     const coincideTexto = contenido.includes(texto);
     const coincideColor = !color || contenido.includes(color);
 
-    card.style.display =
-      coincideTexto && coincideColor && coincidePrecio ? "" : "none";
+    const visible = coincideTexto && coincideColor && coincidePrecio;
+    card.style.display = visible ? "" : "none";
+    if (visible) totalVisible += 1;
   });
+
+  const seccionesConResultados = [];
+
+  document.querySelectorAll(".categoria-productos").forEach((seccion) => {
+    const cantidadVisible = Array.from(seccion.querySelectorAll(".model-card"))
+      .filter((card) => card.style.display !== "none").length;
+    const botonCategoria = document.querySelector(
+      `.category-card[aria-controls="${seccion.id}"]`
+    );
+
+    if (botonCategoria) botonCategoria.hidden = hayFiltros && cantidadVisible === 0;
+    if (cantidadVisible > 0) seccionesConResultados.push(seccion);
+  });
+
+  const seccionActiva = document.querySelector(".categoria-productos.active");
+
+  if (
+    seccionesConResultados.length > 0 &&
+    (!seccionActiva || !seccionesConResultados.includes(seccionActiva)) &&
+    typeof window.mostrarCategoria === "function"
+  ) {
+    window.mostrarCategoria(seccionesConResultados[0].id, false);
+  }
+
+  const resultado = document.getElementById("resultadoProductos");
+  const vacio = document.getElementById("catalogoVacio");
+
+  if (resultado) {
+    resultado.textContent = `${totalVisible} ${totalVisible === 1 ? "producto encontrado" : "productos encontrados"}`;
+  }
+
+  if (vacio) vacio.hidden = totalVisible !== 0;
 
   ordenarProductos();
 }
@@ -291,19 +408,51 @@ document.addEventListener("change", (e) => {
   }
 });
 
+document.addEventListener("click", (e) => {
+  if (e.target.id !== "limpiarFiltros") return;
+
+  ["buscadorProductos", "filtroColor", "filtroPrecio", "ordenProductos"].forEach((id) => {
+    const campo = document.getElementById(id);
+    if (campo) campo.value = "";
+  });
+
+  filtrarProductos();
+  document.getElementById("buscadorProductos")?.focus();
+});
+
 // ==========================
 // CARRITO VIGNA
 // ==========================
 
-let carritoVigna = JSON.parse(localStorage.getItem("carritoVigna")) || [];
+function cargarCarritoGuardado() {
+  try {
+    const guardado = JSON.parse(localStorage.getItem("carritoVigna"));
+    return Array.isArray(guardado) ? guardado : [];
+  } catch (_error) {
+    return [];
+  }
+}
+
+function escaparHTML(valor) {
+  return String(valor || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+let carritoVigna = cargarCarritoGuardado();
 
 // Corrige productos antiguos que no tengan cantidad
 carritoVigna = carritoVigna.map((item) => ({
-  nombre: item.nombre,
+  nombre: String(item.nombre || "Producto VIGNA"),
   precio: Number(item.precio) || 0,
-  cantidad: Number(item.cantidad) || 1,
-  enlace: item.enlace || ""
-}));
+  cantidad: Math.max(1, Math.min(99, Number(item.cantidad) || 1)),
+  enlace: String(item.enlace || ""),
+  id: String(item.id || ""),
+  archivo: String(item.archivo || "")
+})).filter((item) => item.precio >= 0);
 
 function guardarCarrito() {
   localStorage.setItem("carritoVigna", JSON.stringify(carritoVigna));
@@ -337,7 +486,7 @@ function actualizarCarrito() {
     lista.innerHTML += `
       <div class="item-carrito">
 
-        <strong>${item.nombre}</strong>
+        <strong>${escaparHTML(item.nombre)}</strong>
 
         <span class="precio-carrito">
           S/ ${Number(item.precio).toFixed(2)}
@@ -384,9 +533,11 @@ function actualizarCarrito() {
   total.textContent = suma.toFixed(2);
 }
 
-function agregarAlCarrito(nombre, precio, enlace = "") {
+function agregarAlCarrito(nombre, precio, enlace = "", id = "", archivo = "") {
   const existente = carritoVigna.find(
-    (item) => item.nombre === nombre
+    (item) => (id && archivo)
+      ? item.id === String(id) && item.archivo === String(archivo)
+      : item.nombre === nombre
   );
 
   if (existente) {
@@ -395,12 +546,16 @@ function agregarAlCarrito(nombre, precio, enlace = "") {
     if (enlace) {
       existente.enlace = enlace;
     }
+    if (id) existente.id = String(id);
+    if (archivo) existente.archivo = String(archivo);
   } else {
     carritoVigna.push({
       nombre: nombre,
       precio: Number(precio),
       cantidad: 1,
-      enlace: enlace
+      enlace: enlace,
+      id: String(id || ""),
+      archivo: String(archivo || "")
     });
   }
 
@@ -430,11 +585,53 @@ function eliminarDelCarrito(index) {
 }
 
 function abrirCarrito() {
-  document.getElementById("panelCarrito")?.classList.add("open");
+  const panel = document.getElementById("panelCarrito");
+  const overlay = document.getElementById("carritoOverlay");
+  const boton = document.getElementById("btnCarrito");
+
+  panel?.classList.add("open");
+  overlay?.classList.add("open");
+  panel?.setAttribute("aria-hidden", "false");
+  boton?.setAttribute("aria-expanded", "true");
+  document.body.classList.add("carrito-abierto");
+  panel?.querySelector(".cerrar-carrito")?.focus();
 }
 
 function cerrarCarrito() {
-  document.getElementById("panelCarrito")?.classList.remove("open");
+  const panel = document.getElementById("panelCarrito");
+  const overlay = document.getElementById("carritoOverlay");
+  const boton = document.getElementById("btnCarrito");
+
+  panel?.classList.remove("open");
+  overlay?.classList.remove("open");
+  panel?.setAttribute("aria-hidden", "true");
+  boton?.setAttribute("aria-expanded", "false");
+  document.body.classList.remove("carrito-abierto");
+}
+
+function vaciarCarrito() {
+  if (carritoVigna.length === 0) return;
+  if (!window.confirm("¿Deseas vaciar todo el carrito?")) return;
+
+  carritoVigna = [];
+  guardarCarrito();
+  actualizarCarrito();
+}
+
+function iniciarCompra() {
+  if (carritoVigna.length === 0) {
+    alert("Tu carrito está vacío.");
+    return;
+  }
+
+  const productosSinIdentificador = carritoVigna.some((item) => !item.id || !item.archivo);
+
+  if (productosSinIdentificador) {
+    alert("Actualizamos el catálogo. Vacía el carrito y agrega nuevamente los productos para continuar.");
+    return;
+  }
+
+  window.location.href = "checkout.html";
 }
 
 function enviarCarritoWhatsApp() {
@@ -460,10 +657,7 @@ function enviarCarritoWhatsApp() {
       `Subtotal: S/ ${subtotal.toFixed(2)}\n`;
 
     if (item.enlace) {
-      const enlaceCompleto = new URL(
-  item.enlace,
-  window.location.origin + "/"
-).href;
+      const enlaceCompleto = new URL(item.enlace, window.location.href).href;
 
       mensaje += `Producto: ${enlaceCompleto}\n`;
     }
@@ -477,8 +671,12 @@ function enviarCarritoWhatsApp() {
     "https://wa.me/51973108121?text=" +
     encodeURIComponent(mensaje);
 
-  window.open(enlaceWhatsApp, "_blank");
+  window.open(enlaceWhatsApp, "_blank", "noopener,noreferrer");
 }
+
+document.addEventListener("keydown", (evento) => {
+  if (evento.key === "Escape") cerrarCarrito();
+});
 
 document.addEventListener("DOMContentLoaded", () => {
   guardarCarrito();
@@ -490,4 +688,8 @@ window.cambiarCantidad = cambiarCantidad;
 window.eliminarDelCarrito = eliminarDelCarrito;
 window.abrirCarrito = abrirCarrito;
 window.cerrarCarrito = cerrarCarrito;
+window.vaciarCarrito = vaciarCarrito;
+window.iniciarCompra = iniciarCompra;
 window.enviarCarritoWhatsApp = enviarCarritoWhatsApp;
+window.consultarStockProducto = consultarStockProducto;
+window.aplicarDisponibilidadCarrito = aplicarDisponibilidadCarrito;

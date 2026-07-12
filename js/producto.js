@@ -1,5 +1,3 @@
-console.log("producto.js cargado correctamente");
-
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
 
@@ -72,6 +70,12 @@ try {
   document.getElementById("productoNombre").textContent = nombre;
   document.getElementById("productoPrecio").textContent = "S/ " + precio;
   document.getElementById("productoDescripcion").textContent = descripcion;
+  document.title = `${nombre} | VIGNA Home & Bath`;
+
+  const metaDescripcion = document.querySelector('meta[name="description"]');
+  if (metaDescripcion) {
+    metaDescripcion.content = `${nombre}: ${descripcion || "producto premium para baños y cocinas"}. Precio S/ ${precio}.`;
+  }
 
   const especificaciones = [
     ["espMaterial", material],
@@ -128,8 +132,30 @@ if (seccionEspecificaciones) {
 
   const imagen = document.getElementById("productoImagen");
 
+  const rutasCandidatas = [
+    ruta + "portada.png",
+    ruta + "1.png",
+    ruta + "2.png",
+    ruta + "3.png"
+  ];
+
+  const imagenesGaleria = (await Promise.all(
+    rutasCandidatas.map((src) => new Promise((resolve) => {
+      const prueba = new Image();
+      prueba.onload = () => resolve(src);
+      prueba.onerror = () => resolve(null);
+      prueba.src = src;
+    }))
+  )).filter(Boolean);
+
 if (imagen) {
-  imagen.src = ruta + "portada.png";
+  if (imagenesGaleria.length > 0) {
+    imagen.src = imagenesGaleria[0];
+    imagen.alt = nombre;
+  } else {
+    imagen.hidden = true;
+    imagen.closest(".zoom-container")?.classList.add("sin-imagen");
+  }
 }
 
   for (let i = 1; i <= 3; i++) {
@@ -137,7 +163,15 @@ if (imagen) {
 
   if (!mini || !imagen) continue;
 
-  mini.src = ruta + i + ".png";
+  const rutaMiniatura = imagenesGaleria[i];
+
+  if (!rutaMiniatura) {
+    mini.hidden = true;
+    continue;
+  }
+
+  mini.src = rutaMiniatura;
+  mini.alt = `${nombre}, vista ${i + 1}`;
 
   mini.onclick = () => {
   const videoPrincipal = document.getElementById("productoVideoPrincipal");
@@ -152,9 +186,6 @@ if (imagen) {
   imagen.src = mini.src;
 };
 
-  mini.onerror = () => {
-    mini.style.display = "none";
-  };
 }
 
   const lista = document.getElementById("productoCaracteristicas");
@@ -171,9 +202,16 @@ if (lista) {
 
   const videoEl = document.getElementById("productoVideo");
   const videoSource = document.getElementById("productoVideoSource");
+  const seccionVideo = document.querySelector(".producto-video");
 
   if (videoEl && videoSource && video) {
     videoSource.src = ruta + video;
+    videoEl.addEventListener("loadedmetadata", () => {
+      if (seccionVideo) seccionVideo.hidden = false;
+    }, { once: true });
+    videoEl.addEventListener("error", () => {
+      if (seccionVideo) seccionVideo.hidden = true;
+    }, { once: true });
     videoEl.load();
   }
 
@@ -183,6 +221,13 @@ const miniVideo = document.getElementById("miniVideo");
 
 if (videoPrincipal && videoPrincipalSource && miniVideo && imagen && video) {
   videoPrincipalSource.src = ruta + video;
+  videoPrincipal.addEventListener("loadedmetadata", () => {
+    miniVideo.hidden = false;
+  }, { once: true });
+  videoPrincipal.addEventListener("error", () => {
+    miniVideo.hidden = true;
+    videoPrincipal.style.display = "none";
+  }, { once: true });
   videoPrincipal.load();
 
   miniVideo.onclick = () => {
@@ -205,6 +250,26 @@ if (btnWhatsapp) {
     const botonAgregarCarrito = document.getElementById("productoAgregarCarrito");
 
 if (botonAgregarCarrito) {
+  const categoriaSku = archivo.split("/").pop().replace(/\.csv$/i, "");
+  const sku = `${categoriaSku}:${id}`;
+  const stockProducto = document.getElementById("productoStock");
+  const disponibilidad = typeof window.consultarStockProducto === "function"
+    ? await window.consultarStockProducto(sku)
+    : null;
+
+  if (disponibilidad) {
+    const agotado = disponibilidad.activo === false || Number(disponibilidad.stock) <= 0;
+    botonAgregarCarrito.disabled = agotado;
+    botonAgregarCarrito.textContent = agotado ? "Producto agotado" : "Agregar al carrito";
+    if (stockProducto) {
+      stockProducto.hidden = false;
+      stockProducto.textContent = agotado
+        ? "Sin stock disponible"
+        : Number(disponibilidad.stock) <= Number(disponibilidad.stockMinimo) ? "Últimas unidades disponibles" : "Disponible";
+      stockProducto.classList.toggle("agotado", agotado);
+    }
+  }
+
   botonAgregarCarrito.onclick = () => {
     const enlaceProducto =
       "producto.html?" +
@@ -212,7 +277,7 @@ if (botonAgregarCarrito) {
       "&archivo=" + encodeURIComponent(archivo) +
       "&carpetaBase=" + encodeURIComponent(carpetaBase);
 
-    agregarAlCarrito(nombre, precio, enlaceProducto);
+    agregarAlCarrito(nombre, precio, enlaceProducto, id, archivo);
   };
 }
 
@@ -248,6 +313,7 @@ relacionados.innerHTML = "";
 
 const tarjetaRelacionada = document.createElement("div");
 tarjetaRelacionada.className = "model-card";
+tarjetaRelacionada.dataset.sku = `${archivo.split("/").pop().replace(/\.csv$/i, "")}:${idRel}`;
 tarjetaRelacionada.setAttribute("role", "button");
 tarjetaRelacionada.setAttribute("tabindex", "0");
 
@@ -255,7 +321,9 @@ tarjetaRelacionada.innerHTML = `
   <img
     src="${rutaRel}portada.png"
     class="product-cover"
-    alt="${nombreRel}">
+    alt="${nombreRel}"
+    loading="lazy"
+    decoding="async">
 
   <strong>${nombreRel}</strong>
   <span>S/ ${precioRel}</span>
@@ -296,7 +364,9 @@ botonCarritoRelacionado.addEventListener("click", (e) => {
   agregarAlCarrito(
     nombreRel,
     precioRel,
-    enlaceRelacionado
+    enlaceRelacionado,
+    idRel,
+    archivo
   );
 });
 
@@ -310,6 +380,10 @@ relacionados.appendChild(tarjetaRelacionada);
 
     cantidad++;
   });
+
+  if (typeof window.aplicarDisponibilidadCarrito === "function") {
+    window.aplicarDisponibilidadCarrito();
+  }
 
   // ==========================
 // VISOR PREMIUM DE IMÁGENES
@@ -338,13 +412,6 @@ if (imagen && visorProducto && visorImagen && visorCerrar) {
   };
 }
 
-const imagenesGaleria = [
-  ruta + "portada.png",
-  ruta + "1.png",
-  ruta + "2.png",
-  ruta + "3.png"
-];
-
 let indiceGaleria = 0;
 
 const flechaIzq = document.getElementById("flechaIzq");
@@ -365,7 +432,7 @@ if (!imagen) return;
   imagen.src = imagenesGaleria[indice];
 }
 
-if (flechaIzq && flechaDer && imagen) {
+if (flechaIzq && flechaDer && imagen && imagenesGaleria.length > 1) {
   flechaDer.onclick = () => {
     indiceGaleria = (indiceGaleria + 1) % imagenesGaleria.length;
     mostrarImagenGaleria(indiceGaleria);
@@ -376,5 +443,8 @@ if (flechaIzq && flechaDer && imagen) {
       (indiceGaleria - 1 + imagenesGaleria.length) % imagenesGaleria.length;
     mostrarImagenGaleria(indiceGaleria);
   };
+} else {
+  if (flechaIzq) flechaIzq.hidden = true;
+  if (flechaDer) flechaDer.hidden = true;
 }
 });

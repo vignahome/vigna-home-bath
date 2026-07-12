@@ -1,10 +1,45 @@
 const menuToggle = document.getElementById("menu-toggle");
 const mainNav = document.getElementById("main-nav");
+const siteHeader = document.querySelector(".site-header");
 
 if (menuToggle && mainNav) {
+  const cambiarEstadoMenu = (abierto) => {
+    mainNav.classList.toggle("open", abierto);
+    menuToggle.classList.toggle("open", abierto);
+    menuToggle.setAttribute("aria-expanded", String(abierto));
+    menuToggle.setAttribute("aria-label", abierto ? "Cerrar menú" : "Abrir menú");
+  };
+
   menuToggle.addEventListener("click", () => {
-    mainNav.classList.toggle("open");
+    cambiarEstadoMenu(!mainNav.classList.contains("open"));
   });
+
+  mainNav.querySelectorAll("a").forEach((enlace) => {
+    enlace.addEventListener("click", () => cambiarEstadoMenu(false));
+  });
+
+  document.addEventListener("click", (evento) => {
+    if (!mainNav.contains(evento.target) && !menuToggle.contains(evento.target)) {
+      cambiarEstadoMenu(false);
+    }
+  });
+
+  document.addEventListener("keydown", (evento) => {
+    if (evento.key === "Escape") cambiarEstadoMenu(false);
+  });
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 1050) cambiarEstadoMenu(false);
+  });
+}
+
+if (siteHeader) {
+  const actualizarEncabezado = () => {
+    siteHeader.classList.toggle("scrolled", window.scrollY > 30);
+  };
+
+  actualizarEncabezado();
+  window.addEventListener("scroll", actualizarEncabezado, { passive: true });
 }
 
 function mostrarCategoria(id, mover = true) {

@@ -727,7 +727,14 @@ async function ingresarAdmin() {
 
 }
 
-async function suscribirseProfesional(plan, precio, meses) {
+function obtenerApiPagosUrl() {
+  const urlConfigurada = String(window.VIGNA_CONFIG?.apiPagosUrl || "").trim();
+  if (urlConfigurada) return urlConfigurada.replace(/\/$/, "");
+  if (["localhost", "127.0.0.1"].includes(window.location.hostname)) return "http://localhost:3000";
+  return "";
+}
+
+async function suscribirseProfesional(planId) {
   const plomeroId = localStorage.getItem("vignaPendientePago");
 
   if (!plomeroId) {
@@ -735,34 +742,31 @@ async function suscribirseProfesional(plan, precio, meses) {
     return;
   }
 
+  const apiPagosUrl = obtenerApiPagosUrl();
+  if (!apiPagosUrl) {
+    alert("El pago en línea está temporalmente en configuración.");
+    return;
+  }
+
   try {
-    const respuesta = await fetch("http://localhost:3000/crear-pago", {
+    const respuesta = await fetch(`${apiPagosUrl}/crear-pago`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        plan,
-        precio,
-        meses,
-        verificacion: "Plan Activo",
+        planId,
         plomeroId
       })
     });
 
-    const data = await respuesta.json();
-
-    console.log("RESPUESTA DEL SERVIDOR:", data);
-
-    if (data.init_point) {
-      window.location.href = data.init_point;
-    } else {
-      alert("No se pudo crear el pago. Revisa la terminal de server.js.");
-    }
+    const data = await respuesta.json().catch(() => ({}));
+    if (!respuesta.ok || !data.init_point) throw new Error(data.error || "No se pudo crear el pago.");
+    window.location.href = data.init_point;
 
   } catch (error) {
     console.error("ERROR FETCH:", error);
-    alert("No conecta con el servidor de pagos.");
+    alert(error.message || "No conecta con el servidor de pagos.");
   }
 }
 
@@ -770,20 +774,32 @@ async function revisarPagoMercadoPago() {
   const params = new URLSearchParams(window.location.search);
 
   const pago = params.get("pago");
-  const status = params.get("status");
-  const collectionStatus = params.get("collection_status");
+  const paymentId = params.get("payment_id") || params.get("collection_id");
 
-  const plan = params.get("plan") || "VIGNA Profesional";
-  const meses = Number(params.get("meses")) || 1;
-  const verificacion = params.get("verificacion") || "Plan Activo";
-  const plomeroId = params.get("plomeroId") || localStorage.getItem("vignaPendientePago");
+  if (pago === "fallido" || pago === "pendiente") {
+    alert(pago === "fallido" ? "El pago no se completó." : "Tu pago está pendiente de aprobación.");
+    window.history.replaceState({}, document.title, "plomeros.html");
+    return;
+  }
 
-  const pagoAprobado =
-    pago === "aprobado" ||
-    status === "approved" ||
-    collectionStatus === "approved";
+  if (pago !== "retorno" || !paymentId) return;
+  const apiPagosUrl = obtenerApiPagosUrl();
+  if (!apiPagosUrl) {
+    alert("No se pudo verificar el pago porque el servidor aún no está configurado.");
+    return;
+  }
 
-  if (!pagoAprobado || !plomeroId) return;
+  try {
+    const respuesta = await fetch(`${apiPagosUrl}/verificar-pago/${encodeURIComponent(paymentId)}`);
+    const data = await respuesta.json().catch(() => ({}));
+    if (!respuesta.ok || !data.aprobado) throw new Error(data.error || "El pago todavía no figura como aprobado.");
+
+    const plomeroPendiente = localStorage.getItem("vignaPendientePago");
+    if (plomeroPendiente && plomeroPendiente !== data.plomeroId) {
+      throw new Error("El pago no corresponde al perfil profesional de esta sesión.");
+    }
+
+    const { plan, meses, verificacion, plomeroId } = data;
 
   const fechaInicio = new Date();
   const fechaVencimiento = new Date();
@@ -797,7 +813,8 @@ async function revisarPagoMercadoPago() {
     estado: "Activo",
     fechaInicio: fechaInicio.toLocaleDateString(),
     fechaVencimiento: fechaVencimiento.toLocaleDateString(),
-    origen: "Mercado Pago"
+    origen: "Mercado Pago",
+    paymentId
   };
 
   localStorage.setItem("suscripcionProfesional", JSON.stringify(suscripcion));
@@ -813,12 +830,16 @@ async function revisarPagoMercadoPago() {
 
   localStorage.removeItem("vignaPendientePago");
 
-  alert("Pago aprobado. El VIGNA ya aparece automáticamente en el ranking.");
+  alert("Pago verificado. El VIGNA ya aparece automáticamente en el ranking.");
 
   window.history.replaceState({}, document.title, "plomeros.html");
 
   await cargarPlomerosFirebase();
   mostrarEstadoSuscripcion();
+  } catch (error) {
+    console.error("No se pudo verificar el pago:", error);
+    alert(error.message || "No se pudo verificar el pago.");
+  }
 }
 
 function mostrarEstadoSuscripcion() {

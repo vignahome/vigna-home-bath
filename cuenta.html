@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi cuenta | VIGNA Home & Bath</title>
+  <meta name="description" content="Accede a tu cuenta VIGNA para revisar tus datos y el estado de tus pedidos.">
+  <meta name="theme-color" content="#0d0d0d">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/cuenta.css?v=1">
+</head>
+<body>
+  <header class="cuenta-header">
+    <a href="index.html"><img src="images/logo/ChatGPT Image 26 may 2026, 11_05_03 p.m..png" alt="VIGNA Home & Bath"></a>
+    <a href="index.html#productos">← Volver a la tienda</a>
+  </header>
+
+  <main class="cuenta-main">
+    <section id="cuentaAcceso" class="cuenta-acceso">
+      <div class="cuenta-intro">
+        <p>CLIENTES VIGNA</p>
+        <h1>Tu cuenta de compras</h1>
+        <span>Revisa pedidos, pagos y entregas desde un solo lugar.</span>
+      </div>
+
+      <div class="cuenta-formularios">
+        <form id="formLogin" class="cuenta-card">
+          <h2>Ingresar</h2>
+          <label for="loginEmail">Correo</label>
+          <input id="loginEmail" type="email" autocomplete="username" required>
+          <label for="loginPassword">Contraseña</label>
+          <input id="loginPassword" type="password" autocomplete="current-password" minlength="6" required>
+          <button type="submit">Ingresar a mi cuenta</button>
+        </form>
+
+        <form id="formRegistro" class="cuenta-card">
+          <h2>Crear cuenta</h2>
+          <label for="registroNombre">Nombre y apellido</label>
+          <input id="registroNombre" type="text" autocomplete="name" minlength="3" maxlength="100" required>
+          <label for="registroEmail">Correo</label>
+          <input id="registroEmail" type="email" autocomplete="email" required>
+          <label for="registroTelefono">Celular</label>
+          <input id="registroTelefono" type="tel" autocomplete="tel" minlength="9" maxlength="15" required>
+          <label for="registroPassword">Contraseña</label>
+          <input id="registroPassword" type="password" autocomplete="new-password" minlength="6" required>
+          <button type="submit">Crear mi cuenta</button>
+        </form>
+      </div>
+      <p id="cuentaEstado" class="cuenta-estado" role="alert"></p>
+    </section>
+
+    <section id="cuentaPanel" class="cuenta-panel" hidden>
+      <div class="cuenta-panel-cabecera">
+        <div><p>MI CUENTA</p><h1 id="clienteNombre">Cliente VIGNA</h1><span id="clienteEmail"></span></div>
+        <button id="cerrarCuenta">Cerrar sesión</button>
+      </div>
+
+      <div class="cuenta-resumen">
+        <article><span>Total de pedidos</span><strong id="clientePedidos">0</strong></article>
+        <article><span>Pedidos en camino</span><strong id="clienteEnCamino">0</strong></article>
+        <article><span>Compras acumuladas</span><strong id="clienteCompras">S/ 0.00</strong></article>
+      </div>
+
+      <div class="cuenta-card pedidos-card">
+        <div class="pedidos-titulo"><div><p>HISTORIAL</p><h2>Mis pedidos</h2></div><a href="index.html#productos">Seguir comprando</a></div>
+        <div id="clienteListaPedidos"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="cuentaMensaje" class="cuenta-mensaje" hidden role="status"></div>
+  <script type="module" src="js/cuenta.js?v=1"></script>
+</body>
+</html>
