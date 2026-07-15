@@ -15,6 +15,7 @@ const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || "http://127.0.0.1:5500").replace(/\/$/, "");
 const MP_NOTIFICATION_URL = String(process.env.MP_NOTIFICATION_URL || "").trim();
 const MP_WEBHOOK_SECRET = String(process.env.MP_WEBHOOK_SECRET || "").trim();
+const MP_WEBHOOK_SECRET_TEST = String(process.env.MP_WEBHOOK_SECRET_TEST || "").trim();
 const CONTROL_INVENTARIO = String(process.env.CONTROL_INVENTARIO || "false").toLowerCase() === "true";
 const ALLOWED_ORIGINS = new Set(
   (process.env.ALLOWED_ORIGINS || `${PUBLIC_BASE_URL},http://localhost:5500,http://127.0.0.1:5500`)
@@ -479,12 +480,30 @@ app.post("/webhook-mercadopago", async (req, res) => {
   }
 
   try {
+    const secretosWebhook = [
+  MP_WEBHOOK_SECRET,
+  MP_WEBHOOK_SECRET_TEST
+].filter(Boolean);
+
+let firmaValida = false;
+
+for (const secret of secretosWebhook) {
+  try {
     WebhookSignatureValidator.validate({
       xSignature: req.headers["x-signature"],
       xRequestId: req.headers["x-request-id"],
       dataId: paymentId,
-      secret: MP_WEBHOOK_SECRET
+      secret
     });
+
+    firmaValida = true;
+    break;
+  } catch (error) {
+    if (!(error instanceof InvalidWebhookSignatureError)) throw error;
+  }
+}
+
+if (!firmaValida) return res.sendStatus(401);
 
     await consultarYProcesarPagoPedido(paymentId);
     return res.sendStatus(200);
