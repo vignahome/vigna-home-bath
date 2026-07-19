@@ -505,8 +505,22 @@ for (const secret of secretosWebhook) {
 
 if (!firmaValida) return res.sendStatus(401);
 
-    await consultarYProcesarPagoPedido(paymentId);
-    return res.sendStatus(200);
+    console.log("Webhook Mercado Pago recibido.", {
+  paymentId,
+  action: req.body?.action || "",
+  fecha: new Date().toISOString()
+});
+
+res.sendStatus(200);
+
+consultarYProcesarPagoPedido(paymentId).catch((error) => {
+  console.error("No se pudo procesar el pago después de responder al webhook.", {
+    paymentId,
+    message: error.message
+  });
+});
+
+return;
   } catch (error) {
     if (error instanceof InvalidWebhookSignatureError) return res.sendStatus(401);
     console.error("No se pudo procesar el webhook de Mercado Pago.", { message: error.message });
