@@ -30,10 +30,15 @@ form.cuenta-card{display:flex;flex-direction:column;gap:9px}.cuenta-card h2,.ped
 .btn-cerrar{background:transparent;color:var(--texto);border:1px solid rgba(255,255,255,.08);padding:8px 12px;border-radius:8px}
 .pedido-modal-body{margin-top:12px;display:grid;grid-template-columns:1fr 320px;gap:18px}
 .pedido-estados{display:flex;gap:12px;align-items:center;color:var(--suave)}
+.pedido-modal-tracking{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.seguimiento-paso{padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.03);color:var(--texto);display:flex;flex-direction:column;gap:6px;min-height:78px;}
+.seguimiento-paso strong,.seguimiento-paso .paso-nombre{display:block;font-size:.92rem;font-weight:700}
+.seguimiento-paso .paso-estado{display:block;color:var(--suave);font-size:.8rem}
+.seguimiento-paso.completado{border-color:var(--oro);background:rgba(212,175,55,.14)}
 .pedido-items-wrapper{overflow:auto;border:1px solid rgba(255,255,255,.04);border-radius:8px}
-.pedido-items{width:100%;border-collapse:collapse;color:rgba(255,255,255,.85)}
+.pedido-items{width:100%;border-collapse:collapse;color:rgba(255,255,255,.85);table-layout:fixed}
 .pedido-items th{text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--oro)}
-.pedido-items td{padding:10px;border-bottom:1px solid rgba(255,255,255,.03);font-size:.92rem}
+.pedido-items td{padding:10px;border-bottom:1px solid rgba(255,255,255,.03);font-size:.92rem;word-break:break-word}
 .pedido-total{margin-top:10px;text-align:right;color:var(--oro);font-weight:800}
 .pedido-entrega{padding:12px;border:1px solid rgba(255,255,255,.04);border-radius:10px;background:rgba(255,255,255,.02)}
 .pedido-entrega h3,.pedido-datos h3{margin:0 0 10px;color:var(--oro);font-weight:800}
@@ -42,9 +47,18 @@ form.cuenta-card{display:flex;flex-direction:column;gap:9px}.cuenta-card h2,.ped
 
 /* Impresión: mostrar sólo el comprobante */
 @media print{
+  @page{size:A4 portrait;margin:16mm}
+  body{background:#fff}
   body *{visibility:hidden}
-  .pedido-modal, .pedido-modal *{visibility:visible}
+  .pedido-modal,.pedido-modal *{visibility:visible}
   .pedido-modal{position:static;inset:auto;padding:0;margin:0;background:#fff;color:#000}
-  .pedido-modal-contenido{background:#fff;border:0;box-shadow:none;color:#000}
+  .pedido-modal-overlay,.pedido-modal-acciones,.pedido-modal button,.pedido-modal .btn-cerrar,.pedido-modal .btn-oro{display:none!important}
+  .pedido-modal-contenido{background:#fff;border:0;box-shadow:none;color:#000;width:auto;max-width:100%;page-break-inside:avoid}
+  .pedido-modal-body{display:block;gap:0}
+  .pedido-estados,.pedido-modal-tracking,.pedido-datos,.pedido-entrega{page-break-inside:avoid}
+  .pedido-items-wrapper{overflow:visible!important;border:none}
+  .pedido-items{width:100%;table-layout:fixed;border-collapse:collapse}
+  .pedido-items th,.pedido-items td{padding:8px;word-break:break-word;break-inside:avoid-column}
+  .pedido-items tr{page-break-inside:avoid}
   .pedido-items th{color:#333}
 }

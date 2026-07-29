@@ -99,6 +99,33 @@ function seleccionarValor(obj, keys) {
   return undefined;
 }
 
+function obtenerEstadoPedido(pedido) {
+  const estado = seleccionarValor(pedido, ['estado', 'estadoPedido', 'pedidoEstado']) || pedido.estado || '';
+  return String(estado || '').toLowerCase();
+}
+
+function renderSeguimientoPedido(pedido) {
+  const estadoPedido = obtenerEstadoPedido(pedido);
+  const completadoPago = ['pagado', 'preparando', 'enviado', 'entregado'].includes(estadoPedido) || pedido.pagado === true;
+  const completadoPreparando = ['preparando', 'enviado', 'entregado'].includes(estadoPedido);
+  const completadoEnviado = ['enviado', 'entregado'].includes(estadoPedido);
+  const completadoEntregado = estadoPedido === 'entregado';
+  const pasos = [
+    { label: 'Pago confirmado', completo: completadoPago },
+    { label: 'Preparando pedido', completo: completadoPreparando },
+    { label: 'Pedido enviado', completo: completadoEnviado },
+    { label: 'Pedido entregado', completo: completadoEntregado }
+  ];
+  const container = document.getElementById('pedidoModalTracking');
+  if (!container) return;
+  container.innerHTML = pasos.map((paso) => `
+    <div class="seguimiento-paso${paso.completo ? ' completado' : ''}">
+      <span class="paso-nombre">${escapar(paso.label)}</span>
+      <span class="paso-estado">${paso.completo ? 'Completado' : 'Pendiente'}</span>
+    </div>
+  `).join('');
+}
+
 function formatoMoneda(valor) {
   const n = Number(valor || 0);
   return `S/ ${n.toFixed(2)}`;
@@ -109,6 +136,7 @@ function limpiarModal() {
   document.getElementById('pedidoModalFecha').textContent = '';
   document.getElementById('pedidoModalPagoEstado').textContent = '-';
   document.getElementById('pedidoModalEntregaEstado').textContent = '-';
+  document.getElementById('pedidoModalTracking').innerHTML = '';
   document.getElementById('pedidoModalItems').innerHTML = '';
   document.getElementById('pedidoModalTotal').textContent = 'S/ 0.00';
   document.getElementById('pedidoModalNombre').textContent = '-';
@@ -147,13 +175,16 @@ function abrirDetallePedido(id) {
   }
   document.getElementById('pedidoModalFecha').textContent = fechaTexto || 'Fecha pendiente';
 
-  // Estados de pago y entrega: soportar varios nombres posibles  
+  // Estados de pago y entrega: soportar varios nombres posibles
+  
   const pagoEstado = seleccionarValor(pedido, ['pagoEstado','estadoPago','paymentStatus','pago','estadoPagoId']) || seleccionarValor(pedido.pago, ['status','estado','payment_status']) || pedido.estadoPago || pedido.paymentStatus;
   const entregaEstado = seleccionarValor(pedido, ['entregaEstado','estadoEntrega','deliveryStatus','estado']) || seleccionarValor(pedido.envio, ['estado','status']) || pedido.estado || 'pendiente';
   document.getElementById('pedidoModalPagoEstado').textContent = String(pagoEstado || (pedido.pagado ? 'pagado' : 'pendiente'));
   document.getElementById('pedidoModalEntregaEstado').textContent = String(entregaEstado || 'pendiente');
+  renderSeguimientoPedido(pedido);
 
-  // Items: normalizar nombre, cantidad, precio unitario y subtotal  
+  // Items: normalizar nombre, cantidad, precio unitario y subtotal
+  
   const items = Array.isArray(pedido.items) ? pedido.items : (Array.isArray(pedido.productos) ? pedido.productos : []);
   const tbody = document.getElementById('pedidoModalItems');
   let calcTotal = Number(pedido.total || pedido.totalPagado || pedido.monto || 0);
@@ -193,12 +224,82 @@ function abrirDetallePedido(id) {
   abrirModal();
 }
 
+function crearHtmlComprobanteHTML(contenidoHtml) {
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Comprobante de pedido</title>
+<style>
+  @page { size: A4 portrait; margin: 16mm; }
+  html, body { margin: 0; padding: 0; font-family: 'Montserrat', sans-serif; color: #000; background: #fff; }
+  body { min-height: 100vh; }
+  .pedido-modal-contenido { width: 100%; max-width: 100%; padding: 16px; box-sizing: border-box; border: none; box-shadow: none; background: #fff; color: #000; }
+  .pedido-modal-cabecera { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: flex-start; }
+  .pedido-modal-cabecera .oro, .pedido-modal-cabecera h2, .pedido-modal-cabecera small { color: #000; }
+  .pedido-modal-tracking { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .seguimiento-paso { padding: 10px; border: 1px solid #bbb; border-radius: 10px; background: #f9f9f9; color: #000; display: flex; flex-direction: column; gap: 6px; }
+  .seguimiento-paso.completado { border-color: #b68913; background: #fff6dc; }
+  .seguimiento-paso .paso-estado { color: #555; font-size: 0.9rem; }
+  .pedido-estados { display: flex; flex-wrap: wrap; gap: 18px; color: #000; margin-bottom: 14px; }
+  .pedido-items-wrapper { overflow: visible; }
+  .pedido-items { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 10pt; }
+  .pedido-items th, .pedido-items td { padding: 8px; border: 1px solid #ccc; word-break: break-word; }
+  .pedido-items th { background: #f0f0f0; color: #000; text-align: left; }
+  .pedido-items td:nth-child(1) { width: 45%; }
+  .pedido-items td:nth-child(2), .pedido-items td:nth-child(3), .pedido-items td:nth-child(4) { width: 18%; text-align: right; }
+  .pedido-total { margin-top: 10px; text-align: right; font-weight: 700; font-size: 11pt; }
+  .pedido-entrega { margin-top: 16px; padding: 10px; border: 1px solid #ccc; border-radius: 10px; background: #f9f9f9; }
+  .pedido-entrega h3 { margin: 0 0 8px; }
+  .pedido-entrega div { margin-bottom: 6px; }
+  .pedido-modal-acciones { display: none !important; }
+  .pedido-modal-overlay { display: none !important; }
+  @media print {
+    body { margin: 0; }
+    .pedido-modal-tracking { grid-template-columns: 1fr; }
+    .pedido-modal-contenido { page-break-inside: avoid; }
+    .pedido-items tr { page-break-inside: avoid; }
+  }
+  @media (max-width: 840px) {
+    .pedido-modal-tracking { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>${contenidoHtml}</body>
+</html>`;
+}
+
+function imprimirComprobante() {
+  const contenidoModal = document.querySelector('.pedido-modal-contenido');
+  if (!contenidoModal) return;
+  const clon = contenidoModal.cloneNode(true);
+  const acciones = clon.querySelector('.pedido-modal-acciones');
+  if (acciones) acciones.remove();
+
+  const printWindow = window.open('', '_blank', 'width=900,height=700');
+  if (!printWindow) {
+    mostrarMensaje('No se pudo abrir la ventana de impresión. Revisa el bloqueador de ventanas.');
+    return;
+  }
+
+  const html = crearHtmlComprobanteHTML(clon.outerHTML);
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+
+  printWindow.onload = () => {
+    printWindow.print();
+    setTimeout(() => printWindow.close(), 500);
+  };
+}
+
 // Listeners para botones del modal (delegados globales)
 document.addEventListener('click', (e) => {
   if (e.target && e.target.id === 'cerrarPedidoModal') cerrarModal();
   if (e.target && e.target.id === 'imprimirPedido') {
-    // Preparar impresión: window.print() y CSS @media print se encarga de mostrar solo el modal
-    window.print();
+    e.preventDefault();
+    imprimirComprobante();
   }
   // cerrar si hace click en overlay
   if (e.target && e.target.classList && e.target.classList.contains('pedido-modal-overlay')) cerrarModal();
