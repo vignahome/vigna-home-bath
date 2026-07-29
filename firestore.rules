@@ -33,6 +33,11 @@ service cloud.firestore {
       allow read, write: if esAdmin();
     }
 
+    match /movimientosInventario/{movimientoId} {
+      allow read: if esAdmin();
+      allow write: if false;
+    }
+
     // Compatibilidad de lectura con la demostración externa de profesionales.
     match /plomeros/{perfilId} {
       allow read: if true;

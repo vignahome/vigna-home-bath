@@ -296,78 +296,144 @@ function esPagoRestauracion(status) {
 }
 
 async function procesarPagoInventario(pago) {
-  if (!adminDb) return { valido: false, error: "El servidor no está disponible." };
+  if (!adminDb) {
+    return {
+      valido: false,
+      error: "El servidor no está disponible."
+    };
+  }
 
   const status = String(pago.status || "").toLowerCase();
   const paymentId = String(pago.id || "").trim();
-  const pedidoId = String(pago.metadata?.pedido_id || pago.external_reference || "").trim();
+  const pedidoId = String(
+    pago.metadata?.pedido_id || pago.external_reference || ""
+  ).trim();
   const productos = extraerProductosDePago(pago);
   const totalPagado = Number(pago.transaction_amount || 0);
 
   if (!pedidoId || !productos) {
-    return { valido: false, estado: status, pedidoId, total: totalPagado, error: "El pago no contiene datos de pedido válidos." };
+    return {
+      valido: false,
+      estado: status,
+      pedidoId,
+      total: totalPagado,
+      error: "El pago no contiene datos de pedido válidos."
+    };
   }
 
   const validacionAprobada = validarDatosPagoPedido(pago);
   const pedidoRef = adminDb.collection("pedidos").doc(pedidoId);
 
   await adminDb.runTransaction(async (transaccion) => {
+    // PRIMERA ETAPA: todas las lecturas.
     const pedidoSnap = await transaccion.get(pedidoRef);
+
     if (!pedidoSnap.exists) return;
 
     const pedido = pedidoSnap.data() || {};
     const pagoAnterior = String(pedido.estadoPago || "").toLowerCase();
-    const debeAplicarDescuento = esPagoAprobado(status) && validacionAprobada.valido && pagoAnterior !== "approved";
-    const debeRestaurar = esPagoRestauracion(status) && pagoAnterior === "approved";
+
+    const debeAplicarDescuento =
+      esPagoAprobado(status) &&
+      validacionAprobada.valido &&
+      pagoAnterior !== "approved";
+
+    const debeRestaurar =
+      esPagoRestauracion(status) &&
+      pagoAnterior === "approved";
 
     if (debeAplicarDescuento) {
-      transaccion.set(pedidoRef, {
-        pedidoId,
-        total: totalPagado,
-        moneda: "PEN",
-        estado: "pagado",
-        estadoPago: "approved",
-        paymentId,
-        pagadoEnMs: Date.now(),
-        actualizadoEnMs: Date.now()
-      }, { merge: true });
-
-      if (!CONTROL_INVENTARIO) {
-        return;
-      }
-
       const descuentos = [];
 
-      for (const producto of productos) {
-        const inventarioRef = adminDb.collection("inventario").doc(producto.sku);
-        const movimientoRef = adminDb.collection(INVENTARIO_MOVIMIENTOS_COLLECTION)
-          .doc(construirMovimientoId(paymentId, producto.sku, "descuento"));
-        const snapshotInventario = await transaccion.get(inventarioRef);
-        const snapshotMovimiento = await transaccion.get(movimientoRef);
+      if (CONTROL_INVENTARIO) {
+        for (const producto of productos) {
+          const inventarioRef = adminDb
+            .collection("inventario")
+            .doc(producto.sku);
 
-        if (!snapshotInventario.exists) {
-          throw new Error(`No existe inventario para ${producto.sku}.`);
+          const movimientoRef = adminDb
+            .collection(INVENTARIO_MOVIMIENTOS_COLLECTION)
+            .doc(
+              construirMovimientoId(
+                paymentId,
+                producto.sku,
+                "descuento"
+              )
+            );
+
+          const snapshotInventario =
+            await transaccion.get(inventarioRef);
+
+          const snapshotMovimiento =
+            await transaccion.get(movimientoRef);
+
+          if (!snapshotInventario.exists) {
+            throw new Error(
+              `No existe inventario para ${producto.sku}.`
+            );
+          }
+
+          // El movimiento ya fue aplicado. No se vuelve a descontar.
+          if (snapshotMovimiento.exists) continue;
+
+          const datosInventario =
+            snapshotInventario.data() || {};
+
+          const stockAnterior =
+            Number(datosInventario.stock || 0);
+
+          if (stockAnterior < producto.cantidad) {
+            throw new Error(
+              `No hay stock suficiente de ${producto.nombre}.`
+            );
+          }
+
+          descuentos.push({
+            inventarioRef,
+            movimientoRef,
+            datosInventario,
+            producto,
+            stockAnterior
+          });
         }
-
-        const datosInventario = snapshotInventario.data();
-        const stockAnterior = Number(datosInventario.stock || 0);
-
-        if (stockAnterior < producto.cantidad) {
-          throw new Error(`No hay stock suficiente de ${producto.nombre}.`);
-        }
-
-        if (snapshotMovimiento.exists) continue;
-
-        descuentos.push({ inventarioRef, movimientoRef, datosInventario, producto, stockAnterior });
       }
 
-      for (const { inventarioRef, movimientoRef, datosInventario, producto, stockAnterior } of descuentos) {
-        const stockNuevo = stockAnterior - producto.cantidad;
+      // SEGUNDA ETAPA: todas las escrituras.
+      const ahoraMs = Date.now();
+
+      transaccion.set(
+        pedidoRef,
+        {
+          pedidoId,
+          total: totalPagado,
+          moneda: "PEN",
+          estado: "pagado",
+          estadoPago: "approved",
+          paymentId,
+          pagadoEnMs: ahoraMs,
+          actualizadoEnMs: ahoraMs
+        },
+        { merge: true }
+      );
+
+      for (const descuento of descuentos) {
+        const {
+          inventarioRef,
+          movimientoRef,
+          datosInventario,
+          producto,
+          stockAnterior
+        } = descuento;
+
+        const stockNuevo =
+          stockAnterior - producto.cantidad;
 
         transaccion.update(inventarioRef, {
           stock: stockNuevo,
-          vendidos: Number(datosInventario.vendidos || 0) + producto.cantidad,
-          actualizadoEnMs: Date.now()
+          vendidos:
+            Number(datosInventario.vendidos || 0) +
+            producto.cantidad,
+          actualizadoEnMs: ahoraMs
         });
 
         transaccion.set(movimientoRef, {
@@ -379,39 +445,88 @@ async function procesarPagoInventario(pago) {
           tipo: "descuento",
           stockAnterior,
           stockNuevo,
-          fecha: new Date().toISOString(),
-          creadoEnMs: Date.now()
+          fecha: new Date(ahoraMs).toISOString(),
+          creadoEnMs: ahoraMs
         });
       }
+
       return;
     }
 
     if (debeRestaurar) {
-      transaccion.set(pedidoRef, {
-        estado: estadoPedidoDesdePago(status),
-        estadoPago: status,
-        actualizadoEnMs: Date.now()
-      }, { merge: true });
+      const restauraciones = [];
 
-      if (!CONTROL_INVENTARIO) {
-        return;
+      if (CONTROL_INVENTARIO) {
+        for (const producto of productos) {
+          const inventarioRef = adminDb
+            .collection("inventario")
+            .doc(producto.sku);
+
+          const restauracionRef = adminDb
+            .collection(INVENTARIO_MOVIMIENTOS_COLLECTION)
+            .doc(
+              construirMovimientoId(
+                paymentId,
+                producto.sku,
+                "restauracion"
+              )
+            );
+
+          const snapshotInventario =
+            await transaccion.get(inventarioRef);
+
+          const snapshotRestauracion =
+            await transaccion.get(restauracionRef);
+
+          if (
+            !snapshotInventario.exists ||
+            snapshotRestauracion.exists
+          ) {
+            continue;
+          }
+
+          const datosInventario =
+            snapshotInventario.data() || {};
+
+          const stockAnterior =
+            Number(datosInventario.stock || 0);
+
+          restauraciones.push({
+            inventarioRef,
+            restauracionRef,
+            producto,
+            stockAnterior
+          });
+        }
       }
 
-      for (const producto of productos) {
-        const inventarioRef = adminDb.collection("inventario").doc(producto.sku);
-        const restauracionRef = adminDb.collection(INVENTARIO_MOVIMIENTOS_COLLECTION)
-          .doc(construirMovimientoId(paymentId, producto.sku, "restauracion"));
-        const snapshotInventario = await transaccion.get(inventarioRef);
-        const snapshotRestauracion = await transaccion.get(restauracionRef);
+      // Después de terminar las lecturas se realizan las escrituras.
+      const ahoraMs = Date.now();
 
-        if (!snapshotInventario.exists || snapshotRestauracion.exists) continue;
-        const datosInventario = snapshotInventario.data();
-        const stockAnterior = Number(datosInventario.stock || 0);
-        const stockNuevo = stockAnterior + producto.cantidad;
+      transaccion.set(
+        pedidoRef,
+        {
+          estado: estadoPedidoDesdePago(status),
+          estadoPago: status,
+          actualizadoEnMs: ahoraMs
+        },
+        { merge: true }
+      );
+
+      for (const restauracion of restauraciones) {
+        const {
+          inventarioRef,
+          restauracionRef,
+          producto,
+          stockAnterior
+        } = restauracion;
+
+        const stockNuevo =
+          stockAnterior + producto.cantidad;
 
         transaccion.update(inventarioRef, {
           stock: stockNuevo,
-          actualizadoEnMs: Date.now()
+          actualizadoEnMs: ahoraMs
         });
 
         transaccion.set(restauracionRef, {
@@ -423,26 +538,37 @@ async function procesarPagoInventario(pago) {
           tipo: "restauracion",
           stockAnterior,
           stockNuevo,
-          fecha: new Date().toISOString(),
-          creadoEnMs: Date.now()
+          fecha: new Date(ahoraMs).toISOString(),
+          creadoEnMs: ahoraMs
         });
       }
+
       return;
     }
 
-    transaccion.set(pedidoRef, {
-      estado: estadoPedidoDesdePago(status),
-      estadoPago: status,
-      actualizadoEnMs: Date.now()
-    }, { merge: true });
+    transaccion.set(
+      pedidoRef,
+      {
+        estado: estadoPedidoDesdePago(status),
+        estadoPago: status,
+        actualizadoEnMs: Date.now()
+      },
+      { merge: true }
+    );
   });
 
   return {
-    valido: esPagoAprobado(status) && validacionAprobada.valido,
+    valido:
+      esPagoAprobado(status) &&
+      validacionAprobada.valido,
     estado: status,
     pedidoId,
     total: totalPagado,
-    error: esPagoAprobado(status) && !validacionAprobada.valido ? validacionAprobada.error : ""
+    error:
+      esPagoAprobado(status) &&
+      !validacionAprobada.valido
+        ? validacionAprobada.error
+        : ""
   };
 }
 

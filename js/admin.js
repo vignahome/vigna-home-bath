@@ -25,6 +25,7 @@ const FUENTES_CATALOGO = [
 let pedidos = [];
 let inventario = [];
 let catalogoLocal = [];
+let movimientosInventario = [];
 
 function escapar(valor) {
   return String(valor ?? "")
@@ -240,10 +241,52 @@ function abrirAplicacion(user) {
 }
 
 async function cargarPanel() {
-  await Promise.all([cargarPedidos(), cargarInventario(), cargarCatalogoLocal()]);
+  await Promise.all([cargarPedidos(), cargarInventario(), cargarCatalogoLocal(), cargarMovimientosInventario()]);
   actualizarMetricas();
   renderizarPedidos();
   renderizarInventario();
+  renderizarMovimientosInventario();
+}
+
+async function cargarMovimientosInventario() {
+  try {
+    const respuesta = await fetch("/movimientos-inventario");
+    const datos = await respuesta.json();
+    movimientosInventario = Array.isArray(datos.movimientos) ? datos.movimientos : [];
+  } catch (error) {
+    movimientosInventario = [];
+    console.error("No se pudieron cargar los movimientos de inventario.", error);
+  }
+}
+
+function renderizarMovimientosInventario() {
+  const contenedor = document.getElementById("tablaMovimientosInventario");
+  if (!contenedor) return;
+  if (!movimientosInventario.length) {
+    contenedor.innerHTML = '<p class="admin-vacio">No hay movimientos registrados.</p>';
+    return;
+  }
+
+  contenedor.innerHTML = `
+    <table class="admin-tabla">
+      <thead>
+        <tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>SKU</th><th>Cantidad</th><th>Stock anterior</th><th>Stock nuevo</th><th>Pedido</th></tr>
+      </thead>
+      <tbody>${movimientosInventario.map((movimiento) => {
+        const fecha = new Date(Number(movimiento.creadoEnMs || movimiento.fecha || 0));
+        return `
+          <tr>
+            <td>${escapar(isNaN(fecha.getTime()) ? "—" : fecha.toLocaleString("es-PE"))}</td>
+            <td>${escapar(movimiento.tipo || "—")}</td>
+            <td>${escapar(movimiento.producto || "—")}</td>
+            <td>${escapar(movimiento.sku || "—")}</td>
+            <td>${Number(movimiento.cantidad || 0)}</td>
+            <td>${Number(movimiento.stockAnterior || 0)}</td>
+            <td>${Number(movimiento.stockNuevo || 0)}</td>
+            <td>${escapar(movimiento.pedidoId || "—")}</td>
+          </tr>`;
+      }).join("")}</tbody>
+    </table>`;
 }
 
 async function cargarPedidos() {
@@ -391,6 +434,7 @@ function renderizarInventario() {
 
   if (!productos.length) {
     document.getElementById("tablaInventario").innerHTML = '<p class="admin-vacio">No se encontraron productos.</p>';
+    renderizarMovimientosInventario();
     return;
   }
 
@@ -457,6 +501,7 @@ async function guardarStock(sku) {
   await cargarInventario();
   actualizarMetricas();
   renderizarInventario();
+  renderizarMovimientosInventario();
   mostrarMensaje(`Inventario de ${producto.nombre} actualizado.`);
 }
 
