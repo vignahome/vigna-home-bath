@@ -15,6 +15,7 @@ import {
 } from "../firebase.js";
 
 let usuarioActual = null;
+let pedidosCache = []; // cache de pedidos cargados para abrir detalle sin reconsultar
 
 function escapar(valor) {
   return String(valor ?? "")
@@ -59,22 +60,149 @@ async function cargarPedidos(user) {
     document.getElementById("clienteEnCamino").textContent = String(enCamino.length);
     document.getElementById("clienteCompras").textContent = `S/ ${total.toFixed(2)}`;
 
+    // Guardar en cache para uso cuando se abra el detalle
+    pedidosCache = pedidos;
+
     lista.innerHTML = pedidos.length ? pedidos.map((pedido) => `
-      <article class="cliente-pedido">
+      <article class="cliente-pedido" data-pedido-id="${escapar(pedido.id)}">
         <div class="cliente-pedido-cabecera">
           <h3>${escapar(pedido.pedidoId || pedido.id)}</h3>
           <span class="estado">${escapar(pedido.estado || "pendiente")}</span>
           <strong>S/ ${Number(pedido.total || 0).toFixed(2)}</strong>
         </div>
-        <small>${escapar(pedido.fecha ? new Date(pedido.fecha).toLocaleString("es-PE") : "Fecha pendiente")}</small>
+        <small>${escapar(pedido.fecha ? new Date(pedido.fecha).toLocaleString("es-PE") : (pedido.creadoEnMs ? new Date(Number(pedido.creadoEnMs)).toLocaleString("es-PE") : "Fecha pendiente"))}</small>
         <ul class="cliente-items">${(Array.isArray(pedido.items) ? pedido.items : []).map((item) => `
-          <li><span>${escapar(item.nombre)} × ${Number(item.cantidad || 1)}</span><span>S/ ${Number(item.subtotal || 0).toFixed(2)}</span></li>`).join("")}</ul>
+          <li><span>${escapar(item.nombre || item.title || item.titulo)} × ${Number(item.cantidad || 1)}</span><span>S/ ${Number(item.subtotal || item.precio * (item.cantidad || 1) || 0).toFixed(2)}</span></li>`).join("")}</ul>
+        <div style="margin-top:12px;display:flex;gap:10px;justify-content:flex-end">
+          <button class="ver-detalle" data-id="${escapar(pedido.id)}">Ver detalle / comprobante</button>
+        </div>
       </article>`).join("") : '<p class="cuenta-vacio">Todavía no tienes pedidos. Tu próxima compra aparecerá aquí.</p>';
+
+    // delegado de eventos para botones Ver detalle
+    lista.querySelectorAll('.ver-detalle').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const id = btn.dataset.id;
+        abrirDetallePedido(id);
+      });
+    });
   } catch (error) {
     lista.innerHTML = '<p class="cuenta-vacio">No se pudo cargar el historial. Revisa la configuración de acceso.</p>';
     console.error(error);
   }
 }
+
+// Funciones para mostrar modal de detalle
+function seleccionarValor(obj, keys) {
+  for (const k of keys) {
+    if (obj && Object.prototype.hasOwnProperty.call(obj, k) && obj[k] != null) return obj[k];
+  }
+  return undefined;
+}
+
+function formatoMoneda(valor) {
+  const n = Number(valor || 0);
+  return `S/ ${n.toFixed(2)}`;
+}
+
+function limpiarModal() {
+  document.getElementById('pedidoModalCodigo').textContent = '#-';
+  document.getElementById('pedidoModalFecha').textContent = '';
+  document.getElementById('pedidoModalPagoEstado').textContent = '-';
+  document.getElementById('pedidoModalEntregaEstado').textContent = '-';
+  document.getElementById('pedidoModalItems').innerHTML = '';
+  document.getElementById('pedidoModalTotal').textContent = 'S/ 0.00';
+  document.getElementById('pedidoModalNombre').textContent = '-';
+  document.getElementById('pedidoModalEmail').textContent = '-';
+  document.getElementById('pedidoModalTelefono').textContent = '-';
+  document.getElementById('pedidoModalDireccion').textContent = '-';
+  document.getElementById('pedidoModalPagoId').textContent = '-';
+}
+
+function abrirModal() {
+  const modal = document.getElementById('pedidoModal');
+  modal.hidden = false; modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+function cerrarModal() {
+  const modal = document.getElementById('pedidoModal');
+  modal.hidden = true; modal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+function abrirDetallePedido(id) {
+  const pedido = pedidosCache.find(p => String(p.id) === String(id) || String(p.pedidoId) === String(id));
+  if (!pedido) return mostrarMensaje('No se encontró el pedido.');
+
+  limpiarModal();
+  // Código y fecha
+  document.getElementById('pedidoModalCodigo').textContent = String(pedido.pedidoId || pedido.id || '');
+  const fechaVal = seleccionarValor(pedido, ['fecha', 'fechaPedido', 'creadoEn', 'creadoEnMs']);
+  let fechaTexto = '';
+  if (fechaVal) {
+    let d = fechaVal;
+    if (typeof d === 'number') d = new Date(Number(d));
+    else if (typeof d === 'string' && !isNaN(Number(d))) d = new Date(Number(d));
+    else d = new Date(d);
+    fechaTexto = isNaN(d.getTime()) ? String(fechaVal) : d.toLocaleString('es-PE');
+  }
+  document.getElementById('pedidoModalFecha').textContent = fechaTexto || 'Fecha pendiente';
+
+  // Estados de pago y entrega: soportar varios nombres posibles  
+  const pagoEstado = seleccionarValor(pedido, ['pagoEstado','estadoPago','paymentStatus','pago','estadoPagoId']) || seleccionarValor(pedido.pago, ['status','estado','payment_status']) || pedido.estadoPago || pedido.paymentStatus;
+  const entregaEstado = seleccionarValor(pedido, ['entregaEstado','estadoEntrega','deliveryStatus','estado']) || seleccionarValor(pedido.envio, ['estado','status']) || pedido.estado || 'pendiente';
+  document.getElementById('pedidoModalPagoEstado').textContent = String(pagoEstado || (pedido.pagado ? 'pagado' : 'pendiente'));
+  document.getElementById('pedidoModalEntregaEstado').textContent = String(entregaEstado || 'pendiente');
+
+  // Items: normalizar nombre, cantidad, precio unitario y subtotal  
+  const items = Array.isArray(pedido.items) ? pedido.items : (Array.isArray(pedido.productos) ? pedido.productos : []);
+  const tbody = document.getElementById('pedidoModalItems');
+  let calcTotal = Number(pedido.total || pedido.totalPagado || pedido.monto || 0);
+  if (!calcTotal) calcTotal = 0;
+  items.forEach((it) => {
+    const nombre = seleccionarValor(it, ['nombre','title','titulo']) || 'Producto';
+    const cantidad = Number(seleccionarValor(it, ['cantidad','qty','cantidadUnit']) || 1);
+    let precioUnit = seleccionarValor(it, ['precio','precioUnitario','unitPrice','price']) || seleccionarValor(it, ['valor']) || 0;
+    precioUnit = Number(precioUnit || 0);
+    let subtotal = seleccionarValor(it, ['subtotal','subTotal','importe']) || it.subtotal || (precioUnit * cantidad);
+    subtotal = Number(subtotal || precioUnit * cantidad || 0);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapar(nombre)}</td><td>${cantidad}</td><td>${formatoMoneda(precioUnit)}</td><td>${formatoMoneda(subtotal)}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Total pagado: soportar múltiples nombres
+  const totalValor = seleccionarValor(pedido, ['total','totalPagado','monto','amount','paidAmount']) || calcTotal;
+  document.getElementById('pedidoModalTotal').textContent = formatoMoneda(totalValor);
+
+  // Datos comprador / entrega: aceptar diferentes caminos
+  const comprador = pedido.comprador || pedido.cliente || pedido.customer || {};
+  const nombreComprador = seleccionarValor(comprador, ['nombre','name','nombreCompleto']) || seleccionarValor(pedido, ['nombreCliente','clienteNombre']) || '';
+  const emailComprador = seleccionarValor(comprador, ['email','correo']) || seleccionarValor(pedido, ['email']) || '';
+  const telefonoComprador = seleccionarValor(comprador, ['telefono','celular','phone']) || '';
+  const direccionComprador = seleccionarValor(comprador, ['direccion','direccionEntrega','address']) || seleccionarValor(pedido, ['direccion','direccionEntrega']) || '';
+  document.getElementById('pedidoModalNombre').textContent = nombreComprador || '-';
+  document.getElementById('pedidoModalEmail').textContent = emailComprador || '-';
+  document.getElementById('pedidoModalTelefono').textContent = telefonoComprador || '-';
+  document.getElementById('pedidoModalDireccion').textContent = direccionComprador || '-';
+
+  // Identificador de pago (Mercado Pago u otros)
+  const pagoId = seleccionarValor(pedido, ['pagoId','paymentId','mercadoPagoId','mp_id','mpPaymentId']) || seleccionarValor(pedido.pago || {}, ['id','external_reference','payment_id','paymentId']) || seleccionarValor(pedido, ['idPago','id_pago']);
+  document.getElementById('pedidoModalPagoId').textContent = pagoId ? String(pagoId) : '-';
+
+  // Abrir modal
+  abrirModal();
+}
+
+// Listeners para botones del modal (delegados globales)
+document.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'cerrarPedidoModal') cerrarModal();
+  if (e.target && e.target.id === 'imprimirPedido') {
+    // Preparar impresión: window.print() y CSS @media print se encarga de mostrar solo el modal
+    window.print();
+  }
+  // cerrar si hace click en overlay
+  if (e.target && e.target.classList && e.target.classList.contains('pedido-modal-overlay')) cerrarModal();
+});
 
 async function abrirPanel(user) {
   usuarioActual = user;
