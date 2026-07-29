@@ -17,6 +17,7 @@ const MP_NOTIFICATION_URL = String(process.env.MP_NOTIFICATION_URL || "").trim()
 const MP_WEBHOOK_SECRET = String(process.env.MP_WEBHOOK_SECRET || "").trim();
 const MP_WEBHOOK_SECRET_TEST = String(process.env.MP_WEBHOOK_SECRET_TEST || "").trim();
 const CONTROL_INVENTARIO = String(process.env.CONTROL_INVENTARIO || "false").toLowerCase() === "true";
+const INVENTARIO_MOVIMIENTOS_COLLECTION = "movimientosInventario";
 const ALLOWED_ORIGINS = new Set(
   (process.env.ALLOWED_ORIGINS || `${PUBLIC_BASE_URL},http://localhost:5500,http://127.0.0.1:5500`)
     .split(",").map((origin) => origin.trim().replace(/\/$/, "")).filter(Boolean)
@@ -251,51 +252,203 @@ function validarDatosPagoPedido(pago) {
   };
 }
 
-async function confirmarPedidoPagado(validacion, pago) {
-  if (!adminDb || !validacion.valido || !validacion.pedidoId) return;
+function extraerProductosDePago(pago) {
+  let carrito = pago.metadata?.carrito;
 
-  const pedidoRef = adminDb.collection("pedidos").doc(String(validacion.pedidoId));
+  if (typeof carrito === "string") {
+    try { carrito = JSON.parse(carrito); } catch (_error) { carrito = null; }
+  }
+
+  if (!Array.isArray(carrito) || carrito.length < 1) return null;
+
+  const productos = [];
+  for (const item of carrito) {
+    const producto = CATALOGO.porSku.get(String(item?.sku || ""));
+    const cantidad = Number(item?.cantidad);
+    if (!producto || !Number.isInteger(cantidad) || cantidad < 1 || cantidad > 20) return null;
+    productos.push({ ...producto, cantidad });
+  }
+
+  return productos;
+}
+
+function construirMovimientoId(paymentId, sku, tipo) {
+  return `mov-${String(paymentId).replace(/[^a-zA-Z0-9_-]/g, "_")}-${String(sku).replace(/[^a-zA-Z0-9_-]/g, "_")}-${tipo}`;
+}
+
+function estadoPedidoDesdePago(status) {
+  const clave = String(status || "").toLowerCase();
+  if (clave === "approved") return "pagado";
+  if (clave === "cancelled") return "cancelado";
+  if (clave === "refunded") return "reembolsado";
+  if (clave === "rejected") return "rechazado";
+  if (clave === "pending") return "pendiente";
+  if (clave === "in_process") return "en proceso";
+  return clave || "pendiente";
+}
+
+function esPagoAprobado(status) {
+  return String(status || "").toLowerCase() === "approved";
+}
+
+function esPagoRestauracion(status) {
+  return ["cancelled", "refunded"].includes(String(status || "").toLowerCase());
+}
+
+async function procesarPagoInventario(pago) {
+  if (!adminDb) return { valido: false, error: "El servidor no está disponible." };
+
+  const status = String(pago.status || "").toLowerCase();
+  const paymentId = String(pago.id || "").trim();
+  const pedidoId = String(pago.metadata?.pedido_id || pago.external_reference || "").trim();
+  const productos = extraerProductosDePago(pago);
+  const totalPagado = Number(pago.transaction_amount || 0);
+
+  if (!pedidoId || !productos) {
+    return { valido: false, estado: status, pedidoId, total: totalPagado, error: "El pago no contiene datos de pedido válidos." };
+  }
+
+  const validacionAprobada = validarDatosPagoPedido(pago);
+  const pedidoRef = adminDb.collection("pedidos").doc(pedidoId);
 
   await adminDb.runTransaction(async (transaccion) => {
-    const pedido = await transaccion.get(pedidoRef);
-    if (pedido.exists && pedido.data().estadoPago === "approved") return;
+    const pedidoSnap = await transaccion.get(pedidoRef);
+    if (!pedidoSnap.exists) return;
 
-    const inventarios = [];
+    const pedido = pedidoSnap.data() || {};
+    const pagoAnterior = String(pedido.estadoPago || "").toLowerCase();
+    const debeAplicarDescuento = esPagoAprobado(status) && validacionAprobada.valido && pagoAnterior !== "approved";
+    const debeRestaurar = esPagoRestauracion(status) && pagoAnterior === "approved";
 
-    for (const producto of validacion.productos) {
-      const referencia = adminDb.collection("inventario").doc(producto.sku);
-      const snapshot = await transaccion.get(referencia);
-      inventarios.push({ referencia, snapshot, producto });
+    if (debeAplicarDescuento) {
+      transaccion.set(pedidoRef, {
+        pedidoId,
+        total: totalPagado,
+        moneda: "PEN",
+        estado: "pagado",
+        estadoPago: "approved",
+        paymentId,
+        pagadoEnMs: Date.now(),
+        actualizadoEnMs: Date.now()
+      }, { merge: true });
+
+      if (!CONTROL_INVENTARIO) {
+        return;
+      }
+
+      const descuentos = [];
+
+      for (const producto of productos) {
+        const inventarioRef = adminDb.collection("inventario").doc(producto.sku);
+        const movimientoRef = adminDb.collection(INVENTARIO_MOVIMIENTOS_COLLECTION)
+          .doc(construirMovimientoId(paymentId, producto.sku, "descuento"));
+        const snapshotInventario = await transaccion.get(inventarioRef);
+        const snapshotMovimiento = await transaccion.get(movimientoRef);
+
+        if (!snapshotInventario.exists) {
+          throw new Error(`No existe inventario para ${producto.sku}.`);
+        }
+
+        const datosInventario = snapshotInventario.data();
+        const stockAnterior = Number(datosInventario.stock || 0);
+
+        if (stockAnterior < producto.cantidad) {
+          throw new Error(`No hay stock suficiente de ${producto.nombre}.`);
+        }
+
+        if (snapshotMovimiento.exists) continue;
+
+        descuentos.push({ inventarioRef, movimientoRef, datosInventario, producto, stockAnterior });
+      }
+
+      for (const { inventarioRef, movimientoRef, datosInventario, producto, stockAnterior } of descuentos) {
+        const stockNuevo = stockAnterior - producto.cantidad;
+
+        transaccion.update(inventarioRef, {
+          stock: stockNuevo,
+          vendidos: Number(datosInventario.vendidos || 0) + producto.cantidad,
+          actualizadoEnMs: Date.now()
+        });
+
+        transaccion.set(movimientoRef, {
+          sku: producto.sku,
+          producto: producto.nombre,
+          cantidad: producto.cantidad,
+          pedidoId,
+          paymentId,
+          tipo: "descuento",
+          stockAnterior,
+          stockNuevo,
+          fecha: new Date().toISOString(),
+          creadoEnMs: Date.now()
+        });
+      }
+      return;
+    }
+
+    if (debeRestaurar) {
+      transaccion.set(pedidoRef, {
+        estado: estadoPedidoDesdePago(status),
+        estadoPago: status,
+        actualizadoEnMs: Date.now()
+      }, { merge: true });
+
+      if (!CONTROL_INVENTARIO) {
+        return;
+      }
+
+      for (const producto of productos) {
+        const inventarioRef = adminDb.collection("inventario").doc(producto.sku);
+        const restauracionRef = adminDb.collection(INVENTARIO_MOVIMIENTOS_COLLECTION)
+          .doc(construirMovimientoId(paymentId, producto.sku, "restauracion"));
+        const snapshotInventario = await transaccion.get(inventarioRef);
+        const snapshotRestauracion = await transaccion.get(restauracionRef);
+
+        if (!snapshotInventario.exists || snapshotRestauracion.exists) continue;
+        const datosInventario = snapshotInventario.data();
+        const stockAnterior = Number(datosInventario.stock || 0);
+        const stockNuevo = stockAnterior + producto.cantidad;
+
+        transaccion.update(inventarioRef, {
+          stock: stockNuevo,
+          actualizadoEnMs: Date.now()
+        });
+
+        transaccion.set(restauracionRef, {
+          sku: producto.sku,
+          producto: producto.nombre,
+          cantidad: producto.cantidad,
+          pedidoId,
+          paymentId,
+          tipo: "restauracion",
+          stockAnterior,
+          stockNuevo,
+          fecha: new Date().toISOString(),
+          creadoEnMs: Date.now()
+        });
+      }
+      return;
     }
 
     transaccion.set(pedidoRef, {
-      pedidoId: String(validacion.pedidoId),
-      total: validacion.total,
-      moneda: "PEN",
-      estado: "pagado",
-      estadoPago: "approved",
-      paymentId: String(pago.id || ""),
-      pagadoEnMs: Date.now(),
+      estado: estadoPedidoDesdePago(status),
+      estadoPago: status,
       actualizadoEnMs: Date.now()
     }, { merge: true });
-
-    inventarios.forEach(({ referencia, snapshot, producto }) => {
-      if (!snapshot.exists) return;
-      const datos = snapshot.data();
-      transaccion.update(referencia, {
-        stock: Math.max(0, Number(datos.stock || 0) - producto.cantidad),
-        vendidos: Number(datos.vendidos || 0) + producto.cantidad,
-        actualizadoEnMs: Date.now()
-      });
-    });
   });
+
+  return {
+    valido: esPagoAprobado(status) && validacionAprobada.valido,
+    estado: status,
+    pedidoId,
+    total: totalPagado,
+    error: esPagoAprobado(status) && !validacionAprobada.valido ? validacionAprobada.error : ""
+  };
 }
 
 async function consultarYProcesarPagoPedido(paymentId) {
   const pago = await consultarMercadoPago(`/v1/payments/${paymentId}`);
-  const validacion = validarDatosPagoPedido(pago);
-  if (validacion.valido) await confirmarPedidoPagado(validacion, pago);
-  return validacion;
+  return await procesarPagoInventario(pago);
 }
 
 async function comprobarInventario(productos) {
@@ -333,6 +486,31 @@ app.get("/inventario", async (_req, res) => {
     return res.json({ activo: CONTROL_INVENTARIO, productos });
   } catch (_error) {
     return res.status(503).json({ error: "No se pudo consultar el inventario." });
+  }
+});
+
+app.get("/movimientos-inventario", async (req, res) => {
+  if (!adminDb) return res.json({ activo: false, movimientos: [] });
+
+  if (!req.headers.authorization || !req.headers.authorization.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "No autorizado." });
+  }
+
+  const token = req.headers.authorization.slice(7).trim();
+  if (token !== ACCESS_TOKEN) {
+    return res.status(403).json({ error: "Acceso prohibido." });
+  }
+
+  try {
+    const snapshot = await adminDb.collection(INVENTARIO_MOVIMIENTOS_COLLECTION)
+      .orderBy("creadoEnMs", "desc")
+      .limit(200)
+      .get();
+
+    const movimientos = snapshot.docs.map((documento) => ({ id: documento.id, ...documento.data() }));
+    return res.json({ activo: CONTROL_INVENTARIO, movimientos });
+  } catch (_error) {
+    return res.status(503).json({ error: "No se pudo consultar los movimientos de inventario." });
   }
 });
 
@@ -473,57 +651,74 @@ app.get("/verificar-pago-productos/:paymentId", async (req, res) => {
 });
 
 app.post("/webhook-mercadopago", async (req, res) => {
-  const paymentId = String(req.query["data.id"] || req.body?.data?.id || "");
+  const paymentId = String(
+    req.query["data.id"] || req.body?.data?.id || ""
+  );
 
-  if (!MP_WEBHOOK_SECRET || !/^\d{1,30}$/.test(paymentId)) {
+  if (
+    (!MP_WEBHOOK_SECRET && !MP_WEBHOOK_SECRET_TEST) ||
+    !/^\d{1,30}$/.test(paymentId)
+  ) {
     return res.sendStatus(400);
   }
 
   try {
     const secretosWebhook = [
-  MP_WEBHOOK_SECRET,
-  MP_WEBHOOK_SECRET_TEST
-].filter(Boolean);
+      MP_WEBHOOK_SECRET,
+      MP_WEBHOOK_SECRET_TEST
+    ].filter(Boolean);
 
-let firmaValida = false;
+    let firmaValida = false;
 
-for (const secret of secretosWebhook) {
-  try {
-    WebhookSignatureValidator.validate({
-      xSignature: req.headers["x-signature"],
-      xRequestId: req.headers["x-request-id"],
-      dataId: paymentId,
-      secret
-    });
+    for (const secret of secretosWebhook) {
+      try {
+        WebhookSignatureValidator.validate({
+          xSignature: req.headers["x-signature"],
+          xRequestId: req.headers["x-request-id"],
+          dataId: paymentId,
+          secret
+        });
 
-    firmaValida = true;
-    break;
-  } catch (error) {
-    if (!(error instanceof InvalidWebhookSignatureError)) throw error;
-  }
-}
+        firmaValida = true;
+        break;
+      } catch (error) {
+        if (!(error instanceof InvalidWebhookSignatureError)) {
+          throw error;
+        }
+      }
+    }
 
-if (!firmaValida) return res.sendStatus(401);
+    if (!firmaValida) {
+      return res.sendStatus(401);
+    }
 
     console.log("Webhook Mercado Pago recibido.", {
-  paymentId,
-  action: req.body?.action || "",
-  fecha: new Date().toISOString()
-});
+      paymentId,
+      action: req.body?.action || "",
+      fecha: new Date().toISOString()
+    });
 
-res.sendStatus(200);
+    // Procesa el pago después de responder a Mercado Pago.
+    setImmediate(() => {
+      consultarYProcesarPagoPedido(paymentId).catch((error) => {
+        console.error("No se pudo procesar el pago del webhook.", {
+          paymentId,
+          message: error.message
+        });
+      });
+    });
 
-consultarYProcesarPagoPedido(paymentId).catch((error) => {
-  console.error("No se pudo procesar el pago después de responder al webhook.", {
-    paymentId,
-    message: error.message
-  });
-});
-
-return;
+    // Mercado Pago recibe la respuesta inmediatamente.
+    return res.sendStatus(200);
   } catch (error) {
-    if (error instanceof InvalidWebhookSignatureError) return res.sendStatus(401);
-    console.error("No se pudo procesar el webhook de Mercado Pago.", { message: error.message });
+    if (error instanceof InvalidWebhookSignatureError) {
+      return res.sendStatus(401);
+    }
+
+    console.error("No se pudo validar el webhook de Mercado Pago.", {
+      message: error.message
+    });
+
     return res.sendStatus(500);
   }
 });
