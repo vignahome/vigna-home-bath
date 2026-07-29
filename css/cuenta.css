@@ -17,3 +17,34 @@ form.cuenta-card{display:flex;flex-direction:column;gap:9px}.cuenta-card h2,.ped
 .cuenta-mensaje{position:fixed;right:18px;bottom:18px;max-width:340px;padding:14px 18px;border:1px solid var(--borde);border-radius:12px;background:#171717;box-shadow:0 20px 50px rgba(0,0,0,.45);font-size:.8rem}
 @media(max-width:720px){.cuenta-formularios{grid-template-columns:1fr}.cuenta-resumen{grid-template-columns:1fr}.cuenta-panel-cabecera{align-items:flex-start;flex-direction:column}.cliente-pedido-cabecera{grid-template-columns:1fr auto}.cliente-pedido-cabecera strong{grid-column:1/-1}.cuenta-card{padding:20px 14px}}
 @media(max-width:480px){.cuenta-header{height:64px;padding:0 12px}.cuenta-header>a:first-child,.cuenta-header img{width:88px}.cuenta-header img{height:84px}.cuenta-header>a:last-child{font-size:.7rem}.cuenta-main{width:calc(100% - 20px);padding-top:38px}.pedidos-titulo{align-items:flex-start;flex-direction:column}}
+
+/* Estilos para modal de pedido */
+.pedido-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:1200}
+.pedido-modal-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.6),rgba(0,0,0,.85))}
+.pedido-modal-contenido{position:relative;z-index:2;max-width:920px;width:calc(100% - 28px);background:#070707;border:1px solid var(--borde);border-radius:12px;padding:18px;box-shadow:0 40px 120px rgba(0,0,0,.6);color:var(--texto)}
+.pedido-modal-cabecera{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.pedido-modal-cabecera .oro{color:var(--oro);margin:0}.pedido-modal-cabecera h2{margin:6px 0 4px;font:700 1.4rem "Cinzel",serif}
+.pedido-modal-cabecera small{color:var(--suave)}
+.pedido-modal-acciones{display:flex;gap:8px;align-items:center}
+.btn-oro{background:var(--oro);color:#111;border:0;padding:8px 12px;border-radius:8px;font-weight:800}
+.btn-cerrar{background:transparent;color:var(--texto);border:1px solid rgba(255,255,255,.08);padding:8px 12px;border-radius:8px}
+.pedido-modal-body{margin-top:12px;display:grid;grid-template-columns:1fr 320px;gap:18px}
+.pedido-estados{display:flex;gap:12px;align-items:center;color:var(--suave)}
+.pedido-items-wrapper{overflow:auto;border:1px solid rgba(255,255,255,.04);border-radius:8px}
+.pedido-items{width:100%;border-collapse:collapse;color:rgba(255,255,255,.85)}
+.pedido-items th{text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--oro)}
+.pedido-items td{padding:10px;border-bottom:1px solid rgba(255,255,255,.03);font-size:.92rem}
+.pedido-total{margin-top:10px;text-align:right;color:var(--oro);font-weight:800}
+.pedido-entrega{padding:12px;border:1px solid rgba(255,255,255,.04);border-radius:10px;background:rgba(255,255,255,.02)}
+.pedido-entrega h3,.pedido-datos h3{margin:0 0 10px;color:var(--oro);font-weight:800}
+
+@media(max-width:760px){.pedido-modal-body{grid-template-columns:1fr}.pedido-modal-contenido{padding:14px}.pedido-modal-cabecera{flex-direction:column;align-items:flex-start}.pedido-modal-acciones{align-self:flex-end}}
+
+/* Impresión: mostrar sólo el comprobante */
+@media print{
+  body *{visibility:hidden}
+  .pedido-modal, .pedido-modal *{visibility:visible}
+  .pedido-modal{position:static;inset:auto;padding:0;margin:0;background:#fff;color:#000}
+  .pedido-modal-contenido{background:#fff;border:0;box-shadow:none;color:#000}
+  .pedido-items th{color:#333}
+}
