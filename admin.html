@@ -112,6 +112,53 @@
     </main>
   </div>
 
+  <div id="pedidoModal" class="pedido-modal" hidden aria-hidden="true">
+    <div class="pedido-modal-overlay" tabindex="-1"></div>
+    <div class="pedido-modal-contenido" role="dialog" aria-modal="true" aria-labelledby="pedidoModalTitulo">
+      <header class="pedido-modal-cabecera">
+        <div>
+          <p id="pedidoModalTitulo" class="oro">Detalle del pedido</p>
+          <h2 id="pedidoModalCodigo">#0000</h2>
+          <small id="pedidoModalFecha">Fecha</small>
+        </div>
+        <div class="pedido-modal-acciones">
+          <button id="whatsappPedidoModal" class="btn-oro">Contactar WhatsApp</button>
+          <button id="imprimirPedidoModal" class="btn-oro">Imprimir pedido</button>
+          <button id="cerrarPedidoModal" class="btn-cerrar">Cerrar</button>
+        </div>
+      </header>
+      <section class="pedido-modal-body">
+        <div class="pedido-modal-tracking" id="pedidoModalTracking" aria-label="Seguimiento del pedido"></div>
+
+        <div class="pedido-estados">
+          <div>Pago: <strong id="pedidoModalPagoEstado">-</strong></div>
+          <div>Pago MP: <strong id="pedidoModalMPId">-</strong></div>
+        </div>
+
+        <div class="pedido-datos">
+          <h3>Cliente</h3>
+          <div>Nombre: <strong id="pedidoModalNombre">-</strong></div>
+          <div>Correo: <strong id="pedidoModalEmail">-</strong></div>
+          <div>Celular: <strong id="pedidoModalTelefono">-</strong></div>
+          <div>Dirección: <strong id="pedidoModalDireccion">-</strong></div>
+        </div>
+
+        <div class="pedido-items-detalle">
+          <h3>Productos</h3>
+          <div class="pedido-items-wrapper">
+            <table class="pedido-items" aria-labelledby="pedidoModalTitulo">
+              <thead>
+                <tr><th>Producto</th><th>Cantidad</th><th>Precio unit.</th><th>Subtotal</th></tr>
+              </thead>
+              <tbody id="pedidoModalItems"></tbody>
+            </table>
+          </div>
+          <div class="pedido-total">Total: <strong id="pedidoModalTotal">S/ 0.00</strong></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
   <div id="adminMensaje" class="admin-mensaje" hidden role="status"></div>
   <script type="module" src="js/admin.js?v=1"></script>
 </body>

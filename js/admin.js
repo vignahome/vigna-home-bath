@@ -35,6 +35,188 @@ function escapar(valor) {
     .replaceAll("'", "&#039;");
 }
 
+function obtenerEstadoPedido(pedido) {
+  const estado = pedido.estado || pedido.estadoPedido || pedido.pedidoEstado || pedido.estadoPago || "";
+  return String(estado || "").toLowerCase();
+}
+
+function traducirEstadoPago(estado) {
+  const clave = String(estado || "").toLowerCase();
+  const traducciones = {
+    pendiente: "Pendiente",
+    pagado: "Pagado",
+    aprobado: "Aprobado",
+    rechazado: "Rechazado",
+    cancelado: "Cancelado",
+    preparando: "En preparación",
+    enviado: "Enviado",
+    entregado: "Entregado"
+  };
+  return traducciones[clave] || estado || "Pendiente";
+}
+
+function obtenerDireccionCompleta(pedido) {
+  const comprador = pedido.comprador || pedido.cliente || pedido.customer || {};
+  const partes = [
+    comprador.direccion || comprador.direccionEntrega || comprador.address || pedido.direccion || pedido.direccionEntrega || "",
+    comprador.distrito || comprador.district || comprador.city || "",
+    comprador.provincia || comprador.state || "",
+    comprador.departamento || comprador.region || comprador.region || "",
+    comprador.pais || comprador.country || ""
+  ].map((parte) => String(parte || "").trim()).filter(Boolean);
+  return partes.join(", ") || "-";
+}
+
+function obtenerTelefonoPedido(pedido) {
+  const comprador = pedido.comprador || pedido.cliente || pedido.customer || {};
+  return String(comprador.telefono || comprador.celular || comprador.phone || pedido.telefono || pedido.celular || "").trim();
+}
+
+function obtenerEmailPedido(pedido) {
+  const comprador = pedido.comprador || pedido.cliente || pedido.customer || {};
+  return String(comprador.email || comprador.correo || pedido.email || "").trim();
+}
+
+function obtenerNombrePedido(pedido) {
+  const comprador = pedido.comprador || pedido.cliente || pedido.customer || {};
+  return String(comprador.nombre || comprador.name || comprador.nombreCompleto || pedido.nombreCliente || pedido.clienteNombre || "Cliente VIGNA").trim();
+}
+
+function obtenerMpId(pedido) {
+  return String(pedido.pagoId || pedido.paymentId || pedido.mp_id || pedido.mpPaymentId || pedido.payment_id || pedido.pago?.id || pedido.idPago || "").trim();
+}
+
+function obtenerProductosPedido(pedido) {
+  return Array.isArray(pedido.items) ? pedido.items : Array.isArray(pedido.productos) ? pedido.productos : [];
+}
+
+function mostrarModalPedido(pedido) {
+  const modal = document.getElementById("pedidoModal");
+  document.getElementById("pedidoModalCodigo").textContent = `#${escapar(pedido.pedidoId || pedido.id || "")}`;
+
+  const fecha = pedido.creadoEnMs ? new Date(Number(pedido.creadoEnMs)) : new Date(pedido.fecha || pedido.creadoEn || "");
+  document.getElementById("pedidoModalFecha").textContent = isNaN(fecha.getTime()) ? "Fecha pendiente" : fecha.toLocaleString("es-PE");
+
+  document.getElementById("pedidoModalNombre").textContent = escapar(obtenerNombrePedido(pedido));
+  document.getElementById("pedidoModalEmail").textContent = escapar(obtenerEmailPedido(pedido));
+  document.getElementById("pedidoModalTelefono").textContent = escapar(obtenerTelefonoPedido(pedido));
+  document.getElementById("pedidoModalDireccion").textContent = escapar(obtenerDireccionCompleta(pedido));
+  document.getElementById("pedidoModalMPId").textContent = escapar(obtenerMpId(pedido)) || "-";
+
+  const pagoEstado = pedido.estadoPago || pedido.pago?.estado || pedido.pago?.status || pedido.paymentStatus || pedido.estado || "pendiente";
+  document.getElementById("pedidoModalPagoEstado").textContent = escapar(traducirEstadoPago(pagoEstado));
+
+  const tbody = document.getElementById("pedidoModalItems");
+  tbody.innerHTML = "";
+  let total = Number(pedido.total || pedido.totalPagado || pedido.monto || pedido.amount || 0);
+  obtenerProductosPedido(pedido).forEach((item) => {
+    const nombre = escapar(item.nombre || item.title || item.titulo || item.sku || "Producto");
+    const cantidad = Number(item.cantidad || item.qty || item.cantidadUnit || 1);
+    const precioUnit = Number(item.precio || item.precioUnitario || item.unitPrice || item.price || item.valor || 0);
+    const subtotal = Number(item.subtotal || item.subTotal || item.importe || precioUnit * cantidad || 0);
+    const fila = document.createElement("tr");
+    fila.innerHTML = `<td>${nombre}</td><td>${cantidad}</td><td>S/ ${precioUnit.toFixed(2)}</td><td>S/ ${subtotal.toFixed(2)}</td>`;
+    tbody.appendChild(fila);
+    if (!total) total += subtotal;
+  });
+
+  document.getElementById("pedidoModalTotal").textContent = `S/ ${Number(total).toFixed(2)}`;
+
+  const container = document.getElementById("pedidoModalTracking");
+  const estado = obtenerEstadoPedido(pedido);
+  const pasoPago = ["pagado", "preparando", "enviado", "entregado"].includes(estado) || pedido.pagado === true;
+  const pasoPreparando = ["preparando", "enviado", "entregado"].includes(estado);
+  const pasoEnviado = ["enviado", "entregado"].includes(estado);
+  const pasoEntregado = estado === "entregado";
+  container.innerHTML = [
+    { label: "Pago confirmado", completo: pasoPago },
+    { label: "Preparando pedido", completo: pasoPreparando },
+    { label: "Pedido enviado", completo: pasoEnviado },
+    { label: "Pedido entregado", completo: pasoEntregado }
+  ].map((paso) => `
+    <div class="seguimiento-paso${paso.completo ? " completado" : ""}">
+      <span class="paso-nombre">${escapar(paso.label)}</span>
+      <span class="paso-estado">${paso.completo ? "Completado" : "Pendiente"}</span>
+    </div>`).join("");
+
+  modal.hidden = false;
+  modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  modal.dataset.pedidoId = pedido.id || pedido.pedidoId || "";
+}
+
+function cerrarModalPedido() {
+  const modal = document.getElementById("pedidoModal");
+  modal.hidden = true;
+  modal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+function generarWhatsappLink(pedido) {
+  const telefono = obtenerTelefonoPedido(pedido).replace(/[^0-9+]/g, "");
+  if (!telefono) return "";
+  const texto = encodeURIComponent(`Hola ${obtenerNombrePedido(pedido)}, te escribo desde VIGNA para hablar sobre tu pedido ${pedido.pedidoId || pedido.id || ""}.`);
+  return `https://wa.me/${telefono.replace(/^\+/, "")}??text=${texto}`.replace("??", "?");
+}
+
+function abrirWhatsappPedido() {
+  const modal = document.getElementById("pedidoModal");
+  const pedidoId = modal.dataset.pedidoId;
+  const pedido = pedidos.find((item) => String(item.id) === String(pedidoId) || String(item.pedidoId) === String(pedidoId));
+  if (!pedido) return mostrarMensaje("No se encontró el pedido para WhatsApp.");
+  const link = generarWhatsappLink(pedido);
+  if (!link) return mostrarMensaje("Teléfono del cliente no disponible.");
+  window.open(link, "_blank");
+}
+
+function crearHtmlPedidoImpresion(contenido) {
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Pedido ${escapar(contenido.pedidoId || "")}</title>
+<style>
+  body{margin:0;padding:16px;font-family:'Montserrat',sans-serif;color:#000;background:#fff;}
+  .pedido-modal-contenido{max-width:100%;border:none;box-shadow:none;color:#000;}
+  .pedido-modal-cabecera{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;}
+  .pedido-modal-cabecera .oro{color:#000;font-size:0.92rem;}
+  .pedido-modal-cabecera h2{margin:4px 0 0;font-size:1.25rem;font-weight:700;}
+  .pedido-modal-cabecera small{color:#333;}
+  .pedido-modal-tracking{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:16px 0;}
+  .seguimiento-paso{padding:10px;border:1px solid #bbb;border-radius:10px;background:#f7f7f7;}
+  .seguimiento-paso.completado{border-color:#b68913;background:#fff3d7;}
+  .seguimiento-paso .paso-nombre{font-weight:700;}
+  .pedido-estados{display:flex;flex-wrap:wrap;gap:18px;margin-bottom:14px;color:#000;}
+  .pedido-items{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10pt;}
+  .pedido-items th,.pedido-items td{padding:8px;border:1px solid #ccc;word-break:break-word;}
+  .pedido-items th{background:#f0f0f0;text-align:left;}
+  .pedido-items td:nth-child(2),.pedido-items td:nth-child(3),.pedido-items td:nth-child(4){text-align:right;}
+  .pedido-total{margin-top:10px;text-align:right;font-weight:700;}
+  .pedido-entrega{margin-top:16px;padding:10px;border:1px solid #ccc;border-radius:10px;background:#f7f7f7;}
+  .pedido-entrega h3{margin-top:0;}
+  @page{size:A4 portrait;margin:16mm;}
+</style>
+</head>
+<body>${contenido}</body>
+</html>`;
+}
+
+function imprimirPedidoModal() {
+  const contenido = document.querySelector("#pedidoModal .pedido-modal-contenido");
+  if (!contenido) return;
+  const clon = contenido.cloneNode(true);
+  clon.querySelector('.pedido-modal-acciones')?.remove();
+  const printWindow = window.open('', '_blank', 'width=900,height=700');
+  if (!printWindow) return mostrarMensaje('No se pudo abrir la ventana de impresión.');
+  printWindow.document.write(crearHtmlPedidoImpresion(clon.outerHTML));
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.onload = () => {
+    printWindow.print();
+    setTimeout(() => printWindow.close(), 500);
+  };
+}
+
 function mostrarMensaje(texto, error = false) {
   const mensaje = document.getElementById("adminMensaje");
   mensaje.textContent = texto;
@@ -179,7 +361,7 @@ function tablaPedidos(lista) {
     <table class="admin-tabla">
       <thead><tr><th>Pedido</th><th>Cliente</th><th>Total</th><th>Pago</th><th>Estado</th><th>Fecha</th></tr></thead>
       <tbody>${lista.map((pedido) => `
-        <tr>
+        <tr data-abrir-pedido="${escapar(pedido.id)}" class="pedido-fila" title="Ver detalle del pedido">
           <td><strong>${escapar(pedido.pedidoId || pedido.id)}</strong></td>
           <td>${escapar(pedido.comprador?.nombre || pedido.compradorNombre || "Cliente")}</td>
           <td>S/ ${Number(pedido.total || 0).toFixed(2)}</td>
@@ -291,6 +473,18 @@ document.addEventListener("click", async (evento) => {
   if (ir) mostrarSeccion(ir.dataset.ir);
   const guardar = evento.target.closest(".guardar-stock");
   if (guardar) await guardarStock(guardar.dataset.sku);
+
+  if (evento.target.id === "cerrarPedidoModal") return cerrarModalPedido();
+  if (evento.target.id === "imprimirPedidoModal") return imprimirPedidoModal();
+  if (evento.target.id === "whatsappPedidoModal") return abrirWhatsappPedido();
+
+  if (evento.target.closest(".cambiar-estado-pedido")) return;
+  const fila = evento.target.closest("tr[data-abrir-pedido]");
+  if (fila) {
+    const pedidoId = fila.dataset.abrirPedido;
+    const pedido = pedidos.find((item) => String(item.id) === pedidoId || String(item.pedidoId) === pedidoId);
+    if (pedido) mostrarModalPedido(pedido);
+  }
 });
 
 document.addEventListener("change", async (evento) => {
