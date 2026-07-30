@@ -7,6 +7,7 @@ const path = require("node:path");
 const { randomUUID } = require("node:crypto");
 const { initializeApp: initializeAdminApp, cert, applicationDefault, getApps: getAdminApps } = require("firebase-admin/app");
 const { getFirestore: getAdminFirestore } = require("firebase-admin/firestore");
+const { getAuth: getAdminAuth } = require("firebase-admin/auth");
 const { WebhookSignatureValidator, InvalidWebhookSignatureError } = require("mercadopago");
 const app = express();
 
@@ -616,27 +617,71 @@ app.get("/inventario", async (_req, res) => {
 });
 
 app.get("/movimientos-inventario", async (req, res) => {
-  if (!adminDb) return res.json({ activo: false, movimientos: [] });
+  if (!adminDb) {
+    return res.status(503).json({
+      activo: false,
+      movimientos: [],
+      error: "El servidor no está disponible."
+    });
+  }
 
-  if (!req.headers.authorization || !req.headers.authorization.startsWith("Bearer ")) {
+  const autorizacion = String(req.headers.authorization || "");
+
+  if (!autorizacion.startsWith("Bearer ")) {
     return res.status(401).json({ error: "No autorizado." });
   }
 
-  const token = req.headers.authorization.slice(7).trim();
-  if (token !== ACCESS_TOKEN) {
-    return res.status(403).json({ error: "Acceso prohibido." });
+  const idToken = autorizacion.slice(7).trim();
+
+  if (!idToken) {
+    return res.status(401).json({ error: "No autorizado." });
   }
 
   try {
-    const snapshot = await adminDb.collection(INVENTARIO_MOVIMIENTOS_COLLECTION)
+    const usuario = await getAdminAuth().verifyIdToken(idToken);
+    const adminSnap = await adminDb
+      .collection("admins")
+      .doc(usuario.uid)
+      .get();
+
+    const adminDatos = adminSnap.data() || {};
+
+    if (
+      !adminSnap.exists ||
+      adminDatos.activo === false ||
+      adminDatos.rol !== "admin"
+    ) {
+      return res.status(403).json({ error: "Acceso prohibido." });
+    }
+
+    const snapshot = await adminDb
+      .collection(INVENTARIO_MOVIMIENTOS_COLLECTION)
       .orderBy("creadoEnMs", "desc")
       .limit(200)
       .get();
 
-    const movimientos = snapshot.docs.map((documento) => ({ id: documento.id, ...documento.data() }));
-    return res.json({ activo: CONTROL_INVENTARIO, movimientos });
-  } catch (_error) {
-    return res.status(503).json({ error: "No se pudo consultar los movimientos de inventario." });
+    const movimientos = snapshot.docs.map((documento) => ({
+      id: documento.id,
+      ...documento.data()
+    }));
+
+    return res.json({
+      activo: CONTROL_INVENTARIO,
+      movimientos
+    });
+  } catch (error) {
+    if (String(error.code || "").startsWith("auth/")) {
+      return res.status(401).json({ error: "Sesión no válida." });
+    }
+
+    console.error(
+      "No se pudieron consultar los movimientos de inventario.",
+      { message: error.message }
+    );
+
+    return res.status(503).json({
+      error: "No se pudieron consultar los movimientos de inventario."
+    });
   }
 });
 
