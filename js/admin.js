@@ -250,12 +250,58 @@ async function cargarPanel() {
 
 async function cargarMovimientosInventario() {
   try {
-    const respuesta = await fetch("/movimientos-inventario");
+    const apiUrl = String(
+      window.VIGNA_CONFIG?.apiPagosUrl || ""
+    ).trim().replace(/\/+$/, "");
+
+    if (!apiUrl) {
+      throw new Error("No está configurada la dirección del servidor.");
+    }
+
+    const usuario = auth.currentUser;
+
+    if (!usuario) {
+      throw new Error("No existe una sesión administrativa activa.");
+    }
+
+    const token = await usuario.getIdToken();
+
+    const respuesta = await fetch(
+      `${apiUrl}/movimientos-inventario`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    const tipoContenido =
+      respuesta.headers.get("content-type") || "";
+
+    if (!tipoContenido.includes("application/json")) {
+      throw new Error(
+        `El servidor respondió con formato inválido (${respuesta.status}).`
+      );
+    }
+
     const datos = await respuesta.json();
-    movimientosInventario = Array.isArray(datos.movimientos) ? datos.movimientos : [];
+
+    if (!respuesta.ok) {
+      throw new Error(
+        datos.error || `Error ${respuesta.status}.`
+      );
+    }
+
+    movimientosInventario =
+      Array.isArray(datos.movimientos)
+        ? datos.movimientos
+        : [];
   } catch (error) {
     movimientosInventario = [];
-    console.error("No se pudieron cargar los movimientos de inventario.", error);
+    console.error(
+      "No se pudieron cargar los movimientos de inventario.",
+      error
+    );
   }
 }
 
