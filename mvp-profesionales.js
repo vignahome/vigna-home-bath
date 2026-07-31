@@ -17,6 +17,7 @@
   const nowIso = () => new Date().toISOString();
   const escapar = (value = "") => String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
   const dinero = (value) => `S/ ${Number(value || 0).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const htmlSeguro = (value) => ({ __htmlSeguro: String(value) });
 
   function seedData() {
     return {
@@ -219,8 +220,8 @@
     ].map(([label, value]) => `<div class="metric"><small>${label}</small><strong>${value}</strong></div>`).join("");
 
     document.getElementById("admin-profesionales").innerHTML = tableHtml(["ID", "Profesional", "Profesión principal", "Cobertura", "Documentos", "Estado", "Acciones"], data.profesionales.map((p) => [
-      p.id, nombreCompleto(p), p.profesionPrincipal, p.coberturaDetalle, `${p.documentosDeclarados || 0} declarados`, `<span class="status-chip ${estadoClase(p.estado)}">${escapar(p.estado)}</span>`,
-      `<div class="table-actions"><button class="tiny-button approve" data-admin-professional="${p.id}" data-state="Aprobado">Aprobar</button><button class="tiny-button" data-profile="${p.id}">Revisar</button><button class="tiny-button reject" data-admin-professional="${p.id}" data-state="Rechazado">Rechazar</button></div>`
+      p.id, nombreCompleto(p), p.profesionPrincipal, p.coberturaDetalle, `${p.documentosDeclarados || 0} declarados`, htmlSeguro(`<span class="status-chip ${estadoClase(p.estado)}">${escapar(p.estado)}</span>`),
+      htmlSeguro(`<div class="table-actions"><button class="tiny-button approve" data-admin-professional="${p.id}" data-state="Aprobado">Aprobar</button><button class="tiny-button" data-profile="${p.id}">Revisar</button><button class="tiny-button reject" data-admin-professional="${p.id}" data-state="Rechazado">Rechazar</button></div>`)
     ]));
     document.getElementById("admin-clientes").innerHTML = tableHtml(["ID", "Cliente", "Documento", "Ubicación", "Estado"], data.clientes.map((c) => [c.id, nombreCompleto(c), `${c.tipoDocumento} ${c.documento}`, `${c.departamento} - ${c.provincia} - ${c.distrito}`, c.estado]));
     document.getElementById("admin-solicitudes").innerHTML = tableHtml(["ID", "Profesión", "Lugar", "Presupuesto", "Estado"], data.solicitudes.map((s) => [s.id, s.profesion, `${s.departamento} - ${s.distrito}`, s.presupuesto, s.estado]));
@@ -230,7 +231,7 @@
 
   function tableHtml(headers, rows) {
     if (!rows.length) return '<div class="empty-state"><p>No existen registros.</p></div>';
-    return `<table class="data-table"><thead><tr>${headers.map((h) => `<th>${escapar(h)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((value) => `<td>${String(value).includes("<") ? value : escapar(value)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    return `<table class="data-table"><thead><tr>${headers.map((h) => `<th>${escapar(h)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((value) => `<td>${value && typeof value === "object" && value.__htmlSeguro ? value.__htmlSeguro : escapar(value)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
   }
 
   function renderAll() {
