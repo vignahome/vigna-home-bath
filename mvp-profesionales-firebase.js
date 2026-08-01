@@ -336,11 +336,16 @@ async function cargarDatos() {
       todos(COLECCIONES.cotizaciones), todos(COLECCIONES.contratos), todos(COLECCIONES.auditoria)
     ]);
   } else if (rol === "cliente") {
-    [clientes, solicitudes, cotizaciones, contratos, auditoria] = await Promise.all([
-      porCampo(COLECCIONES.clientes, "uid", user.uid), porCampo(COLECCIONES.solicitudes, "clienteUid", user.uid),
+    const [clienteSnapshot, solicitudesCliente, cotizacionesCliente, contratosCliente, auditoriaCliente] = await Promise.all([
+      getDoc(doc(db, COLECCIONES.clientes, user.uid)), porCampo(COLECCIONES.solicitudes, "clienteUid", user.uid),
       porCampo(COLECCIONES.cotizaciones, "clienteUid", user.uid), porCampo(COLECCIONES.contratos, "clienteUid", user.uid),
       porArray(COLECCIONES.auditoria, "participantes", user.uid)
     ]);
+    clientes = clienteSnapshot.exists() ? [{ id: clienteSnapshot.id, ...clienteSnapshot.data() }] : [];
+    solicitudes = solicitudesCliente;
+    cotizaciones = cotizacionesCliente;
+    contratos = contratosCliente;
+    auditoria = auditoriaCliente;
   } else if (rol === "profesional") {
     const perfil = await getDoc(doc(db, COLECCIONES.profesionales, user.uid));
     if (perfil.exists() && !profesionales.some((item) => item.id === user.uid)) profesionales.unshift({ id: perfil.id, ...perfil.data() });
