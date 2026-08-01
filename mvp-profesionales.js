@@ -277,7 +277,7 @@
   function openContract(id) {
     const contract = data.contratos.find((c) => c.id === id); if (!contract) return;
     const request = data.solicitudes.find((s) => s.id === contract.solicitudId); const client = data.clientes.find((c) => c.id === contract.clienteId); const professional = data.profesionales.find((p) => p.id === contract.profesionalId);
-    document.getElementById("contractDialogContent").innerHTML = `<div class="contract-sheet"><div class="contract-brand"><img src="images/logo/ChatGPT Image 26 may 2026, 11_05_03 p.m..png" alt="VIGNA Home & Bath"><strong>Profesionales Vigna’s</strong></div><p class="eyebrow">CONTRATO ${escapar(contract.id)} · VERSIÓN ${contract.version}</p><h1>Contrato de prestación de servicios</h1><p><b>Cliente:</b> ${escapar(nombreCompleto(client))} · ${escapar(client?.tipoDocumento)} ${escapar(client?.documento)}</p><p><b>Profesional:</b> ${escapar(nombreCompleto(professional))} · ${escapar(professional?.tipoDocumento)} ${escapar(professional?.documento)}</p><h2>Objeto y alcance</h2><p>${escapar(request?.descripcion || "Servicio acordado")}</p><p><b>Opción:</b> ${escapar(contract.opcion)} · <b>Total:</b> ${dinero(contract.total)}</p><p>${escapar(contract.detalle)}</p><h2>Lugar y plazo</h2><p>${escapar(request?.departamento)}, ${escapar(request?.provincia)}, ${escapar(request?.distrito)} · Fecha preferida: ${escapar(request?.fecha)}</p><h2>Condiciones, pagos, garantía y exclusiones</h2><p>${escapar(contract.condiciones)}</p><div class="contract-signatures"><div><span></span><b>Firma del cliente</b><small>${escapar(nombreCompleto(client))} · ${escapar(client?.tipoDocumento)} ${escapar(client?.documento)}</small></div><div><span></span><b>Firma del profesional</b><small>${escapar(nombreCompleto(professional))} · ${escapar(professional?.tipoDocumento)} ${escapar(professional?.documento)}</small></div></div><h2>Estado</h2><p>${escapar(contract.estado)}${contract.archivoFirmado ? ` · Archivo: ${escapar(contract.archivoFirmado)}` : ""}</p><div class="signed-upload no-print"><button class="secondary-button" type="button" onclick="window.print()">Imprimir contrato</button><label>Subir contrato firmado<input id="signedContractFile" type="file" accept=".pdf,image/*"></label><button class="gold-button" data-upload-contract="${contract.id}">Registrar documento firmado</button></div></div>`;
+    document.getElementById("contractDialogContent").innerHTML = `<div class="contract-sheet"><div class="contract-brand"><img src="images/logo/ChatGPT Image 26 may 2026, 11_05_03 p.m..png" alt="VIGNA Home & Bath"><strong>Profesionales Vigna’s</strong></div><p class="eyebrow">CONTRATO ${escapar(contract.id)} · VERSIÓN ${contract.version}</p><h1>Contrato de prestación de servicios</h1><p><b>Cliente:</b> ${escapar(contract.clienteNombre || nombreCompleto(client))} · ${escapar(contract.clienteTipoDocumento || client?.tipoDocumento)} ${escapar(contract.clienteDocumento || client?.documento)}</p><p><b>Profesional:</b> ${escapar(contract.profesionalNombre || nombreCompleto(professional))} · ${escapar(contract.profesionalTipoDocumento || professional?.tipoDocumento)} ${escapar(contract.profesionalDocumento || professional?.documento)}</p><h2>Objeto y alcance</h2><p>${escapar(request?.descripcion || "Servicio acordado")}</p><p><b>Opción:</b> ${escapar(contract.opcion)} · <b>Total:</b> ${dinero(contract.total)}</p><p>${escapar(contract.detalle)}</p><h2>Lugar y plazo</h2><p>${escapar(request?.departamento)}, ${escapar(request?.provincia)}, ${escapar(request?.distrito)} · Fecha preferida: ${escapar(request?.fecha)}</p><h2>Condiciones, pagos, garantía y exclusiones</h2><p>${escapar(contract.condiciones)}</p><div class="contract-signatures"><div><span></span><b>Firma del cliente</b><small>${escapar(nombreCompleto(client))} · ${escapar(client?.tipoDocumento)} ${escapar(client?.documento)}</small></div><div><span></span><b>Firma del profesional</b><small>${escapar(nombreCompleto(professional))} · ${escapar(professional?.tipoDocumento)} ${escapar(professional?.documento)}</small></div></div><h2>Estado</h2><p>${escapar(contract.estado)}${contract.archivoFirmado ? ` · Archivo: ${escapar(contract.archivoFirmado)}` : ""}</p><div class="signed-upload no-print"><button class="secondary-button" type="button" onclick="window.print()">Imprimir contrato</button><label>Subir contrato firmado<input id="signedContractFile" type="file" accept=".pdf,image/*"></label><button class="gold-button" data-upload-contract="${contract.id}">Registrar documento firmado</button></div></div>`;
     const dialog = document.getElementById("contractDialog"); if (!dialog.open) dialog.showModal();
   }
 
@@ -334,5 +334,17 @@
   });
 
   initSelectors(); syncPrincipal(); renderAll();
-  window.VignaProfesionalesMVP = { getData: () => structuredClone(data), reset: () => { localStorage.removeItem(STORAGE_KEY); location.reload(); } };
+  window.VignaProfesionalesMVP = {
+    getData: () => structuredClone(data),
+    setData: (nuevo) => {
+      if (!nuevo || typeof nuevo !== "object") return;
+      data = { ...seedData(), ...nuevo, version: 1 };
+      panelProfesionalId = data.profesionales.some((item) => item.id === panelProfesionalId)
+        ? panelProfesionalId
+        : (data.profesionales[0]?.id || "");
+      renderAll();
+    },
+    reset: () => { localStorage.removeItem(STORAGE_KEY); location.reload(); }
+  };
+  window.dispatchEvent(new CustomEvent("vigna-mvp-ready"));
 })();
