@@ -33,3 +33,16 @@
 .contract-brand strong{color:#6f4708;font-size:14px;letter-spacing:1.2px;text-transform:uppercase}
 @media(max-width:640px){.mvp-brand-logo{width:112px;height:50px}.mvp-brand-section{font-size:11px;padding-left:8px}.contract-brand img{width:135px;height:72px}.contract-brand strong{font-size:11px}}
 @media print{.contract-brand{break-inside:avoid}.contract-brand img{width:170px;height:90px}}
+
+/* Sesión y persistencia Firebase de Profesionales Vigna’s */
+[hidden]{display:none!important}
+.pv-cloud-status{position:fixed;z-index:120;left:18px;bottom:18px;max-width:min(430px,calc(100vw - 36px));padding:9px 13px;border:1px solid #2f7540;border-radius:999px;background:rgba(11,25,14,.96);color:#8fe5a4;font-size:12px;box-shadow:0 10px 34px rgba(0,0,0,.48)}
+.pv-cloud-status.error{border-color:#876519;background:rgba(37,27,7,.97);color:#f6d773}
+.pv-access-dialog{width:min(520px,calc(100% - 24px))}
+.pv-access-dialog .page-intro.compact{padding:10px 0 24px}
+.pv-access-dialog .page-intro.compact h1{font-size:clamp(30px,5vw,44px)}
+.pv-access-dialog #pvLogoutButton{margin-top:14px;width:100%}
+#pvAccessButton{max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+form :disabled{cursor:wait;opacity:.7}
+@media(max-width:640px){.pv-cloud-status{left:10px;right:10px;bottom:10px;max-width:none;border-radius:12px;text-align:center}}
+@media print{.pv-cloud-status{display:none!important}}
