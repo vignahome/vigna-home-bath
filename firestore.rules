@@ -71,6 +71,145 @@ service cloud.firestore {
       allow update, delete: if esAdmin();
     }
 
+    // Profesionales Vigna’s: datos aislados del comercio electrónico.
+    function pvRol(rol) {
+      return autenticado() &&
+        get(/databases/$(database)/documents/pv_usuarios/$(request.auth.uid)).data.rol == rol;
+    }
+
+    function pvEsProfesionalCompatible(solicitud) {
+      return pvRol("profesional") &&
+        get(/databases/$(database)/documents/pv_profesionales/$(request.auth.uid)).data.estado == "Aprobado" &&
+        get(/databases/$(database)/documents/pv_profesionales/$(request.auth.uid)).data.profesiones.hasAny([solicitud.profesion]);
+    }
+
+    match /pv_usuarios/{uid} {
+      allow create: if autenticado() && request.auth.uid == uid &&
+        request.resource.data.uid == uid &&
+        request.resource.data.rol in ["cliente", "profesional"];
+      allow read: if esAdmin() || (autenticado() && request.auth.uid == uid);
+      allow update: if esAdmin() || (
+        autenticado() && request.auth.uid == uid &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.rol == resource.data.rol
+      );
+      allow delete: if esAdmin();
+    }
+
+    match /pv_profesionales/{uid} {
+      allow read: if resource.data.estado == "Aprobado" || esAdmin() ||
+        (autenticado() && request.auth.uid == uid);
+      allow create: if autenticado() && request.auth.uid == uid &&
+        request.resource.data.uid == uid && request.resource.data.estado == "Pendiente";
+      allow update: if esAdmin() || (
+        autenticado() && request.auth.uid == uid &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.estado == resource.data.estado &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "nombres", "apellidos", "correo", "whatsapp", "modalidad",
+          "departamento", "provincia", "distrito", "profesiones",
+          "profesionPrincipal", "experiencia", "coberturaTipo",
+          "coberturaDetalle", "distancia", "recargo", "descripcion",
+          "fotoIniciales", "portafolio", "actualizadoEn"
+        ])
+      );
+      allow delete: if esAdmin();
+    }
+
+    match /pv_profesionales_privados/{uid} {
+      allow create, read, update: if esAdmin() || (autenticado() && request.auth.uid == uid);
+      allow delete: if esAdmin();
+    }
+
+    match /pv_clientes/{uid} {
+      allow create: if autenticado() && request.auth.uid == uid &&
+        request.resource.data.uid == uid && request.resource.data.estado == "Pendiente";
+      allow read: if esAdmin() || (autenticado() && request.auth.uid == uid);
+      allow update: if esAdmin() || (
+        autenticado() && request.auth.uid == uid &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.estado == resource.data.estado
+      );
+      allow delete: if esAdmin();
+    }
+
+    match /pv_solicitudes/{solicitudId} {
+      allow create: if pvRol("cliente") &&
+        request.resource.data.clienteUid == request.auth.uid &&
+        request.resource.data.autorizacion == true &&
+        request.resource.data.estado == "Enviada";
+      allow read: if esAdmin() || (
+        autenticado() && (
+          resource.data.clienteUid == request.auth.uid ||
+          resource.data.profesionalUid == request.auth.uid ||
+          pvEsProfesionalCompatible(resource.data)
+        )
+      );
+      allow update: if esAdmin() || (
+        autenticado() && resource.data.clienteUid == request.auth.uid &&
+        request.resource.data.clienteUid == resource.data.clienteUid
+      );
+      allow delete: if esAdmin();
+    }
+
+    match /pv_cotizaciones/{cotizacionId} {
+      allow create: if pvRol("profesional") &&
+        request.resource.data.profesionalUid == request.auth.uid &&
+        get(/databases/$(database)/documents/pv_profesionales/$(request.auth.uid)).data.estado == "Aprobado" &&
+        get(/databases/$(database)/documents/pv_profesionales/$(request.auth.uid)).data.profesiones.hasAny([
+          get(/databases/$(database)/documents/pv_solicitudes/$(request.resource.data.solicitudId)).data.profesion
+        ]) &&
+        get(/databases/$(database)/documents/pv_solicitudes/$(request.resource.data.solicitudId)).data.clienteUid == request.resource.data.clienteUid &&
+        get(/databases/$(database)/documents/pv_solicitudes/$(request.resource.data.solicitudId)).data.profesionalUid in ["", request.auth.uid];
+      allow read: if esAdmin() || (
+        autenticado() && (
+          resource.data.clienteUid == request.auth.uid ||
+          resource.data.profesionalUid == request.auth.uid
+        )
+      );
+      allow update: if esAdmin() || (
+        autenticado() && resource.data.profesionalUid == request.auth.uid &&
+        resource.data.estado != "Aceptada" &&
+        request.resource.data.profesionalUid == resource.data.profesionalUid
+      ) || (
+        autenticado() && resource.data.clienteUid == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["estado", "actualizadoEn"])
+      );
+      allow delete: if esAdmin();
+    }
+
+    match /pv_contratos/{contratoId} {
+      allow create: if pvRol("cliente") &&
+        request.resource.data.clienteUid == request.auth.uid &&
+        get(/databases/$(database)/documents/pv_cotizaciones/$(request.resource.data.cotizacionId)).data.clienteUid == request.auth.uid;
+      allow read: if esAdmin() || (
+        autenticado() && (
+          resource.data.clienteUid == request.auth.uid ||
+          resource.data.profesionalUid == request.auth.uid
+        )
+      );
+      allow update: if esAdmin() || (
+        autenticado() &&
+        (resource.data.clienteUid == request.auth.uid || resource.data.profesionalUid == request.auth.uid) &&
+        request.resource.data.clienteUid == resource.data.clienteUid &&
+        request.resource.data.profesionalUid == resource.data.profesionalUid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "archivoFirmado", "archivoFirmadoUrl", "firmadoPorUid", "estado", "actualizadoEn"
+        ])
+      );
+      allow delete: if esAdmin();
+    }
+
+    match /pv_auditoria/{eventoId} {
+      allow create: if autenticado() &&
+        request.resource.data.actorUid == request.auth.uid &&
+        request.auth.uid in request.resource.data.participantes;
+      allow read: if esAdmin() || (
+        autenticado() && request.auth.uid in resource.data.participantes
+      );
+      allow update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
