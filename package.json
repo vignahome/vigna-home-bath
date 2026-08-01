@@ -1,7 +1,8 @@
 {
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check firebase.js && node --check js/script.js && node --check js/productos.js && node --check js/producto.js && node --check js/checkout.js && node --check js/admin.js && node --check js/cuenta.js && node --check plomeros.js && node --check mvp-profesionales.js && node --check mvp-profesionales-firebase.js && node --check mvp-profesionales-cloud-ui.js && node --check mvp-profesionales-bootstrap.js && node --check panel-vigna.js && node --check vigna-config.js"
+    "check": "node --check server.js && node --check firebase.js && node --check js/script.js && node --check js/productos.js && node --check js/producto.js && node --check js/checkout.js && node --check js/admin.js && node --check js/cuenta.js && node --check plomeros.js && node --check mvp-profesionales.js && node --check mvp-profesionales-firebase.js && node --check mvp-profesionales-cloud-ui.js && node --check mvp-profesionales-bootstrap.js && node --check panel-vigna.js && node --check vigna-config.js && node --check preparar-hosting-profesionales.js",
+    "build:profesionales": "node preparar-hosting-profesionales.js"
   },
   "dependencies": {
     "cors": "^2.8.6",
