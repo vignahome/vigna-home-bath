@@ -127,19 +127,20 @@ document.addEventListener("submit", async (event) => {
   if (form.id === "pvLoginForm") {
     event.preventDefault();
     event.stopImmediatePropagation();
+    const datos = new FormData(form);
     await ejecutar(form, async () => {
-      const datos = new FormData(form);
       await api.iniciarSesion(String(datos.get("correo") || "").trim(), String(datos.get("password") || ""));
       document.getElementById("pvAccessDialog")?.close();
     }, "Sesión iniciada correctamente.");
     return;
   }
+  const datos = new FormData(form);
   const acciones = {
-    formProfesional: [() => api.registrarProfesional(new FormData(form)), "Perfil profesional enviado a revisión."],
-    formCliente: [() => api.registrarCliente(new FormData(form)), "Cuenta de cliente enviada a revisión."],
-    formSolicitud: [() => api.crearSolicitud(new FormData(form)), "Solicitud guardada en Firebase."],
-    formPortafolio: [() => api.agregarPortafolio(new FormData(form)), "Proyecto guardado en Firebase Storage."],
-    formCotizacion: [() => api.crearCotizacion(new FormData(form)), "Cotización guardada en Firebase."]
+    formProfesional: [() => api.registrarProfesional(datos), "Perfil profesional enviado a revisión."],
+    formCliente: [() => api.registrarCliente(datos), "Cuenta de cliente enviada a revisión."],
+    formSolicitud: [() => api.crearSolicitud(datos), "Solicitud guardada en Firebase."],
+    formPortafolio: [() => api.agregarPortafolio(datos), "Proyecto guardado en Firebase Storage."],
+    formCotizacion: [() => api.crearCotizacion(datos), "Cotización guardada en Firebase."]
   };
   const accion = acciones[form.id];
   if (!accion) return;
