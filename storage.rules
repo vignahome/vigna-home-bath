@@ -1,0 +1,90 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    function esAdmin() {
+      return autenticado() &&
+        firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+    }
+
+    function rolProfesionales(rol) {
+      return autenticado() &&
+        firestore.get(/databases/(default)/documents/pv_usuarios/$(request.auth.uid)).data.rol == rol;
+    }
+
+    function imagenOPdf(maximo) {
+      return request.resource.size <= maximo &&
+        (request.resource.contentType.matches('image/.*') ||
+         request.resource.contentType == 'application/pdf');
+    }
+
+    match /profesionales-vigna/profesionales/{uid}/identidad/{archivo} {
+      allow read: if esAdmin() || (autenticado() && request.auth.uid == uid);
+      allow create: if autenticado() && request.auth.uid == uid &&
+        imagenOPdf(10 * 1024 * 1024);
+      allow update, delete: if false;
+    }
+
+    match /profesionales-vigna/clientes/{uid}/identidad/{archivo} {
+      allow read: if esAdmin() || (autenticado() && request.auth.uid == uid);
+      allow create: if autenticado() && request.auth.uid == uid &&
+        imagenOPdf(10 * 1024 * 1024);
+      allow update, delete: if false;
+    }
+
+    match /profesionales-vigna/profesionales/{uid}/portafolio/{archivo} {
+      allow read: if firestore.get(/databases/(default)/documents/pv_profesionales/$(uid)).data.estado == "Aprobado" ||
+        esAdmin() || (autenticado() && request.auth.uid == uid);
+      allow create: if autenticado() && request.auth.uid == uid &&
+        request.resource.size <= 80 * 1024 * 1024 &&
+        (request.resource.contentType.matches('image/.*') ||
+         request.resource.contentType.matches('video/.*'));
+      allow update, delete: if esAdmin();
+    }
+
+    match /profesionales-vigna/solicitudes/{clienteUid}/{solicitudId}/{archivo} {
+      function solicitud() {
+        return firestore.get(/databases/(default)/documents/pv_solicitudes/$(solicitudId)).data;
+      }
+
+      allow read: if esAdmin() ||
+        (autenticado() && request.auth.uid == clienteUid) ||
+        (rolProfesionales("profesional") &&
+         firestore.get(/databases/(default)/documents/pv_profesionales/$(request.auth.uid)).data.estado == "Aprobado" &&
+         firestore.get(/databases/(default)/documents/pv_profesionales/$(request.auth.uid)).data.profesiones.hasAny([solicitud().profesion]));
+      allow create: if rolProfesionales("cliente") &&
+        request.auth.uid == clienteUid &&
+        request.resource.size <= 25 * 1024 * 1024 &&
+        (request.resource.contentType.matches('image/.*') ||
+         request.resource.contentType.matches('video/.*') ||
+         request.resource.contentType == 'application/pdf');
+      allow update, delete: if esAdmin();
+    }
+
+    match /profesionales-vigna/contratos/{contratoId}/{archivo} {
+      function contrato() {
+        return firestore.get(/databases/(default)/documents/pv_contratos/$(contratoId)).data;
+      }
+
+      allow read: if esAdmin() || (
+        autenticado() &&
+        (contrato().clienteUid == request.auth.uid ||
+         contrato().profesionalUid == request.auth.uid)
+      );
+      allow create: if autenticado() &&
+        (esAdmin() ||
+         contrato().clienteUid == request.auth.uid ||
+         contrato().profesionalUid == request.auth.uid) &&
+        imagenOPdf(15 * 1024 * 1024);
+      allow update, delete: if esAdmin();
+    }
+
+    match /{archivo=**} {
+      allow read, write: if false;
+    }
+  }
+}
