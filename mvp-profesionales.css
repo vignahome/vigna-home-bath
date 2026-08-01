@@ -46,3 +46,9 @@
 form :disabled{cursor:wait;opacity:.7}
 @media(max-width:640px){.pv-cloud-status{left:10px;right:10px;bottom:10px;max-width:none;border-radius:12px;text-align:center}}
 @media print{.pv-cloud-status{display:none!important}}
+
+.pv-documents-dialog{width:min(680px,calc(100% - 32px));border:1px solid var(--gold,#d4af37);border-radius:18px;background:#111;color:#f7f2e7;padding:28px}
+.pv-document-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:22px}
+.pv-document-grid .gold-button,.pv-document-grid .secondary-button{display:flex;align-items:center;justify-content:center;min-height:48px;text-align:center}
+.pv-private-note{margin:18px 0 0;color:#c9c3b7;font-size:.9rem}
+@media(max-width:620px){.pv-document-grid{grid-template-columns:1fr}.pv-documents-dialog{padding:22px 18px}}
