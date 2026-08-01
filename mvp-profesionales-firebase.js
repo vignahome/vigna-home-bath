@@ -335,6 +335,12 @@ async function cargarDatos() {
       todos(COLECCIONES.profesionales), todos(COLECCIONES.clientes), todos(COLECCIONES.solicitudes),
       todos(COLECCIONES.cotizaciones), todos(COLECCIONES.contratos), todos(COLECCIONES.auditoria)
     ]);
+    const privados = await todos(COLECCIONES.profesionalesPrivados);
+    const privadosPorUid = new Map(privados.map((item) => [item.uid || item.id, item]));
+    profesionales = profesionales.map((item) => ({
+      ...item,
+      privado: privadosPorUid.get(item.uid || item.id) || null
+    }));
   } else if (rol === "cliente") {
     const [clienteSnapshot, solicitudesCliente, cotizacionesCliente, contratosCliente, auditoriaCliente] = await Promise.all([
       getDoc(doc(db, COLECCIONES.clientes, user.uid)), porCampo(COLECCIONES.solicitudes, "clienteUid", user.uid),
