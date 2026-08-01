@@ -1,0 +1,32 @@
+const fs = require("node:fs");
+const path = require("node:path");
+
+const RAIZ = __dirname;
+const SALIDA = path.join(RAIZ, "hosting-profesionales");
+const LOGO = path.join("images", "logo", "ChatGPT Image 26 may 2026, 11_05_03 p.m..png");
+const ARCHIVOS = [
+  "firebase.js",
+  "mvp-profesionales.css",
+  "mvp-profesionales.js",
+  "mvp-profesionales-firebase.js",
+  "mvp-profesionales-cloud-ui.js",
+  "mvp-profesionales-bootstrap.js",
+  LOGO
+];
+
+fs.rmSync(SALIDA, { recursive: true, force: true });
+fs.mkdirSync(SALIDA, { recursive: true });
+
+for (const archivo of ARCHIVOS) {
+  const origen = path.join(RAIZ, archivo);
+  const destino = path.join(SALIDA, archivo);
+  if (!fs.existsSync(origen)) throw new Error(`Falta el archivo requerido: ${archivo}`);
+  fs.mkdirSync(path.dirname(destino), { recursive: true });
+  fs.copyFileSync(origen, destino);
+}
+
+const html = fs.readFileSync(path.join(RAIZ, "mvp-profesionales.html"), "utf8");
+fs.writeFileSync(path.join(SALIDA, "index.html"), html);
+fs.writeFileSync(path.join(SALIDA, "mvp-profesionales.html"), html);
+
+console.log("Publicación aislada preparada en hosting-profesionales.");
