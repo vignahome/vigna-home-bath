@@ -52,6 +52,48 @@ function insertarAcceso() {
   document.body.appendChild(dialogo);
 }
 
+function escaparHtml(valor = "") {
+  return String(valor).replace(/[&<>"']/g, (caracter) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+  })[caracter]);
+}
+
+function insertarRevisionDocumentos() {
+  if (document.getElementById("pvDocumentsDialog")) return;
+  const dialogo = document.createElement("dialog");
+  dialogo.id = "pvDocumentsDialog";
+  dialogo.className = "mvp-dialog pv-documents-dialog";
+  dialogo.innerHTML = '<button class="dialog-close" data-pv-docs-close type="button" aria-label="Cerrar">×</button><div id="pvDocumentsContent"></div>';
+  document.body.appendChild(dialogo);
+}
+
+async function revisarDocumentos(tipo, uid) {
+  const mvp = await esperarMVP();
+  const datos = mvp.getData();
+  const persona = tipo === "profesional"
+    ? datos.profesionales.find((item) => item.id === uid || item.uid === uid)
+    : datos.clientes.find((item) => item.id === uid || item.uid === uid);
+  if (!persona) return alert("No se encontró el registro.");
+  const privado = tipo === "profesional" ? (persona.privado || {}) : persona;
+  const documentos = privado.documentos || {};
+  const enlace = (url, etiqueta) => /^https:\/\//.test(String(url || ""))
+    ? `<a class="gold-button" href="${escaparHtml(url)}" target="_blank" rel="noopener noreferrer">${escaparHtml(etiqueta)}</a>`
+    : `<span class="secondary-button disabled">${escaparHtml(etiqueta)} no disponible</span>`;
+  document.getElementById("pvDocumentsContent").innerHTML = `
+    <div class="page-intro compact">
+      <p class="eyebrow">REVISIÓN PRIVADA · SOLO ADMINISTRACIÓN</p>
+      <h1>${escaparHtml(`${persona.nombres || ""} ${persona.apellidos || ""}`.trim())}</h1>
+      <p>${escaparHtml(privado.tipoDocumento || persona.tipoDocumento || "Documento")} · ${escaparHtml(privado.documento || persona.documento || "Sin número")}</p>
+    </div>
+    <div class="pv-document-grid">
+      ${enlace(documentos.frenteUrl, "Abrir frente")}
+      ${enlace(documentos.reversoUrl, "Abrir reverso")}
+      ${enlace(documentos.selfieUrl, "Abrir selfie")}
+    </div>
+    <p class="pv-private-note">Estos enlaces contienen documentación privada y no deben compartirse.</p>`;
+  document.getElementById("pvDocumentsDialog").showModal();
+}
+
 function insertarPasswords() {
   const agregar = (formId) => {
     const form = document.getElementById(formId);
@@ -159,6 +201,7 @@ document.addEventListener("click", async (event) => {
     return;
   }
   if (event.target.closest("[data-pv-close]")) document.getElementById("pvAccessDialog")?.close();
+  if (event.target.closest("[data-pv-docs-close]")) document.getElementById("pvDocumentsDialog")?.close();
   if (event.target.closest("#pvLogoutButton")) {
     await api.cerrarSesion();
     location.reload();
@@ -188,9 +231,22 @@ document.addEventListener("click", async (event) => {
     event.stopImmediatePropagation();
     await ejecutar(null, () => api.cambiarEstadoProfesional(admin.dataset.adminProfessional, admin.dataset.state), `Perfil ${admin.dataset.state.toLowerCase()}.`);
   }
+  const revisarProfesional = event.target.closest("[data-review-professional]");
+  if (revisarProfesional) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await revisarDocumentos("profesional", revisarProfesional.dataset.reviewProfessional);
+  }
+  const revisarCliente = event.target.closest("[data-review-client]");
+  if (revisarCliente) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await revisarDocumentos("cliente", revisarCliente.dataset.reviewClient);
+  }
 }, true);
 
 insertarAcceso();
+insertarRevisionDocumentos();
 insertarPasswords();
 api.observarSesion(async (user) => {
   rolActual = await api.obtenerRol(user?.uid);
