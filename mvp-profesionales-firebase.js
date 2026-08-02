@@ -20,7 +20,6 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import {
-  getBlob,
   getDownloadURL,
   ref,
   uploadBytes
@@ -341,10 +340,10 @@ async function abrirContratoFirmado(contratoId) {
   const { contrato } = await contratoAutorizado(contratoId);
   const ruta = contrato.archivoFirmadoRuta || rutaDesdeUrlStorage(contrato.archivoFirmadoUrl);
   if (!ruta || !contrato.archivoFirmado) throw new Error("Este contrato todavía no tiene un documento firmado.");
-  const contenido = await getBlob(ref(storage, ruta), 16 * 1024 * 1024);
+  const url = contrato.archivoFirmadoUrl || await getDownloadURL(ref(storage, ruta));
   return {
     nombre: contrato.archivoFirmado,
-    urlTemporal: URL.createObjectURL(contenido)
+    url
   };
 }
 
