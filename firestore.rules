@@ -253,6 +253,47 @@ service cloud.firestore {
       allow update, delete: if esAdmin();
     }
 
+
+    match /pv_reclamos/{reclamoId} {
+      allow create: if pvRol("cliente") &&
+        request.resource.data.clienteUid == request.auth.uid &&
+        request.resource.data.estado == "Abierto" &&
+        request.resource.data.contratoId is string &&
+        exists(/databases/$(database)/documents/pv_contratos/$(request.resource.data.contratoId)) &&
+        get(/databases/$(database)/documents/pv_contratos/$(request.resource.data.contratoId)).data.clienteUid == request.auth.uid &&
+        get(/databases/$(database)/documents/pv_contratos/$(request.resource.data.contratoId)).data.profesionalUid == request.resource.data.profesionalUid &&
+        get(/databases/$(database)/documents/pv_contratos/$(request.resource.data.contratoId)).data.estado == "Cerrado";
+
+      allow read: if esAdmin() || (
+        autenticado() &&
+        (resource.data.clienteUid == request.auth.uid ||
+         resource.data.profesionalUid == request.auth.uid)
+      );
+
+      allow update: if esAdmin() || (
+        pvRol("profesional") &&
+        resource.data.profesionalUid == request.auth.uid &&
+        request.resource.data.clienteUid == resource.data.clienteUid &&
+        request.resource.data.profesionalUid == resource.data.profesionalUid &&
+        request.resource.data.contratoId == resource.data.contratoId &&
+        request.resource.data.estado == "Respondido" &&
+        resource.data.estado in ["Abierto", "En revisión"] &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "respuestaProfesional", "archivosProfesional", "estado", "actualizadoEn", "historial"
+        ])
+      ) || (
+        pvRol("cliente") &&
+        resource.data.clienteUid == request.auth.uid &&
+        resource.data.estado == "Resuelto" &&
+        request.resource.data.estado == "Cerrado" &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "estado", "actualizadoEn", "historial"
+        ])
+      );
+
+      allow delete: if false;
+    }
+
     match /pv_auditoria/{eventoId} {
       allow create: if autenticado() &&
         request.resource.data.actorUid == request.auth.uid &&
