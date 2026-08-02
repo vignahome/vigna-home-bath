@@ -182,6 +182,35 @@
   }
 
   function renderPanel() {
+    const panel = document.getElementById("view-panel");
+    const titulo = panel.querySelector(".page-intro h1");
+    const descripcion = panel.querySelector(".page-intro > p:last-child");
+    const selector = panel.querySelector(".dashboard-selector");
+    const herramientas = panel.querySelector(".dashboard-grid");
+    const listadoTitulo = panel.querySelector(".dashboard-card.full h2");
+
+    if (data.rol === "cliente") {
+      titulo.textContent = "Panel del cliente";
+      descripcion.textContent = "Revisa tus solicitudes, cotizaciones recibidas y contratos.";
+      selector.hidden = true;
+      herramientas.hidden = true;
+      listadoTitulo.textContent = "Cotizaciones y contratos";
+      document.getElementById("panelMetricas").innerHTML = [
+        ["Solicitudes", data.solicitudes.length],
+        ["Cotizaciones recibidas", data.cotizaciones.length],
+        ["Contratos", data.contratos.length],
+        ["Pendientes de revisar", data.cotizaciones.filter((q) => q.estado === "Enviada").length]
+      ].map(([label, value]) => `<div class="metric"><small>${label}</small><strong>${value}</strong></div>`).join("");
+      renderQuotes();
+      return;
+    }
+
+    titulo.textContent = "Panel del profesional";
+    descripcion.textContent = "Administra portafolio, cotizaciones y contratos del MVP.";
+    selector.hidden = false;
+    herramientas.hidden = false;
+    listadoTitulo.textContent = "Cotizaciones y contratos";
+
     const p = data.profesionales.find((item) => item.id === panelProfesionalId) || data.profesionales[0];
     if (!p) return;
     panelProfesionalId = p.id;
