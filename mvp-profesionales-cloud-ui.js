@@ -222,14 +222,13 @@ document.addEventListener("click", async (event) => {
     await ejecutar(null, async () => {
       const archivoFirmado = await api.abrirContratoFirmado(abrirFirmado.dataset.openSignedContract);
       const enlace = document.createElement("a");
-      enlace.href = archivoFirmado.urlTemporal;
+      enlace.href = archivoFirmado.url;
       enlace.target = "_blank";
       enlace.rel = "noopener";
       enlace.setAttribute("aria-label", `Abrir ${archivoFirmado.nombre}`);
       document.body.appendChild(enlace);
       enlace.click();
       enlace.remove();
-      window.setTimeout(() => URL.revokeObjectURL(archivoFirmado.urlTemporal), 60000);
     }, "Contrato firmado abierto de forma segura.");
     return;
   }
