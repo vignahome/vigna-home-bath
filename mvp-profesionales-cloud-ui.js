@@ -242,6 +242,52 @@ document.addEventListener("click", async (event) => {
     document.getElementById("contractDialog")?.close();
     return;
   }
+  const iniciarServicio = event.target.closest("[data-start-service]");
+  if (iniciarServicio) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (!confirm("¿Confirmas que el servicio ha comenzado?")) return;
+    await ejecutar(null, () => api.iniciarServicio(iniciarServicio.dataset.startService), "Servicio marcado como en ejecución.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  const finalizarServicio = event.target.closest("[data-finish-service]");
+  if (finalizarServicio) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const files = document.getElementById("serviceEvidenceFiles")?.files;
+    const nota = document.getElementById("serviceCompletionNote")?.value;
+    await ejecutar(null, () => api.finalizarServicio(finalizarServicio.dataset.finishService, files, nota), "Servicio finalizado y evidencias protegidas.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  const cerrarServicio = event.target.closest("[data-close-service]");
+  if (cerrarServicio) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const calificacion = document.getElementById("serviceRating")?.value;
+    const comentario = document.getElementById("serviceReview")?.value;
+    if (!confirm("¿Confirmas tu conformidad y deseas cerrar el servicio?")) return;
+    await ejecutar(null, () => api.cerrarServicio(cerrarServicio.dataset.closeService, calificacion, comentario), "Servicio cerrado y calificación registrada.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  const abrirEvidencia = event.target.closest("[data-open-service-evidence]");
+  if (abrirEvidencia) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(null, async () => {
+      const evidencia = await api.abrirEvidenciaServicio(abrirEvidencia.dataset.openServiceEvidence, abrirEvidencia.dataset.evidencePath);
+      const enlace = document.createElement("a");
+      enlace.href = evidencia.url;
+      enlace.target = "_blank";
+      enlace.rel = "noopener";
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+    }, "Evidencia abierta de forma segura.");
+    return;
+  }
   const admin = event.target.closest("[data-admin-professional]");
   if (admin) {
     event.preventDefault();
