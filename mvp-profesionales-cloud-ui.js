@@ -112,7 +112,7 @@ function insertarPasswords() {
 function actualizarNavegacion(user) {
   const reglas = {
     solicitud: rolActual === "cliente" || rolActual === "admin",
-    panel: rolActual === "profesional" || rolActual === "admin",
+    panel: rolActual === "cliente" || rolActual === "profesional" || rolActual === "admin",
     admin: rolActual === "admin",
     "registro-profesional": !user,
     "registro-cliente": !user
