@@ -103,3 +103,14 @@ form :disabled{cursor:wait;opacity:.7}
 @media (max-width: 620px) {
   .service-timeline { grid-template-columns: 1fr 1fr; }
 }
+.profile-reviews{margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+.profile-reviews-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.profile-reviews-heading h3{margin:0;color:var(--gold-light)}
+.profile-reviews-heading>span{display:inline-grid;min-width:30px;height:30px;padding:0 9px;place-items:center;border:1px solid var(--gold);border-radius:999px;background:rgba(212,175,55,.1);color:var(--gold-light);font-weight:800}
+.profile-reviews-list{display:grid;gap:12px;margin-top:12px}
+.verified-review{padding:16px;border:1px solid #3c3c3c;border-radius:12px;background:linear-gradient(145deg,#181818,#111)}
+.verified-review-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.verified-review-stars{color:var(--gold-light);letter-spacing:.08em;font-weight:800}
+.verified-review-client{color:var(--muted);font-size:.88rem}
+.verified-review p{margin:10px 0 0;line-height:1.55}
+.verified-review-empty{color:var(--muted);font-style:italic}
