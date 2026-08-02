@@ -52,3 +52,54 @@ form :disabled{cursor:wait;opacity:.7}
 .pv-document-grid .gold-button,.pv-document-grid .secondary-button{display:flex;align-items:center;justify-content:center;min-height:48px;text-align:center}
 .pv-private-note{margin:18px 0 0;color:#c9c3b7;font-size:.9rem}
 @media(max-width:620px){.pv-document-grid{grid-template-columns:1fr}.pv-documents-dialog{padding:22px 18px}}
+
+
+/* Ciclo seguro del servicio */
+.service-timeline {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .5rem;
+  margin: 1rem 0;
+}
+.service-step {
+  border: 1px solid #b8aa7a;
+  border-radius: 999px;
+  color: #665f4d;
+  font-size: .75rem;
+  padding: .55rem .4rem;
+  text-align: center;
+}
+.service-step.done {
+  background: linear-gradient(100deg, #8c5b00, #e0ad24, #fff0a6, #b77a00);
+  border-color: #a86f00;
+  color: #111;
+  font-weight: 800;
+}
+.service-action, .service-evidence, .service-review {
+  border-top: 1px solid #d5c596;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+.service-action {
+  display: grid;
+  gap: .75rem;
+}
+.service-action label {
+  display: grid;
+  gap: .4rem;
+  font-weight: 700;
+}
+.service-action textarea, .service-action select {
+  border: 1px solid #8d7b49;
+  border-radius: .6rem;
+  font: inherit;
+  padding: .75rem;
+}
+.evidence-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+}
+@media (max-width: 620px) {
+  .service-timeline { grid-template-columns: 1fr 1fr; }
+}
