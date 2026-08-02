@@ -225,7 +225,7 @@ document.addEventListener("click", async (event) => {
       enlace.href = archivoFirmado.urlTemporal;
       enlace.target = "_blank";
       enlace.rel = "noopener";
-      enlace.download = archivoFirmado.nombre;
+      enlace.setAttribute("aria-label", `Abrir ${archivoFirmado.nombre}`);
       document.body.appendChild(enlace);
       enlace.click();
       enlace.remove();
