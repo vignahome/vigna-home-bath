@@ -115,6 +115,18 @@
 
   function nombreCompleto(persona) { return `${persona?.nombres || ""} ${persona?.apellidos || ""}`.trim() || "Sin nombre"; }
 
+  function valoracionProfesional(profesionalId, respaldo = {}) {
+    const resenas = (data.resenas || []).filter((item) => item.profesionalUid === profesionalId);
+    if (!resenas.length) return {
+      calificacion: Number(respaldo.calificacion || 0),
+      trabajos: Number(respaldo.trabajos || 0)
+    };
+    return {
+      calificacion: resenas.reduce((total, item) => total + Number(item.calificacion || 0), 0) / resenas.length,
+      trabajos: resenas.length
+    };
+  }
+
   function initSelectors() {
     const filter = document.getElementById("filtroProfesion");
     const request = document.getElementById("solicitudProfesion");
@@ -142,6 +154,7 @@
     departmentSelect.innerHTML = '<option value="">Todo el Perú</option>' + departments.map((d) => `<option>${escapar(d)}</option>`).join("");
     departmentSelect.value = departments.includes(current) ? current : "";
 
+    data.profesionales.forEach((p) => Object.assign(p, valoracionProfesional(p.uid || p.id, p)));
     const results = data.profesionales.filter((p) => {
       const coverage = `${p.departamento} ${p.provincia} ${p.distrito} ${p.coberturaDetalle}`.toLowerCase();
       return (!profession || p.profesiones.includes(profession)) && (!department || p.departamento === department || p.coberturaTipo === "Nacional") && (!zone || coverage.includes(zone)) && (!state || p.estado === state);
@@ -287,6 +300,7 @@
 
   function showProfile(id) {
     const p = data.profesionales.find((item) => item.id === id); if (!p) return;
+    Object.assign(p, valoracionProfesional(p.uid || p.id, p));
     const content = document.getElementById("profileDialogContent");
     content.innerHTML = `<div class="profile-hero"><div class="professional-avatar">${escapar(p.fotoIniciales)}</div><div><p class="eyebrow">${escapar(p.estado)}</p><h1>${escapar(nombreCompleto(p))}</h1><p class="primary-profession">${escapar(p.profesionPrincipal)}</p><p class="rating">★★★★★ ${Number(p.calificacion || 5).toFixed(1)} · ${p.trabajos || 0} servicios</p></div></div><div class="chip-list">${p.profesiones.map((x) => `<span class="profession-chip ${x === p.profesionPrincipal ? "primary" : ""}">${escapar(x)}</span>`).join("")}</div><p>${escapar(p.descripcion)}</p><div class="profile-detail-grid"><div class="detail-box"><h3>Cobertura</h3><p>${escapar(p.coberturaDetalle)}</p><p>${escapar(p.distancia || "")}</p></div><div class="detail-box"><h3>Experiencia</h3><p>${p.experiencia} años</p><p>Plan: ${escapar(p.plan || "Sin plan")}</p></div></div><div class="form-actions no-print"><button class="gold-button" data-request="${p.id}">Solicitar servicio</button></div>`;
     document.getElementById("profileDialog").showModal();
