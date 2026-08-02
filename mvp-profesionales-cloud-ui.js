@@ -215,6 +215,24 @@ document.addEventListener("click", async (event) => {
     document.getElementById("contractDialog")?.close();
     return;
   }
+  const abrirFirmado = event.target.closest("[data-open-signed-contract]");
+  if (abrirFirmado) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(null, async () => {
+      const archivoFirmado = await api.abrirContratoFirmado(abrirFirmado.dataset.openSignedContract);
+      const enlace = document.createElement("a");
+      enlace.href = archivoFirmado.urlTemporal;
+      enlace.target = "_blank";
+      enlace.rel = "noopener";
+      enlace.download = archivoFirmado.nombre;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      window.setTimeout(() => URL.revokeObjectURL(archivoFirmado.urlTemporal), 60000);
+    }, "Contrato firmado abierto de forma segura.");
+    return;
+  }
   const subir = event.target.closest("[data-upload-contract]");
   if (subir) {
     event.preventDefault();
