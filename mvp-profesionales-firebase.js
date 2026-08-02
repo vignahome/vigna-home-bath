@@ -3,6 +3,7 @@ import {
   addDoc,
   arrayUnion,
   collection,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -19,6 +20,7 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import {
+  getBlob,
   getDownloadURL,
   ref,
   uploadBytes
@@ -70,6 +72,33 @@ async function subir(path, file, opciones) {
     customMetadata: { propietarioUid: auth.currentUser?.uid || "" }
   });
   return getDownloadURL(resultado.ref);
+}
+
+async function subirPrivado(path, file, opciones) {
+  if (!file) return "";
+  validarArchivo(file, opciones);
+  const referencia = ref(storage, `${path}/${Date.now()}-${limpiarNombre(file.name)}`);
+  const resultado = await uploadBytes(referencia, file, {
+    contentType: file.type,
+    customMetadata: { propietarioUid: auth.currentUser?.uid || "" }
+  });
+  return resultado.ref.fullPath;
+}
+
+function rutaDesdeUrlStorage(url = "") {
+  const coincidencia = String(url).match(/\/o\/([^?]+)/);
+  return coincidencia ? decodeURIComponent(coincidencia[1]) : "";
+}
+
+async function contratoAutorizado(contratoId) {
+  const user = exigirUsuario();
+  const contratoRef = doc(db, COLECCIONES.contratos, contratoId);
+  const snapshot = await getDoc(contratoRef);
+  if (!snapshot.exists()) throw new Error("El contrato ya no existe.");
+  const contrato = snapshot.data();
+  const autorizado = [contrato.clienteUid, contrato.profesionalUid].includes(user.uid) || await esAdmin(user.uid);
+  if (!autorizado) throw new Error("No tienes acceso a este contrato.");
+  return { user, contratoRef, contrato };
 }
 
 async function esAdmin(uid = auth.currentUser?.uid) {
@@ -294,16 +323,29 @@ async function aceptarCotizacion(cotizacionId, opcionIndice) {
 }
 
 async function registrarContratoFirmado(contratoId, file) {
-  const user = exigirUsuario();
-  const contratoRef = doc(db, COLECCIONES.contratos, contratoId);
-  const snapshot = await getDoc(contratoRef);
-  if (!snapshot.exists()) throw new Error("El contrato ya no existe.");
-  const contrato = snapshot.data();
-  if (![contrato.clienteUid, contrato.profesionalUid].includes(user.uid) && !(await esAdmin(user.uid))) throw new Error("No tienes acceso a este contrato.");
-  const url = await subir(`profesionales-vigna/contratos/${contratoId}`, file, { maxMb: 15, tipos: ["application/pdf", "image/"] });
-  await updateDoc(contratoRef, { archivoFirmado: file.name, archivoFirmadoUrl: url, firmadoPorUid: user.uid, estado: "Firmado", actualizadoEn: ahora() });
+  const { user, contratoRef, contrato } = await contratoAutorizado(contratoId);
+  const ruta = await subirPrivado(`profesionales-vigna/contratos/${contratoId}`, file, { maxMb: 15, tipos: ["application/pdf", "image/"] });
+  await updateDoc(contratoRef, {
+    archivoFirmado: file.name,
+    archivoFirmadoRuta: ruta,
+    archivoFirmadoUrl: deleteField(),
+    firmadoPorUid: user.uid,
+    estado: "Firmado",
+    actualizadoEn: ahora()
+  });
   await auditar("Contrato firmado registrado", `${contratoId}: ${file.name}`, [contrato.clienteUid, contrato.profesionalUid]);
-  return url;
+  return ruta;
+}
+
+async function abrirContratoFirmado(contratoId) {
+  const { contrato } = await contratoAutorizado(contratoId);
+  const ruta = contrato.archivoFirmadoRuta || rutaDesdeUrlStorage(contrato.archivoFirmadoUrl);
+  if (!ruta || !contrato.archivoFirmado) throw new Error("Este contrato todavía no tiene un documento firmado.");
+  const contenido = await getBlob(ref(storage, ruta), 16 * 1024 * 1024);
+  return {
+    nombre: contrato.archivoFirmado,
+    urlTemporal: URL.createObjectURL(contenido)
+  };
 }
 
 async function cambiarEstadoProfesional(uid, estado) {
@@ -386,6 +428,7 @@ export const ProfesionalesFirebase = Object.freeze({
   crearCotizacion,
   aceptarCotizacion,
   registrarContratoFirmado,
+  abrirContratoFirmado,
   cambiarEstadoProfesional,
   cargarDatos,
   observarSesion,
