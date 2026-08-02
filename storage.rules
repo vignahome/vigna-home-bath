@@ -83,6 +83,26 @@ service firebase.storage {
       allow update, delete: if esAdmin();
     }
 
+
+    match /profesionales-vigna/servicios/{contratoId}/evidencias/{archivo} {
+      function contratoServicio() {
+        return firestore.get(/databases/(default)/documents/pv_contratos/$(contratoId)).data;
+      }
+
+      allow read: if esAdmin() || (
+        autenticado() &&
+        (contratoServicio().clienteUid == request.auth.uid ||
+         contratoServicio().profesionalUid == request.auth.uid)
+      );
+      allow create: if pvRol("profesional") &&
+        contratoServicio().profesionalUid == request.auth.uid &&
+        contratoServicio().estado == "En ejecución" &&
+        request.resource.size <= 25 * 1024 * 1024 &&
+        (request.resource.contentType.matches("image/.*") ||
+         request.resource.contentType.matches("video/.*"));
+      allow update, delete: if esAdmin();
+    }
+
     match /{archivo=**} {
       allow read, write: if false;
     }
