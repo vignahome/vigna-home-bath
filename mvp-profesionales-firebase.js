@@ -33,6 +33,7 @@ const COLECCIONES = Object.freeze({
   solicitudes: "pv_solicitudes",
   cotizaciones: "pv_cotizaciones",
   contratos: "pv_contratos",
+  resenas: "pv_resenas",
   auditoria: "pv_auditoria"
 });
 
@@ -347,6 +348,89 @@ async function abrirContratoFirmado(contratoId) {
   };
 }
 
+
+async function iniciarServicio(contratoId) {
+  const { user, contratoRef, contrato } = await contratoAutorizado(contratoId);
+  if (user.uid !== contrato.profesionalUid) throw new Error("Solo el profesional contratado puede iniciar el servicio.");
+  if (contrato.estado !== "Firmado") throw new Error("El contrato debe estar firmado antes de iniciar.");
+  await updateDoc(contratoRef, {
+    estado: "En ejecución",
+    iniciadoPorUid: user.uid,
+    iniciadoEn: ahora(),
+    actualizadoEn: ahora()
+  });
+  await auditar("Servicio iniciado", contratoId, [contrato.clienteUid, contrato.profesionalUid]);
+}
+
+async function finalizarServicio(contratoId, files, nota) {
+  const { user, contratoRef, contrato } = await contratoAutorizado(contratoId);
+  if (user.uid !== contrato.profesionalUid) throw new Error("Solo el profesional contratado puede finalizar el servicio.");
+  if (contrato.estado !== "En ejecución") throw new Error("El servicio debe estar en ejecución.");
+  const evidencias = [...(files || [])].filter((file) => file instanceof File && file.size);
+  if (!evidencias.length || evidencias.length > 6) throw new Error("Adjunta entre 1 y 6 evidencias.");
+  const informe = String(nota || "").trim();
+  if (informe.length < 20) throw new Error("El informe final debe tener al menos 20 caracteres.");
+  const subidas = [];
+  for (const file of evidencias) {
+    const ruta = await subirPrivado(`profesionales-vigna/servicios/${contratoId}/evidencias`, file, { maxMb: 25, tipos: ["image/", "video/"] });
+    subidas.push({ nombre: file.name, ruta, tipo: file.type || "application/octet-stream" });
+  }
+  await updateDoc(contratoRef, {
+    estado: "Finalizado",
+    evidenciasFinalizacion: subidas,
+    notaFinalizacion: informe.slice(0, 1000),
+    finalizadoPorUid: user.uid,
+    finalizadoEn: ahora(),
+    actualizadoEn: ahora()
+  });
+  await auditar("Servicio finalizado con evidencias", `${contratoId}: ${subidas.length} archivo(s)`, [contrato.clienteUid, contrato.profesionalUid]);
+}
+
+async function cerrarServicio(contratoId, calificacion, comentario) {
+  const user = exigirUsuario();
+  const valor = Number(calificacion);
+  const opinion = String(comentario || "").trim();
+  if (!Number.isInteger(valor) || valor < 1 || valor > 5) throw new Error("Selecciona una calificación válida.");
+  if (opinion.length < 10) throw new Error("El comentario debe tener al menos 10 caracteres.");
+  const contratoRef = doc(db, COLECCIONES.contratos, contratoId);
+  const resenaRef = doc(db, COLECCIONES.resenas, contratoId);
+  let participantes = [];
+  await runTransaction(db, async (tx) => {
+    const snapshot = await tx.get(contratoRef);
+    if (!snapshot.exists()) throw new Error("El contrato ya no existe.");
+    const contrato = snapshot.data();
+    if (user.uid !== contrato.clienteUid) throw new Error("Solo el cliente del contrato puede confirmar la conformidad.");
+    if (contrato.estado !== "Finalizado") throw new Error("El profesional todavía no ha finalizado el servicio.");
+    participantes = [contrato.clienteUid, contrato.profesionalUid];
+    tx.update(contratoRef, {
+      estado: "Cerrado",
+      calificacion: valor,
+      comentarioCliente: opinion.slice(0, 1000),
+      cerradoPorUid: user.uid,
+      cerradoEn: ahora(),
+      actualizadoEn: ahora()
+    });
+    tx.set(resenaRef, {
+      contratoId,
+      clienteUid: contrato.clienteUid,
+      profesionalUid: contrato.profesionalUid,
+      calificacion: valor,
+      comentario: opinion.slice(0, 1000),
+      clienteAlias: "Cliente verificado",
+      creadoEn: ahora()
+    });
+  });
+  await auditar("Servicio confirmado y calificado", `${contratoId}: ${valor}/5`, participantes);
+}
+
+async function abrirEvidenciaServicio(contratoId, ruta) {
+  const { contrato } = await contratoAutorizado(contratoId);
+  const evidencias = Array.isArray(contrato.evidenciasFinalizacion) ? contrato.evidenciasFinalizacion : [];
+  const evidencia = evidencias.find((item) => item.ruta === ruta);
+  if (!evidencia) throw new Error("La evidencia solicitada no pertenece a este contrato.");
+  return { nombre: evidencia.nombre, url: await getDownloadURL(ref(storage, evidencia.ruta)) };
+}
+
 async function cambiarEstadoProfesional(uid, estado) {
   const user = exigirUsuario();
   if (!(await esAdmin(user.uid))) throw new Error("Se requiere autorización administrativa.");
@@ -369,7 +453,8 @@ async function cargarDatos() {
   let cotizaciones = [];
   let contratos = [];
   let auditoria = [];
-  if (!user) return { version: 1, profesionales, clientes, solicitudes, cotizaciones, contratos, auditoria, nube: true, rol };
+  const resenas = await todos(COLECCIONES.resenas);
+  if (!user) return { version: 1, profesionales, clientes, solicitudes, cotizaciones, contratos, resenas, auditoria, nube: true, rol };
 
   if (rol === "admin") {
     [profesionales, clientes, solicitudes, cotizaciones, contratos, auditoria] = await Promise.all([
@@ -409,7 +494,7 @@ async function cargarDatos() {
     solicitudes = [...new Map([...asignadas, ...compatibles].map((item) => [item.id, item])).values()];
   }
   const adaptar = (items) => items.map((item) => ({ ...item, clienteId: item.clienteUid || item.clienteId, profesionalId: item.profesionalUid || item.profesionalId, actor: item.actorEmail || item.actorUid || "Sistema" }));
-  return { version: 1, profesionales: adaptar(profesionales), clientes: adaptar(clientes), solicitudes: adaptar(solicitudes), cotizaciones: adaptar(cotizaciones), contratos: adaptar(contratos), auditoria: adaptar(auditoria), nube: true, rol };
+  return { version: 1, profesionales: adaptar(profesionales), clientes: adaptar(clientes), solicitudes: adaptar(solicitudes), cotizaciones: adaptar(cotizaciones), contratos: adaptar(contratos), resenas: adaptar(resenas), auditoria: adaptar(auditoria), nube: true, rol };
 }
 
 const observarSesion = (callback) => onAuthStateChanged(auth, callback);
@@ -428,6 +513,10 @@ export const ProfesionalesFirebase = Object.freeze({
   aceptarCotizacion,
   registrarContratoFirmado,
   abrirContratoFirmado,
+  iniciarServicio,
+  finalizarServicio,
+  cerrarServicio,
+  abrirEvidenciaServicio,
   cambiarEstadoProfesional,
   cargarDatos,
   observarSesion,
