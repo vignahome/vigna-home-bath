@@ -94,7 +94,7 @@ service firebase.storage {
         (contratoServicio().clienteUid == request.auth.uid ||
          contratoServicio().profesionalUid == request.auth.uid)
       );
-      allow create: if pvRol("profesional") &&
+      allow create: if rolProfesionales("profesional") &&
         contratoServicio().profesionalUid == request.auth.uid &&
         contratoServicio().estado == "En ejecución" &&
         request.resource.size <= 25 * 1024 * 1024 &&
