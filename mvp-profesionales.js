@@ -298,11 +298,31 @@
     return canvas.toDataURL("image/jpeg", .78);
   }
 
+  function fechaResena(resena) {
+    const fecha = resena?.creadoEn;
+    if (fecha && typeof fecha.toMillis === "function") return fecha.toMillis();
+    if (fecha && Number.isFinite(fecha.seconds)) return fecha.seconds * 1000;
+    const parsed = Date.parse(fecha || "");
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
   function showProfile(id) {
     const p = data.profesionales.find((item) => item.id === id); if (!p) return;
-    Object.assign(p, valoracionProfesional(p.uid || p.id, p));
+    const profesionalUid = p.uid || p.id;
+    Object.assign(p, valoracionProfesional(profesionalUid, p));
+    const resenasProfesional = (data.resenas || [])
+      .filter((resena) => resena.profesionalUid === profesionalUid && Number(resena.calificacion) >= 1)
+      .slice()
+      .sort((a, b) => fechaResena(b) - fechaResena(a));
+    const opinionesHtml = resenasProfesional.length
+      ? `<section class="profile-reviews" aria-label="Opiniones verificadas"><div class="profile-reviews-heading"><h3>Opiniones verificadas</h3><span>${resenasProfesional.length}</span></div><div class="profile-reviews-list">${resenasProfesional.slice(0, 5).map((resena) => {
+          const score = Math.max(1, Math.min(5, Math.round(Number(resena.calificacion) || 0)));
+          const comentario = String(resena.comentario || "").trim();
+          return `<article class="verified-review"><div class="verified-review-top"><span class="verified-review-stars" aria-label="${score} de 5 estrellas">${"★".repeat(score)}${"☆".repeat(5 - score)}</span><span class="verified-review-client">Cliente verificado</span></div>${comentario ? `<p>${escapar(comentario)}</p>` : `<p class="verified-review-empty">Calificación verificada sin comentario.</p>`}</article>`;
+        }).join("")}</div></section>`
+      : "";
     const content = document.getElementById("profileDialogContent");
-    content.innerHTML = `<div class="profile-hero"><div class="professional-avatar">${escapar(p.fotoIniciales)}</div><div><p class="eyebrow">${escapar(p.estado)}</p><h1>${escapar(nombreCompleto(p))}</h1><p class="primary-profession">${escapar(p.profesionPrincipal)}</p><p class="rating">★★★★★ ${Number(p.calificacion || 5).toFixed(1)} · ${p.trabajos || 0} servicios</p></div></div><div class="chip-list">${p.profesiones.map((x) => `<span class="profession-chip ${x === p.profesionPrincipal ? "primary" : ""}">${escapar(x)}</span>`).join("")}</div><p>${escapar(p.descripcion)}</p><div class="profile-detail-grid"><div class="detail-box"><h3>Cobertura</h3><p>${escapar(p.coberturaDetalle)}</p><p>${escapar(p.distancia || "")}</p></div><div class="detail-box"><h3>Experiencia</h3><p>${p.experiencia} años</p><p>Plan: ${escapar(p.plan || "Sin plan")}</p></div></div><div class="form-actions no-print"><button class="gold-button" data-request="${p.id}">Solicitar servicio</button></div>`;
+    content.innerHTML = `<div class="profile-hero"><div class="professional-avatar">${escapar(p.fotoIniciales)}</div><div><p class="eyebrow">${escapar(p.estado)}</p><h1>${escapar(nombreCompleto(p))}</h1><p class="primary-profession">${escapar(p.profesionPrincipal)}</p><p class="rating">★★★★★ ${Number(p.calificacion || 5).toFixed(1)} · ${p.trabajos || 0} servicios</p></div></div><div class="chip-list">${p.profesiones.map((x) => `<span class="profession-chip ${x === p.profesionPrincipal ? "primary" : ""}">${escapar(x)}</span>`).join("")}</div><p>${escapar(p.descripcion)}</p><div class="profile-detail-grid"><div class="detail-box"><h3>Cobertura</h3><p>${escapar(p.coberturaDetalle)}</p><p>${escapar(p.distancia || "")}</p></div><div class="detail-box"><h3>Experiencia</h3><p>${p.experiencia} años</p><p>Plan: ${escapar(p.plan || "Sin plan")}</p></div></div>${opinionesHtml}<div class="form-actions no-print"><button class="gold-button" data-request="${p.id}">Solicitar servicio</button></div>`;
     document.getElementById("profileDialog").showModal();
   }
 
