@@ -84,6 +84,27 @@ service firebase.storage {
     }
 
 
+
+    match /profesionales-vigna/reclamos/{reclamoId}/{uid}/{archivo} {
+      function reclamo() {
+        return firestore.get(/databases/(default)/documents/pv_reclamos/$(reclamoId)).data;
+      }
+
+      allow read: if esAdmin() || (
+        autenticado() &&
+        (reclamo().clienteUid == request.auth.uid ||
+         reclamo().profesionalUid == request.auth.uid)
+      );
+      allow create: if autenticado() &&
+        request.auth.uid == uid &&
+        (reclamo().clienteUid == uid || reclamo().profesionalUid == uid) &&
+        request.resource.size <= 25 * 1024 * 1024 &&
+        (request.resource.contentType.matches("image/.*") ||
+         request.resource.contentType.matches("video/.*") ||
+         request.resource.contentType == "application/pdf");
+      allow update, delete: if esAdmin();
+    }
+
     match /profesionales-vigna/servicios/{contratoId}/evidencias/{archivo} {
       function contratoServicio() {
         return firestore.get(/databases/(default)/documents/pv_contratos/$(contratoId)).data;
