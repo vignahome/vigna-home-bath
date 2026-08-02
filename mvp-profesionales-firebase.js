@@ -453,7 +453,12 @@ async function cargarDatos() {
   let cotizaciones = [];
   let contratos = [];
   let auditoria = [];
-  const resenas = await todos(COLECCIONES.resenas);
+  let resenas = [];
+  try {
+    resenas = await todos(COLECCIONES.resenas);
+  } catch (error) {
+    console.warn("Las reseñas se activarán cuando se publiquen las reglas actualizadas.", error);
+  }
   if (!user) return { version: 1, profesionales, clientes, solicitudes, cotizaciones, contratos, resenas, auditoria, nube: true, rol };
 
   if (rol === "admin") {
