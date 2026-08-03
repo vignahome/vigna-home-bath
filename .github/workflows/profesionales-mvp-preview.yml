@@ -1,0 +1,69 @@
+name: Vista previa de Profesionales Vigna's
+
+on:
+  push:
+    branches:
+      - agent/profesionales-vigna-mvp
+    paths:
+      - "mvp-profesionales.html"
+      - "mvp-profesionales.css"
+      - "mvp-profesionales.js"
+      - "mvp-profesionales-*.js"
+      - "preparar-hosting-profesionales.js"
+      - "firebase.js"
+      - "firebase.json"
+      - "package.json"
+      - "package-lock.json"
+      - "images/logo/**"
+      - ".github/workflows/profesionales-mvp-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: profesionales-vigna-mvp-preview
+  cancel-in-progress: true
+
+jobs:
+  validar-y-publicar:
+    if: github.ref == 'refs/heads/agent/profesionales-vigna-mvp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Descargar la rama MVP
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Validar el código
+        run: npm run check
+
+      - name: Preparar la publicación aislada
+        run: npm run build:profesionales
+
+      - name: Verificar límites de seguridad
+        shell: bash
+        run: |
+          test "$GITHUB_REF_NAME" = "agent/profesionales-vigna-mvp"
+          test -f hosting-profesionales/index.html
+          test -f hosting-profesionales/mvp-profesionales.html
+          test -f hosting-profesionales/mvp-profesionales.js
+          test ! -f hosting-profesionales/server.js
+          test ! -f hosting-profesionales/.env
+
+      - name: Publicar únicamente la vista previa
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_VIGNA_PLOMEROS }}
+          projectId: vigna-plomeros
+          channelId: profesionales-mvp
+          expires: 30d
