@@ -40,7 +40,7 @@ const llavesBalanceadas = (contenido) => {
   return nivel === 0;
 };
 
-exigir(html.includes('src="garantias-reclamos.js?v=1"'), "la página no carga su controlador");
+exigir(html.includes('src="garantias-reclamos.js?v=2"'), "la página no carga su controlador actualizado");
 exigir(html.includes('href="garantias-reclamos.css?v=1"'), "la página no carga sus estilos");
 exigir(js.includes('"cliente", "profesional", "admin"'), "faltan los tres roles autorizados");
 exigir(js.includes("signInWithEmailAndPassword"), "falta Firebase Auth");
@@ -69,6 +69,9 @@ exigir(interfazNube.includes("function destinoNotificacion(item)"), "las notific
 exigir(interfazNube.includes('location.href = "garantias-reclamos.html"'), "los avisos de reclamo no abren Asistencia");
 exigir(interfazNube.includes("data-pv-notification-target"), "faltan acciones en los avisos globales");
 exigir(firebaseProfesionales.includes("onSnapshot"), "falta la escucha Firestore en tiempo real");
+exigir(js.includes("function suscribirActualizaciones()"), "Asistencia no prepara sus actualizaciones en tiempo real");
+exigir(js.includes("detenerReclamos = onSnapshot"), "los expedientes de Asistencia no se actualizan en vivo");
+exigir(js.includes("detenerContratos = onSnapshot"), "los contratos disponibles no se actualizan en vivo");
 exigir(firebaseProfesionales.includes("async function observarActividad"), "falta el observador global de actividad");
 exigir(interfazNube.includes("recibirActividadEnTiempoReal"), "la interfaz no actualiza las notificaciones en vivo");
 exigir(principal.includes('name="garantiaDias"'), "la cotización no solicita una vigencia de garantía");

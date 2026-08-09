@@ -4,6 +4,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   query,
   runTransaction,
   updateDoc,
@@ -42,6 +43,9 @@ const estado = {
   notificaciones: [],
   cargando: false
 };
+
+let detenerReclamos = null;
+let detenerContratos = null;
 
 const elementos = {
   acceso: document.getElementById("acceso"),
@@ -287,6 +291,49 @@ async function cargarDatos() {
     estado.cargando = false;
   }
   renderizar();
+}
+
+function detenerActualizaciones() {
+  if (detenerReclamos) detenerReclamos();
+  if (detenerContratos) detenerContratos();
+  detenerReclamos = null;
+  detenerContratos = null;
+}
+
+function ordenarReclamos(reclamos) {
+  return reclamos.sort((a, b) => String(b.actualizadoEn || b.creadoEn || "").localeCompare(String(a.actualizadoEn || a.creadoEn || "")));
+}
+
+function suscribirActualizaciones() {
+  detenerActualizaciones();
+  if (!estado.usuario || !ROLES_VALIDOS.includes(estado.rol)) return;
+
+  const reclamosConsulta = estado.rol === "admin"
+    ? collection(db, COLECCIONES.reclamos)
+    : query(
+      collection(db, COLECCIONES.reclamos),
+      where(estado.rol === "cliente" ? "clienteUid" : "profesionalUid", "==", estado.usuario.uid)
+    );
+
+  detenerReclamos = onSnapshot(reclamosConsulta, (snapshot) => {
+    estado.reclamos = ordenarReclamos(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })));
+    renderizar();
+  }, (error) => {
+    console.error("No se pudo actualizar Asistencia en tiempo real", error);
+  });
+
+  if (estado.rol === "cliente") {
+    const contratosConsulta = query(
+      collection(db, COLECCIONES.contratos),
+      where("clienteUid", "==", estado.usuario.uid)
+    );
+    detenerContratos = onSnapshot(contratosConsulta, (snapshot) => {
+      estado.contratos = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+      renderizar();
+    }, (error) => {
+      console.error("No se pudieron actualizar los contratos en tiempo real", error);
+    });
+  }
 }
 
 function configurarSesionVisual() {
@@ -697,6 +744,7 @@ elementos.listaReclamos.addEventListener("click", async (evento) => {
 });
 
 onAuthStateChanged(auth, async (usuario) => {
+  detenerActualizaciones();
   estado.usuario = usuario;
   estado.rol = usuario ? await obtenerRol(usuario.uid) : "publico";
   estado.contratos = [];
@@ -706,6 +754,7 @@ onAuthStateChanged(auth, async (usuario) => {
   if (usuario && ROLES_VALIDOS.includes(estado.rol)) {
     try {
       await cargarDatos();
+      suscribirActualizaciones();
     } catch (error) {
       console.error(error);
       mostrarMensaje(mensajeError(error), true);

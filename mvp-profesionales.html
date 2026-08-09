@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profesionales Vigna’s - MVP</title>
   <meta name="description" content="MVP de Profesionales Vigna’s para registro, búsqueda, cotizaciones y contratos.">
-  <link rel="stylesheet" href="mvp-profesionales.css?v=14">
+  <link rel="stylesheet" href="mvp-profesionales.css?v=15">
 </head>
 <body>
   <header class="mvp-header">
@@ -13,7 +13,11 @@
       <img class="mvp-brand-logo" src="images/logo/ChatGPT Image 26 may 2026, 11_05_03 p.m..png" alt="VIGNA Home & Bath">
       <span class="mvp-brand-section">Profesionales</span>
     </a>
-    <button class="menu-button" id="menuButton" type="button" aria-expanded="false" aria-controls="mainNav">☰</button>
+    <button class="menu-button" id="menuButton" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M4 6h16M4 12h16M4 18h16"></path>
+      </svg>
+    </button>
     <nav class="mvp-nav" id="mainNav" aria-label="Navegación principal">
       <button type="button" data-view="inicio" class="active">Buscar</button>
       <button type="button" data-view="solicitud">Solicitar servicio</button>

@@ -146,3 +146,8 @@ form :disabled{cursor:wait;opacity:.7}
 @media(max-width:1000px){.pv-notifications-trigger{width:100%;height:auto;min-height:42px}.pv-notifications-trigger:after{content:"Notificaciones";margin-left:8px;font-size:14px}.pv-notifications-count{top:4px;right:8px}}
 @media(max-width:640px){.assistance-fab{right:16px;bottom:76px;width:58px;height:58px}.toast{right:16px;bottom:146px;max-width:calc(100% - 32px)}}
 @media(max-width:560px){.pv-notification-footer{align-items:stretch;flex-direction:column}.pv-notification-action{width:100%}}
+
+/* El icono vectorial conserva su forma en navegadores y fuentes móviles. */
+.menu-button{place-items:center;width:42px;height:42px;padding:9px;font-size:0}
+.menu-button svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+@media(max-width:1000px){.menu-button{display:grid}}
