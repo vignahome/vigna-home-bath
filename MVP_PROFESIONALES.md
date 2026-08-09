@@ -23,6 +23,7 @@ La gestión privada de garantías, reclamos e incidencias se abre desde el menú
 - Módulo independiente de Asistencia para garantías y reclamos de cliente, profesional y administración.
 - Evidencias privadas vinculadas al contrato mediante Firebase Storage.
 - Centro global de notificaciones en la página principal, alimentado por toda la actividad auditada del usuario y por toda la plataforma para administración.
+- Sincronización automática de paneles cuando llega una actividad nueva, con filtro opcional de notificaciones no leídas.
 - Bloqueo de reclamos fuera de garantía o duplicados mientras exista otro expediente activo del contrato.
 - Auditoría básica de todas las operaciones.
 - Diseño responsive negro y dorado metálico.

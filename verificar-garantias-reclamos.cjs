@@ -74,6 +74,11 @@ exigir(js.includes("detenerReclamos = onSnapshot"), "los expedientes de Asistenc
 exigir(js.includes("detenerContratos = onSnapshot"), "los contratos disponibles no se actualizan en vivo");
 exigir(firebaseProfesionales.includes("async function observarActividad"), "falta el observador global de actividad");
 exigir(interfazNube.includes("recibirActividadEnTiempoReal"), "la interfaz no actualiza las notificaciones en vivo");
+exigir(interfazNube.includes("temporizadorSincronizacion"), "la actividad nueva no sincroniza el resto de los paneles");
+exigir(interfazNube.includes("actividadInicializada = true"), "la primera notificación posterior a una lista vacía puede perderse");
+exigir(interfazNube.includes('filtroNotificaciones === "no-leidas"'), "falta el filtro de notificaciones no leídas");
+exigir(principal.includes('id="pvNotificationsFilter"'), "falta el selector visual de notificaciones");
+exigir(!interfazNube.includes('showModal();\n    marcarNotificacionesVistas();'), "abrir el centro no debe marcar automáticamente los avisos");
 exigir(principal.includes('name="garantiaDias"'), "la cotización no solicita una vigencia de garantía");
 exigir(firebaseProfesionales.includes("vigenciaGarantia"), "el cierre no prepara la vigencia estructurada de garantía");
 exigir(hosting.includes('"garantias-reclamos.html"'), "Hosting no incluye la página independiente");

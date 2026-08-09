@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profesionales Vigna’s - MVP</title>
   <meta name="description" content="MVP de Profesionales Vigna’s para registro, búsqueda, cotizaciones y contratos.">
-  <link rel="stylesheet" href="mvp-profesionales.css?v=15">
+  <link rel="stylesheet" href="mvp-profesionales.css?v=16">
 </head>
 <body>
   <header class="mvp-header">
@@ -283,12 +283,20 @@
       <p class="eyebrow">ACTIVIDAD COMPLETA</p>
       <h2>Todas las notificaciones</h2>
       <p>Servicios, cotizaciones, contratos, asistencia y actuaciones administrativas, sin excluir ningún evento registrado para tu cuenta.</p>
-      <button id="pvNotificationsSeen" class="secondary-button" type="button">Marcar todas como vistas</button>
+      <div class="pv-notifications-controls">
+        <label>Mostrar
+          <select id="pvNotificationsFilter">
+            <option value="todas">Todas las notificaciones</option>
+            <option value="no-leidas">Solo no leídas</option>
+          </select>
+        </label>
+        <button id="pvNotificationsSeen" class="secondary-button" type="button">Marcar todas como vistas</button>
+      </div>
     </div>
     <div id="pvNotificationsList" class="pv-notifications-list" aria-live="polite"></div>
   </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="mvp-profesionales-bootstrap.js?v=10"></script>
+  <script type="module" src="mvp-profesionales-bootstrap.js?v=11"></script>
 </body>
 </html>

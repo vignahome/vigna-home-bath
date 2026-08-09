@@ -6,6 +6,9 @@ let notificacionesGlobales = [];
 let usuarioNotificaciones = null;
 let detenerActividad = null;
 let temporizadorAvisoVivo = null;
+let temporizadorSincronizacion = null;
+let actividadInicializada = false;
+let filtroNotificaciones = "todas";
 
 const esperarMVP = () => window.VignaProfesionalesMVP
   ? Promise.resolve(window.VignaProfesionalesMVP)
@@ -137,10 +140,13 @@ function pintarNotificacionesGlobales() {
   }
   const ultimaRevision = ultimaRevisionNotificaciones(uid);
   const nuevas = notificacionesGlobales.filter((item) => new Date(item.fecha || "").getTime() > ultimaRevision).length;
+  const visibles = filtroNotificaciones === "no-leidas"
+    ? notificacionesGlobales.filter((item) => new Date(item.fecha || "").getTime() > ultimaRevision)
+    : notificacionesGlobales;
   contador.textContent = nuevas > 99 ? "99+" : String(nuevas);
   boton.setAttribute("aria-label", nuevas ? `Abrir todas las notificaciones. ${nuevas} nuevas` : "Abrir todas las notificaciones");
-  lista.innerHTML = notificacionesGlobales.length
-    ? notificacionesGlobales.map((item) => {
+  lista.innerHTML = visibles.length
+    ? visibles.map((item) => {
       const nueva = new Date(item.fecha || "").getTime() > ultimaRevision;
       const accion = destinoNotificacion(item);
       return `<article class="pv-notification-item ${nueva ? "unread" : ""}">
@@ -151,7 +157,7 @@ function pintarNotificacionesGlobales() {
         <button class="tiny-button pv-notification-action" type="button" data-pv-notification-target="${escaparHtml(accion.destino)}">${escaparHtml(accion.etiqueta)}</button></div></div>
       </article>`;
     }).join("")
-    : '<div class="pv-notifications-empty">Todavía no existe actividad registrada para esta cuenta.</div>';
+    : `<div class="pv-notifications-empty">${filtroNotificaciones === "no-leidas" ? "No tienes notificaciones pendientes." : "Todavía no existe actividad registrada para esta cuenta."}</div>`;
 }
 
 function actualizarNotificacionesGlobales(datos, user) {
@@ -177,10 +183,16 @@ function mostrarNotificacionEnVivo(item) {
 }
 
 function recibirActividadEnTiempoReal(actividad, user) {
+  const escuchaEstabaLista = actividadInicializada;
   const anteriores = new Set(notificacionesGlobales.map((item) => item.id).filter(Boolean));
   actualizarNotificacionesGlobales({ auditoria: actividad }, user);
   const nueva = notificacionesGlobales.find((item) => item.id && !anteriores.has(item.id));
-  if (anteriores.size && nueva) mostrarNotificacionEnVivo(nueva);
+  actividadInicializada = true;
+  if (escuchaEstabaLista && nueva) {
+    mostrarNotificacionEnVivo(nueva);
+    window.clearTimeout(temporizadorSincronizacion);
+    temporizadorSincronizacion = window.setTimeout(() => refrescarNube(), 350);
+  }
 }
 
 function insertarRevisionDocumentos() {
@@ -332,7 +344,6 @@ document.addEventListener("click", async (event) => {
   }
   if (event.target.closest("#pvNotificationsButton")) {
     document.getElementById("pvNotificationsDialog")?.showModal();
-    marcarNotificacionesVistas();
     return;
   }
   if (event.target.closest("[data-pv-notifications-close]")) {
@@ -459,11 +470,18 @@ document.addEventListener("click", async (event) => {
   }
 }, true);
 
+document.getElementById("pvNotificationsFilter")?.addEventListener("change", (event) => {
+  filtroNotificaciones = event.target.value === "no-leidas" ? "no-leidas" : "todas";
+  pintarNotificacionesGlobales();
+});
+
 asegurarAsistenciaFlotante();
 insertarAcceso();
 insertarRevisionDocumentos();
 insertarPasswords();
 api.observarSesion(async (user) => {
+  actividadInicializada = false;
+  window.clearTimeout(temporizadorSincronizacion);
   if (detenerActividad) {
     detenerActividad();
     detenerActividad = null;

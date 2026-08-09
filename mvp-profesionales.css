@@ -132,6 +132,8 @@ form :disabled{cursor:wait;opacity:.7}
 .pv-notifications-heading h2{margin:5px 0;font-size:clamp(27px,4vw,40px)}
 .pv-notifications-heading p:not(.eyebrow){margin:0 0 16px;color:var(--muted)}
 .pv-notifications-heading .secondary-button{padding:9px 13px}
+.pv-notifications-controls{display:flex;align-items:end;justify-content:space-between;gap:14px}
+.pv-notifications-controls label{width:min(270px,100%)}
 .pv-notifications-list{display:grid;gap:10px;margin-top:18px}
 .pv-notification-item{display:grid;grid-template-columns:auto 1fr;gap:12px;padding:15px;border:1px solid #3a3a3a;border-radius:13px;background:#151515}
 .pv-notification-item.unread{border-color:#8d650d;background:linear-gradient(145deg,#211807,#15130e)}
@@ -145,7 +147,7 @@ form :disabled{cursor:wait;opacity:.7}
 .pv-notifications-empty{padding:45px 20px;text-align:center;border:1px dashed #555;border-radius:13px;color:var(--muted)}
 @media(max-width:1000px){.pv-notifications-trigger{width:100%;height:auto;min-height:42px}.pv-notifications-trigger:after{content:"Notificaciones";margin-left:8px;font-size:14px}.pv-notifications-count{top:4px;right:8px}}
 @media(max-width:640px){.assistance-fab{right:16px;bottom:76px;width:58px;height:58px}.toast{right:16px;bottom:146px;max-width:calc(100% - 32px)}}
-@media(max-width:560px){.pv-notification-footer{align-items:stretch;flex-direction:column}.pv-notification-action{width:100%}}
+@media(max-width:560px){.pv-notification-footer,.pv-notifications-controls{align-items:stretch;flex-direction:column}.pv-notification-action,.pv-notifications-controls .secondary-button{width:100%}}
 
 /* El icono vectorial conserva su forma en navegadores y fuentes móviles. */
 .menu-button{place-items:center;width:42px;height:42px;padding:9px;font-size:0}
