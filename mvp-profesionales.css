@@ -118,3 +118,26 @@ form :disabled{cursor:wait;opacity:.7}
 /* Acceso al módulo independiente de garantías y reclamos */
 .mvp-nav a{border:0;border-radius:10px;background:transparent;color:#ddd;padding:10px 12px;text-decoration:none}
 .mvp-nav a:hover{background:var(--metallic);color:#1a0e00;font-weight:800}
+
+.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.mvp-nav .assistance-link{display:grid;width:42px;height:42px;padding:8px;place-items:center;border:1px solid transparent}
+.mvp-nav .assistance-link svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.mvp-nav .assistance-link:hover{border-color:var(--gold-light)}
+.pv-notifications-trigger{position:relative;display:grid!important;width:42px;height:42px;padding:0!important;place-items:center;font-size:20px}
+.pv-notifications-trigger[hidden]{display:none!important}
+.pv-notifications-count{position:absolute;top:1px;right:0;display:grid;min-width:18px;height:18px;padding:0 4px;place-items:center;border:1px solid #f2cb64;border-radius:999px;background:#7a4e00;color:#fff;font-size:10px;font-weight:900;line-height:1}
+.pv-notifications-dialog{width:min(760px,calc(100% - 24px))}
+.pv-notifications-heading{padding-right:52px;border-bottom:1px solid var(--line);padding-bottom:18px}
+.pv-notifications-heading h2{margin:5px 0;font-size:clamp(27px,4vw,40px)}
+.pv-notifications-heading p:not(.eyebrow){margin:0 0 16px;color:var(--muted)}
+.pv-notifications-heading .secondary-button{padding:9px 13px}
+.pv-notifications-list{display:grid;gap:10px;margin-top:18px}
+.pv-notification-item{display:grid;grid-template-columns:auto 1fr;gap:12px;padding:15px;border:1px solid #3a3a3a;border-radius:13px;background:#151515}
+.pv-notification-item.unread{border-color:#8d650d;background:linear-gradient(145deg,#211807,#15130e)}
+.pv-notification-dot{width:9px;height:9px;margin-top:7px;border-radius:50%;background:#777}
+.pv-notification-item.unread .pv-notification-dot{background:var(--gold-light);box-shadow:0 0 12px rgba(255,211,90,.45)}
+.pv-notification-item h3{margin:0;color:var(--gold-light);font-size:16px}
+.pv-notification-item p{margin:5px 0;color:#eee}
+.pv-notification-item small{color:var(--muted)}
+.pv-notifications-empty{padding:45px 20px;text-align:center;border:1px dashed #555;border-radius:13px;color:var(--muted)}
+@media(max-width:1000px){.mvp-nav .assistance-link,.pv-notifications-trigger{width:100%;height:auto;min-height:42px}.mvp-nav .assistance-link:after{content:"Asistencia";margin-left:8px}.mvp-nav .assistance-link{display:flex;justify-content:center}.pv-notifications-trigger:after{content:"Notificaciones";margin-left:8px;font-size:14px}.pv-notifications-count{top:4px;right:8px}}

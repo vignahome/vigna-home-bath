@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profesionales Vigna’s - MVP</title>
   <meta name="description" content="MVP de Profesionales Vigna’s para registro, búsqueda, cotizaciones y contratos.">
-  <link rel="stylesheet" href="mvp-profesionales.css?v=10">
+  <link rel="stylesheet" href="mvp-profesionales.css?v=11">
 </head>
 <body>
   <header class="mvp-header">
@@ -21,7 +21,15 @@
       <button type="button" data-view="registro-cliente">Soy cliente</button>
       <button type="button" data-view="panel">Mi panel</button>
       <button type="button" data-view="admin">Administración</button>
-      <a href="garantias-reclamos.html">Garantías y reclamos</a>
+      <button id="pvNotificationsButton" class="pv-notifications-trigger" type="button" aria-label="Abrir todas las notificaciones" title="Notificaciones" hidden>
+        <span aria-hidden="true">🔔</span><span id="pvNotificationsCount" class="pv-notifications-count">0</span>
+      </button>
+      <a class="assistance-link" href="garantias-reclamos.html" aria-label="Asistencia" title="Asistencia">
+        <svg viewBox="0 0 64 64" role="img" aria-hidden="true">
+          <path d="M13 34v-5a19 19 0 0 1 38 0v5M13 34H9a4 4 0 0 0-4 4v10a4 4 0 0 0 4 4h4V34Zm38 0h4a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4h-4V34ZM51 49c0 6-5 10-11 10h-3m0 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+        </svg>
+        <span class="visually-hidden">Asistencia</span>
+      </a>
     </nav>
   </header>
 
@@ -264,8 +272,18 @@
 
   <dialog id="profileDialog" class="mvp-dialog"><button class="dialog-close" data-close-dialog type="button">×</button><div id="profileDialogContent"></div></dialog>
   <dialog id="contractDialog" class="mvp-dialog contract-dialog"><button class="dialog-close" data-close-dialog type="button">×</button><div id="contractDialogContent"></div></dialog>
+  <dialog id="pvNotificationsDialog" class="mvp-dialog pv-notifications-dialog">
+    <button class="dialog-close" data-pv-notifications-close type="button" aria-label="Cerrar notificaciones">×</button>
+    <div class="pv-notifications-heading">
+      <p class="eyebrow">ACTIVIDAD COMPLETA</p>
+      <h2>Todas las notificaciones</h2>
+      <p>Servicios, cotizaciones, contratos, asistencia y actuaciones administrativas, sin excluir ningún evento registrado para tu cuenta.</p>
+      <button id="pvNotificationsSeen" class="secondary-button" type="button">Marcar todas como vistas</button>
+    </div>
+    <div id="pvNotificationsList" class="pv-notifications-list" aria-live="polite"></div>
+  </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="mvp-profesionales-bootstrap.js?v=6"></script>
+  <script type="module" src="mvp-profesionales-bootstrap.js?v=7"></script>
 </body>
 </html>

@@ -21,6 +21,7 @@ const js = leer("garantias-reclamos.js");
 const bootstrap = leer("mvp-profesionales-bootstrap.js");
 const principal = leer("mvp-profesionales.html");
 const firebaseProfesionales = leer("mvp-profesionales-firebase.js");
+const interfazNube = leer("mvp-profesionales-cloud-ui.js");
 const hosting = leer("preparar-hosting-profesionales.js");
 const firestore = leer("firestore.rules");
 const storage = leer("storage.rules");
@@ -47,7 +48,7 @@ exigir(js.includes('reclamos: "pv_reclamos"'), "falta la conexión a Firestore")
 exigir(js.includes("uploadBytes"), "falta la conexión a Firebase Storage");
 exigir(js.includes('notificaciones: "pv_notificaciones"'), "falta la colección aislada de notificaciones");
 exigir(js.includes("guardarNotificaciones"), "faltan los avisos automáticos por cambio de estado");
-exigir(js.includes("marcarNotificacionLeida"), "falta el control de notificaciones leídas");
+exigir(interfazNube.includes("marcarNotificacionesVistas"), "falta el control global de notificaciones vistas");
 exigir(js.includes("Este cierre omite la aceptación final del cliente"), "el cierre administrativo directo debe pedir confirmación");
 exigir(js.includes("function garantiaVigente(contrato)"), "falta validar la vigencia de la garantía");
 exigir(js.includes("function tieneReclamoActivo(contratoId)"), "falta bloquear expedientes activos duplicados");
@@ -55,6 +56,13 @@ exigir(js.includes("La garantía de este contrato ya venció"), "falta informar 
 exigir(js.includes("form?.elements?.namedItem(nombre)"), "los formularios deben poder leerse después de bloquear sus controles");
 exigir(js.includes("} finally {\n    estado.cargando = false;\n  }\n  renderizar();"), "el listado debe renderizarse después de finalizar la carga");
 exigir(principal.includes('href="garantias-reclamos.html"'), "el MVP no enlaza el módulo independiente");
+exigir(principal.includes('aria-label="Asistencia"'), "el acceso principal no se llama Asistencia");
+exigir(principal.includes('class="assistance-link"'), "falta el acceso con símbolo de auriculares");
+exigir(principal.includes('id="pvNotificationsDialog"'), "falta el centro global de notificaciones en la página principal");
+exigir(!html.includes('id="abrirNotificaciones"'), "las notificaciones no deben permanecer en la página de Asistencia");
+exigir(html.includes("<h1>Asistencia</h1>"), "el módulo independiente no se presenta como Asistencia");
+exigir(interfazNube.includes("actualizarNotificacionesGlobales(datos, user)"), "la página principal no carga toda la actividad auditada");
+exigir(interfazNube.includes("datos?.auditoria || []"), "el centro global no usa la auditoría completa");
 exigir(principal.includes('name="garantiaDias"'), "la cotización no solicita una vigencia de garantía");
 exigir(firebaseProfesionales.includes("vigenciaGarantia"), "el cierre no prepara la vigencia estructurada de garantía");
 exigir(hosting.includes('"garantias-reclamos.html"'), "Hosting no incluye la página independiente");
@@ -70,4 +78,4 @@ exigir(storage.includes("match /profesionales-vigna/reclamos/{reclamoId}/{uid}/{
 exigir(llavesBalanceadas(firestore), "las llaves de firestore.rules no están balanceadas");
 exigir(llavesBalanceadas(storage), "las llaves de storage.rules no están balanceadas");
 
-console.log("Garantías y reclamos: integración independiente verificada.");
+console.log("Asistencia y notificaciones globales: integración verificada.");

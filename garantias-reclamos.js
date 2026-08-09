@@ -49,11 +49,6 @@ const elementos = {
   modulo: document.getElementById("modulo"),
   estadoSesion: document.getElementById("estadoSesion"),
   cerrarSesion: document.getElementById("cerrarSesion"),
-  abrirNotificaciones: document.getElementById("abrirNotificaciones"),
-  contadorNotificaciones: document.getElementById("contadorNotificaciones"),
-  dialogoNotificaciones: document.getElementById("dialogoNotificaciones"),
-  cerrarNotificaciones: document.getElementById("cerrarNotificaciones"),
-  listaNotificaciones: document.getElementById("listaNotificaciones"),
   formAcceso: document.getElementById("formAcceso"),
   correoUsuario: document.getElementById("correoUsuario"),
   etiquetaRol: document.getElementById("etiquetaRol"),
@@ -135,15 +130,6 @@ async function obtenerRol(uid) {
 async function obtenerPorCampo(coleccion, campo, valor) {
   const snapshot = await getDocs(query(collection(db, coleccion), where(campo, "==", valor)));
   return snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-}
-
-async function obtenerNotificaciones(campo, valor) {
-  try {
-    return await obtenerPorCampo(COLECCIONES.notificaciones, campo, valor);
-  } catch (error) {
-    console.warn("Las notificaciones se activarán cuando se publiquen sus reglas Firebase.", error);
-    return [];
-  }
 }
 
 function entradaHistorial(accion, detalle = "") {
@@ -285,27 +271,18 @@ async function cargarDatos() {
   renderizarLista();
   try {
     if (estado.rol === "admin") {
-      const [snapshot, notificaciones] = await Promise.all([
-        getDocs(collection(db, COLECCIONES.reclamos)),
-        obtenerNotificaciones("destinatarioRol", "admin")
-      ]);
+      const snapshot = await getDocs(collection(db, COLECCIONES.reclamos));
       estado.reclamos = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-      estado.notificaciones = notificaciones;
       estado.contratos = [];
     } else {
       const campo = estado.rol === "cliente" ? "clienteUid" : "profesionalUid";
-      const tareas = [
-        obtenerPorCampo(COLECCIONES.reclamos, campo, estado.usuario.uid),
-        obtenerNotificaciones("destinatarioUid", estado.usuario.uid)
-      ];
+      const tareas = [obtenerPorCampo(COLECCIONES.reclamos, campo, estado.usuario.uid)];
       if (estado.rol === "cliente") tareas.push(obtenerPorCampo(COLECCIONES.contratos, "clienteUid", estado.usuario.uid));
       const resultados = await Promise.all(tareas);
       estado.reclamos = resultados[0];
-      estado.notificaciones = resultados[1];
-      estado.contratos = estado.rol === "cliente" ? resultados[2] : [];
+      estado.contratos = estado.rol === "cliente" ? resultados[1] : [];
     }
     estado.reclamos.sort((a, b) => String(b.actualizadoEn || b.creadoEn || "").localeCompare(String(a.actualizadoEn || a.creadoEn || "")));
-    estado.notificaciones.sort((a, b) => String(b.creadoEn || "").localeCompare(String(a.creadoEn || "")));
   } finally {
     estado.cargando = false;
   }
@@ -319,7 +296,6 @@ function configurarSesionVisual() {
   elementos.accesoDenegado.hidden = !autenticado || autorizado;
   elementos.modulo.hidden = !autorizado;
   elementos.cerrarSesion.hidden = !autenticado;
-  elementos.abrirNotificaciones.hidden = !autorizado;
 
   if (!autenticado) {
     elementos.estadoSesion.innerHTML = "<div><strong>Sesión requerida</strong><small>Ingresa para consultar expedientes privados.</small></div>";
@@ -445,27 +421,12 @@ function renderizarLista() {
     : '<div class="gr-empty">No existen expedientes para esta vista.</div>';
 }
 
-function renderizarNotificaciones() {
-  const pendientes = estado.notificaciones.filter((item) => !item.leida).length;
-  elementos.contadorNotificaciones.textContent = String(pendientes);
-  elementos.listaNotificaciones.innerHTML = estado.notificaciones.length
-    ? estado.notificaciones.map((item) => `<article class="gr-notification ${item.leida ? "" : "unread"}">
-        <div class="gr-notification-head">
-          <div><h3>${escapar(item.titulo || "Actualización de expediente")}</h3><small>${escapar(fechaLegible(item.creadoEn))} · Expediente ${escapar(item.reclamoId || "—")}</small></div>
-          ${item.leida ? "" : `<button class="gr-button" type="button" data-leer-notificacion="${escapar(item.id)}">Marcar como leída</button>`}
-        </div>
-        <p>${escapar(item.mensaje || "El expediente recibió una actualización.")}</p>
-      </article>`).join("")
-    : '<div class="gr-empty">Todavía no tienes notificaciones.</div>';
-}
-
 function renderizar() {
   configurarSesionVisual();
   if (!estado.usuario || !ROLES_VALIDOS.includes(estado.rol)) return;
   renderizarMetricas();
   renderizarContratos();
   renderizarLista();
-  renderizarNotificaciones();
 }
 
 async function crearReclamo(form) {
@@ -655,18 +616,6 @@ async function cerrarReclamoCliente(reclamoId) {
   await cargarDatos();
 }
 
-async function marcarNotificacionLeida(notificacionId) {
-  const notificacion = estado.notificaciones.find((item) => item.id === notificacionId);
-  if (!notificacion || notificacion.leida) return;
-  await updateDoc(doc(db, COLECCIONES.notificaciones, notificacionId), {
-    leida: true,
-    leidaEn: ahora()
-  });
-  notificacion.leida = true;
-  notificacion.leidaEn = ahora();
-  renderizarNotificaciones();
-}
-
 async function abrirArchivo(ruta) {
   if (!ruta) throw new Error("La evidencia no tiene una ruta válida.");
   const url = await getDownloadURL(ref(storage, ruta));
@@ -689,29 +638,8 @@ elementos.formAcceso.addEventListener("submit", async (evento) => {
 });
 
 elementos.cerrarSesion.addEventListener("click", async () => {
-  elementos.dialogoNotificaciones.close();
   await signOut(auth);
   mostrarMensaje("Sesión cerrada.");
-});
-
-elementos.abrirNotificaciones.addEventListener("click", () => {
-  renderizarNotificaciones();
-  elementos.dialogoNotificaciones.showModal();
-});
-
-elementos.cerrarNotificaciones.addEventListener("click", () => elementos.dialogoNotificaciones.close());
-
-elementos.listaNotificaciones.addEventListener("click", async (evento) => {
-  const boton = evento.target.closest("[data-leer-notificacion]");
-  if (!boton) return;
-  boton.disabled = true;
-  try {
-    await marcarNotificacionLeida(boton.dataset.leerNotificacion);
-  } catch (error) {
-    console.error(error);
-    mostrarMensaje(mensajeError(error), true);
-    boton.disabled = false;
-  }
 });
 
 elementos.formReclamo.addEventListener("submit", async (evento) => {

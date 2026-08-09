@@ -235,7 +235,14 @@ async function crearSolicitud(form) {
     estado: "Enviada", creadoEn: ahora(), actualizadoEn: ahora()
   };
   await setDoc(solicitudRef, solicitud);
-  await auditar("Solicitud creada", `${solicitudRef.id}: ${solicitud.profesion}`, [user.uid, solicitud.profesionalUid]);
+  let profesionalesCompatibles = [];
+  if (!solicitud.profesionalUid) {
+    const aprobados = await porCampo(COLECCIONES.profesionales, "estado", "Aprobado");
+    profesionalesCompatibles = aprobados
+      .filter((item) => (item.profesiones || []).includes(solicitud.profesion))
+      .map((item) => item.uid || item.id);
+  }
+  await auditar("Solicitud creada", `${solicitudRef.id}: ${solicitud.profesion}`, [user.uid, solicitud.profesionalUid, ...profesionalesCompatibles]);
   return solicitud;
 }
 
@@ -297,11 +304,13 @@ async function aceptarCotizacion(cotizacionId, opcionIndice) {
   if (!clienteSnapshot.exists()) throw new Error("No se encontró el perfil del cliente.");
   const cliente = clienteSnapshot.data();
   const contratoRef = doc(collection(db, COLECCIONES.contratos));
+  let profesionalUid = "";
   await runTransaction(db, async (tx) => {
     const cotizacionRef = doc(db, COLECCIONES.cotizaciones, cotizacionId);
     const cotizacionSnapshot = await tx.get(cotizacionRef);
     if (!cotizacionSnapshot.exists()) throw new Error("La cotización ya no existe.");
     const cotizacion = cotizacionSnapshot.data();
+    profesionalUid = cotizacion.profesionalUid;
     if (cotizacion.clienteUid !== user.uid) throw new Error("Esta cotización no pertenece a tu cuenta.");
     if (cotizacion.estado === "Aceptada") throw new Error("Esta cotización ya fue aceptada.");
     const solicitudRef = doc(db, COLECCIONES.solicitudes, cotizacion.solicitudId);
@@ -323,7 +332,7 @@ async function aceptarCotizacion(cotizacionId, opcionIndice) {
     tx.update(cotizacionRef, { estado: "Aceptada", actualizadoEn: ahora() });
     tx.update(solicitudRef, { estado: "Contratada", profesionalUid: cotizacion.profesionalUid, actualizadoEn: ahora() });
   });
-  await auditar("Contrato generado", `${contratoRef.id} desde ${cotizacionId}`, [user.uid]);
+  await auditar("Contrato generado", `${contratoRef.id} desde ${cotizacionId}`, [user.uid, profesionalUid]);
   return contratoRef.id;
 }
 

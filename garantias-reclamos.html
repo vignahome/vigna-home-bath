@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Garantías y reclamos | Profesionales Vigna’s</title>
-  <meta name="description" content="Gestión privada de garantías, reclamos e incidencias de Profesionales Vigna’s.">
+  <title>Asistencia | Profesionales Vigna’s</title>
+  <meta name="description" content="Asistencia privada para garantías, reclamos e incidencias de Profesionales Vigna’s.">
   <link rel="stylesheet" href="garantias-reclamos.css?v=1">
 </head>
 <body>
@@ -15,7 +15,6 @@
     </a>
     <nav aria-label="Navegación del módulo">
       <a href="mvp-profesionales.html">Volver a profesionales</a>
-      <button id="abrirNotificaciones" type="button" hidden>Notificaciones <span id="contadorNotificaciones">0</span></button>
       <button id="cerrarSesion" type="button" hidden>Cerrar sesión</button>
     </nav>
   </header>
@@ -24,7 +23,7 @@
     <section class="gr-hero">
       <div>
         <p class="gr-eyebrow">PROTECCIÓN DEL SERVICIO</p>
-        <h1>Garantías y reclamos</h1>
+        <h1>Asistencia</h1>
         <p>Cada expediente permanece conectado con el contrato, sus evidencias privadas y las acciones del cliente, profesional y administrador.</p>
       </div>
       <div class="gr-session-card" id="estadoSesion" aria-live="polite">
@@ -117,14 +116,6 @@
       </section>
     </section>
   </main>
-
-  <dialog class="gr-notifications" id="dialogoNotificaciones">
-    <div class="gr-notifications-head">
-      <div><p class="gr-eyebrow">ACTUALIZACIONES</p><h2>Notificaciones</h2></div>
-      <button id="cerrarNotificaciones" type="button" aria-label="Cerrar notificaciones">×</button>
-    </div>
-    <div class="gr-notifications-list" id="listaNotificaciones"></div>
-  </dialog>
 
   <div class="gr-toast" id="mensaje" role="status" aria-live="polite" hidden></div>
   <script type="module" src="garantias-reclamos.js?v=1"></script>

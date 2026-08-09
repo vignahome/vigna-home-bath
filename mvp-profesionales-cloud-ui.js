@@ -2,6 +2,8 @@ import { ProfesionalesFirebase as api } from "./mvp-profesionales-firebase.js";
 
 let rolActual = "publico";
 let operacionEnCurso = false;
+let notificacionesGlobales = [];
+let usuarioNotificaciones = null;
 
 const esperarMVP = () => window.VignaProfesionalesMVP
   ? Promise.resolve(window.VignaProfesionalesMVP)
@@ -56,6 +58,74 @@ function escaparHtml(valor = "") {
   return String(valor).replace(/[&<>"']/g, (caracter) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
   })[caracter]);
+}
+
+function fechaNotificacion(valor) {
+  const fecha = new Date(valor || "");
+  if (Number.isNaN(fecha.getTime())) return "Fecha no disponible";
+  return new Intl.DateTimeFormat("es-PE", { dateStyle: "medium", timeStyle: "short" }).format(fecha);
+}
+
+function claveRevisionNotificaciones(uid) {
+  return `pv_notificaciones_globales_vistas_${uid}`;
+}
+
+function ultimaRevisionNotificaciones(uid) {
+  try {
+    return Number(localStorage.getItem(claveRevisionNotificaciones(uid)) || 0);
+  } catch {
+    return 0;
+  }
+}
+
+function guardarRevisionNotificaciones(uid) {
+  try {
+    localStorage.setItem(claveRevisionNotificaciones(uid), String(Date.now()));
+  } catch {
+    // La lista completa sigue disponible aunque el navegador bloquee el almacenamiento local.
+  }
+}
+
+function pintarNotificacionesGlobales() {
+  const boton = document.getElementById("pvNotificationsButton");
+  const contador = document.getElementById("pvNotificationsCount");
+  const lista = document.getElementById("pvNotificationsList");
+  if (!boton || !contador || !lista) return;
+  const uid = usuarioNotificaciones?.uid || "";
+  boton.hidden = !uid;
+  if (!uid) {
+    contador.textContent = "0";
+    lista.innerHTML = '<div class="pv-notifications-empty">Inicia sesión para consultar tu actividad.</div>';
+    return;
+  }
+  const ultimaRevision = ultimaRevisionNotificaciones(uid);
+  const nuevas = notificacionesGlobales.filter((item) => new Date(item.fecha || "").getTime() > ultimaRevision).length;
+  contador.textContent = nuevas > 99 ? "99+" : String(nuevas);
+  boton.setAttribute("aria-label", nuevas ? `Abrir todas las notificaciones. ${nuevas} nuevas` : "Abrir todas las notificaciones");
+  lista.innerHTML = notificacionesGlobales.length
+    ? notificacionesGlobales.map((item) => {
+      const nueva = new Date(item.fecha || "").getTime() > ultimaRevision;
+      return `<article class="pv-notification-item ${nueva ? "unread" : ""}">
+        <span class="pv-notification-dot" aria-hidden="true"></span>
+        <div><h3>${escaparHtml(item.accion || "Actualización")}</h3>
+        <p>${escaparHtml(item.detalle || "Actividad registrada en Profesionales Vigna’s.")}</p>
+        <small>${escaparHtml(fechaNotificacion(item.fecha))} · ${escaparHtml(item.actor || item.actorEmail || item.actorUid || "Sistema")}</small></div>
+      </article>`;
+    }).join("")
+    : '<div class="pv-notifications-empty">Todavía no existe actividad registrada para esta cuenta.</div>';
+}
+
+function actualizarNotificacionesGlobales(datos, user) {
+  usuarioNotificaciones = user || null;
+  notificacionesGlobales = [...(datos?.auditoria || [])]
+    .sort((a, b) => String(b.fecha || "").localeCompare(String(a.fecha || "")));
+  pintarNotificacionesGlobales();
+}
+
+function marcarNotificacionesVistas() {
+  if (!usuarioNotificaciones?.uid) return;
+  guardarRevisionNotificaciones(usuarioNotificaciones.uid);
+  pintarNotificacionesGlobales();
 }
 
 function insertarRevisionDocumentos() {
@@ -135,6 +205,7 @@ async function refrescarNube() {
     mvp.setData(datos);
     const user = api.usuarioActual();
     actualizarNavegacion(user);
+    actualizarNotificacionesGlobales(datos, user);
     mensaje(user ? `Firebase activo · ${rolActual} · ${user.email || "cuenta autenticada"}` : "Firebase activo · catálogo público");
   } catch (error) {
     console.error("No se pudieron cargar los datos de Profesionales Vigna’s.", error);
@@ -192,6 +263,19 @@ document.addEventListener("submit", async (event) => {
 }, true);
 
 document.addEventListener("click", async (event) => {
+  if (event.target.closest("#pvNotificationsButton")) {
+    document.getElementById("pvNotificationsDialog")?.showModal();
+    marcarNotificacionesVistas();
+    return;
+  }
+  if (event.target.closest("[data-pv-notifications-close]")) {
+    document.getElementById("pvNotificationsDialog")?.close();
+    return;
+  }
+  if (event.target.closest("#pvNotificationsSeen")) {
+    marcarNotificacionesVistas();
+    return;
+  }
   const acceso = event.target.closest("[data-pv-access]");
   if (acceso) {
     if (api.usuarioActual()) {
