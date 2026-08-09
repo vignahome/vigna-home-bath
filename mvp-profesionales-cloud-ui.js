@@ -98,6 +98,29 @@ function guardarRevisionNotificaciones(uid) {
   }
 }
 
+function destinoNotificacion(item) {
+  const texto = `${item?.accion || ""} ${item?.detalle || ""}`.toLocaleLowerCase("es");
+  if (/reclamo|expediente|resolución administrativa|respuesta profesional/.test(texto)) {
+    return { destino: "asistencia", etiqueta: "Abrir Asistencia" };
+  }
+  if (/cotización|contrato|servicio|portafolio/.test(texto)) {
+    return { destino: "panel", etiqueta: "Abrir mi panel" };
+  }
+  if (/solicitud/.test(texto)) {
+    return rolActual === "profesional"
+      ? { destino: "panel", etiqueta: "Revisar solicitud" }
+      : { destino: "solicitud", etiqueta: "Abrir solicitudes" };
+  }
+  if (/registrado|estado profesional|revisión/.test(texto)) {
+    return rolActual === "admin"
+      ? { destino: "admin", etiqueta: "Abrir administración" }
+      : { destino: "panel", etiqueta: "Abrir mi panel" };
+  }
+  return rolActual === "admin"
+    ? { destino: "admin", etiqueta: "Ver en administración" }
+    : { destino: "inicio", etiqueta: "Ir al inicio" };
+}
+
 function pintarNotificacionesGlobales() {
   const boton = document.getElementById("pvNotificationsButton");
   const contador = document.getElementById("pvNotificationsCount");
@@ -117,11 +140,13 @@ function pintarNotificacionesGlobales() {
   lista.innerHTML = notificacionesGlobales.length
     ? notificacionesGlobales.map((item) => {
       const nueva = new Date(item.fecha || "").getTime() > ultimaRevision;
+      const accion = destinoNotificacion(item);
       return `<article class="pv-notification-item ${nueva ? "unread" : ""}">
         <span class="pv-notification-dot" aria-hidden="true"></span>
         <div><h3>${escaparHtml(item.accion || "Actualización")}</h3>
         <p>${escaparHtml(item.detalle || "Actividad registrada en Profesionales Vigna’s.")}</p>
-        <small>${escaparHtml(fechaNotificacion(item.fecha))} · ${escaparHtml(item.actor || item.actorEmail || item.actorUid || "Sistema")}</small></div>
+        <div class="pv-notification-footer"><small>${escaparHtml(fechaNotificacion(item.fecha))} · ${escaparHtml(item.actor || item.actorEmail || item.actorUid || "Sistema")}</small>
+        <button class="tiny-button pv-notification-action" type="button" data-pv-notification-target="${escaparHtml(accion.destino)}">${escaparHtml(accion.etiqueta)}</button></div></div>
       </article>`;
     }).join("")
     : '<div class="pv-notifications-empty">Todavía no existe actividad registrada para esta cuenta.</div>';
@@ -275,6 +300,18 @@ document.addEventListener("submit", async (event) => {
 }, true);
 
 document.addEventListener("click", async (event) => {
+  const destinoAviso = event.target.closest("[data-pv-notification-target]");
+  if (destinoAviso) {
+    const destino = destinoAviso.dataset.pvNotificationTarget;
+    document.getElementById("pvNotificationsDialog")?.close();
+    if (destino === "asistencia") {
+      location.href = "garantias-reclamos.html";
+      return;
+    }
+    const botonVista = document.querySelector(`[data-view="${destino}"]`);
+    if (botonVista && !botonVista.hidden) botonVista.click();
+    return;
+  }
   if (event.target.closest("#pvNotificationsButton")) {
     document.getElementById("pvNotificationsDialog")?.showModal();
     marcarNotificacionesVistas();

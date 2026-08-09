@@ -65,6 +65,9 @@ exigir(!html.includes('id="abrirNotificaciones"'), "las notificaciones no deben 
 exigir(html.includes("<h1>Asistencia</h1>"), "el módulo independiente no se presenta como Asistencia");
 exigir(interfazNube.includes("actualizarNotificacionesGlobales(datos, user)"), "la página principal no carga toda la actividad auditada");
 exigir(interfazNube.includes("datos?.auditoria || []"), "el centro global no usa la auditoría completa");
+exigir(interfazNube.includes("function destinoNotificacion(item)"), "las notificaciones no determinan su acción directa");
+exigir(interfazNube.includes('location.href = "garantias-reclamos.html"'), "los avisos de reclamo no abren Asistencia");
+exigir(interfazNube.includes("data-pv-notification-target"), "faltan acciones en los avisos globales");
 exigir(principal.includes('name="garantiaDias"'), "la cotización no solicita una vigencia de garantía");
 exigir(firebaseProfesionales.includes("vigenciaGarantia"), "el cierre no prepara la vigencia estructurada de garantía");
 exigir(hosting.includes('"garantias-reclamos.html"'), "Hosting no incluye la página independiente");
