@@ -4,6 +4,7 @@ const path = require("node:path");
 const RAIZ = __dirname;
 const SALIDA = path.join(RAIZ, "hosting-profesionales");
 const LOGO = path.join("images", "logo", "ChatGPT Image 26 may 2026, 11_05_03 p.m..png");
+const PLANTILLA_CONTRATO = path.join("plantillas", "plantilla-productos-paso-a-paso-vigna.xlsx");
 const ARCHIVOS = [
   "firebase.js",
   "mvp-profesionales.css",
@@ -14,6 +15,7 @@ const ARCHIVOS = [
   "garantias-reclamos.html",
   "garantias-reclamos.css",
   "garantias-reclamos.js",
+  PLANTILLA_CONTRATO,
   LOGO
 ];
 

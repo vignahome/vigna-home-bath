@@ -1,4 +1,4 @@
-import { ProfesionalesFirebase as api } from "./mvp-profesionales-firebase.js";
+import { ProfesionalesFirebase as api } from "./mvp-profesionales-firebase.js?v=2";
 
 let rolActual = "publico";
 let operacionEnCurso = false;
@@ -427,6 +427,24 @@ document.addEventListener("click", async (event) => {
     }, "Contrato firmado abierto de forma segura.");
     return;
   }
+  const abrirPlanTrabajo = event.target.closest("[data-open-work-plan]");
+  if (abrirPlanTrabajo) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(null, async () => {
+      const anexo = await api.abrirAnexoPlanTrabajo(abrirPlanTrabajo.dataset.openWorkPlan);
+      const enlace = document.createElement("a");
+      enlace.href = anexo.url;
+      enlace.target = "_blank";
+      enlace.rel = "noopener";
+      enlace.download = anexo.nombre;
+      enlace.setAttribute("aria-label", `Abrir ${anexo.nombre}`);
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+    }, "Plan de productos y ejecución abierto de forma segura.");
+    return;
+  }
   const subir = event.target.closest("[data-upload-contract]");
   if (subir) {
     event.preventDefault();
@@ -434,6 +452,16 @@ document.addEventListener("click", async (event) => {
     const file = document.getElementById("signedContractFile")?.files?.[0];
     if (!file) return alert("Selecciona el contrato firmado.");
     await ejecutar(null, () => api.registrarContratoFirmado(subir.dataset.uploadContract, file), "Contrato firmado guardado en Firebase Storage.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  const subirPlanTrabajo = event.target.closest("[data-upload-work-plan]");
+  if (subirPlanTrabajo) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const file = document.getElementById("workPlanFile")?.files?.[0];
+    if (!file) return alert("Selecciona la hoja Excel o CSV.");
+    await ejecutar(null, () => api.registrarAnexoPlanTrabajo(subirPlanTrabajo.dataset.uploadWorkPlan, file), "Plan opcional guardado en Firebase Storage.");
     document.getElementById("contractDialog")?.close();
     return;
   }

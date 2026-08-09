@@ -12,7 +12,8 @@ const requeridos = [
   "garantias-reclamos.css",
   "garantias-reclamos.js",
   "firestore.rules",
-  "storage.rules"
+  "storage.rules",
+  "plantillas/plantilla-productos-paso-a-paso-vigna.xlsx"
 ];
 requeridos.forEach((archivo) => exigir(fs.existsSync(path.join(raiz, archivo)), `falta ${archivo}`));
 
@@ -78,7 +79,7 @@ exigir(principalJs.includes("abrirContrato: (id) => openContract(id)"), "la noti
 exigir(principalJs.includes("abrirCotizacion: (id) => openQuote(id)"), "la notificación no puede abrir una cotización exacta");
 exigir(principalJs.includes("enfocarSolicitud: (id) => enfocarSolicitud(id)"), "la notificación no puede enfocar una solicitud exacta");
 exigir(interfazNube.includes("mvp.enfocarSolicitud(id)"), "la acción de solicitud no usa su identificador");
-exigir(principal.includes('mvp-profesionales-bootstrap.js?v=13'), "la página principal no carga la navegación directa actualizada");
+exigir(principal.includes('mvp-profesionales-bootstrap.js?v=14'), "la página principal no carga la integración contractual actualizada");
 exigir(interfazNube.includes('"garantias-reclamos.html"'), "los avisos de reclamo no abren Asistencia");
 exigir(interfazNube.includes("data-pv-notification-target"), "faltan acciones en los avisos globales");
 exigir(firebaseProfesionales.includes("onSnapshot"), "falta la escucha Firestore en tiempo real");
@@ -100,6 +101,7 @@ exigir(firebaseProfesionales.includes("vigenciaGarantia"), "el cierre no prepara
 exigir(hosting.includes('"garantias-reclamos.html"'), "Hosting no incluye la página independiente");
 exigir(hosting.includes('"garantias-reclamos.js"'), "Hosting no incluye el controlador");
 exigir(hosting.includes('"garantias-reclamos.css"'), "Hosting no incluye los estilos");
+exigir(hosting.includes("plantilla-productos-paso-a-paso-vigna.xlsx"), "Hosting no incluye la plantilla Excel del contrato");
 exigir(!bootstrap.includes("mvp-profesionales-reclamos.js"), "el panel flotante anterior todavía se carga");
 exigir(!fs.existsSync(path.join(raiz, "mvp-profesionales-reclamos.js")), "el archivo roto anterior todavía existe");
 exigir(firestore.includes("match /pv_reclamos/{reclamoId}"), "faltan reglas Firestore para reclamos");
@@ -109,9 +111,19 @@ exigir(firestore.includes('request.resource.data.estado == "Pendiente de firma"'
 exigir(firestore.includes("cotizacionSeleccionada().opciones[2].precio"), "las reglas no validan el precio contra la cotización");
 exigir(firestore.includes('"estado", "profesionalUid", "actualizadoEn"'), "la actualización de solicitudes permite modificar campos no autorizados");
 exigir(!firestore.includes('resource.data.estado != "Aceptada"'), "el profesional todavía puede reescribir una cotización enviada");
+exigir(firestore.includes('"anexoPlanTrabajoNombre", "anexoPlanTrabajoRuta"'), "las reglas Firestore no limitan los campos del anexo contractual");
 exigir(firestore.includes('"garantiaInicioEn", "garantiaVenceEn", "actualizadoEn"'), "las reglas no permiten registrar la vigencia de garantía");
 exigir(firestore.includes("allow delete: if false"), "los reclamos deben ser indelebles desde el cliente web");
 exigir(storage.includes("match /profesionales-vigna/reclamos/{reclamoId}/{uid}/{archivo}"), "faltan reglas Storage para evidencias");
+exigir(storage.includes("match /profesionales-vigna/contratos/{contratoId}/anexos/{archivo}"), "faltan reglas Storage para el anexo Excel");
+exigir(storage.includes("function hojaCalculo(maximo)"), "Storage no valida archivos Excel o CSV");
+exigir(firebaseProfesionales.includes("async function registrarAnexoPlanTrabajo"), "falta guardar el anexo contractual en Firebase");
+exigir(firebaseProfesionales.includes("async function abrirAnexoPlanTrabajo"), "falta abrir el anexo contractual de forma privada");
+exigir(interfazNube.includes("api.registrarAnexoPlanTrabajo"), "la interfaz conectada no carga el anexo contractual");
+exigir(principalJs.includes("data-upload-work-plan"), "el contrato no ofrece adjuntar el plan opcional");
+exigir(principalJs.includes("plantilla-productos-paso-a-paso-vigna.xlsx"), "el contrato no permite descargar la plantilla Excel");
+const plantilla = fs.readFileSync(path.join(raiz, "plantillas", "plantilla-productos-paso-a-paso-vigna.xlsx"));
+exigir(plantilla.length > 4096 && plantilla[0] === 0x50 && plantilla[1] === 0x4b, "la plantilla Excel no es un archivo XLSX válido");
 exigir(llavesBalanceadas(firestore), "las llaves de firestore.rules no están balanceadas");
 exigir(llavesBalanceadas(storage), "las llaves de storage.rules no están balanceadas");
 

@@ -220,6 +220,9 @@ service cloud.firestore {
         request.resource.data.version == 1 &&
         request.resource.data.archivoFirmado == "" &&
         request.resource.data.archivoFirmadoUrl == "" &&
+        request.resource.data.anexoPlanTrabajoNombre == "" &&
+        request.resource.data.anexoPlanTrabajoRuta == "" &&
+        request.resource.data.anexoPlanTrabajoActualizadoEn == "" &&
         cotizacionSeleccionada().clienteUid == request.auth.uid &&
         cotizacionSeleccionada().estado == "Enviada" &&
         request.resource.data.solicitudId == cotizacionSeleccionada().solicitudId &&
@@ -254,6 +257,21 @@ service cloud.firestore {
             request.resource.data.diff(resource.data).affectedKeys().hasOnly([
               "archivoFirmado", "archivoFirmadoRuta", "archivoFirmadoUrl",
               "firmadoPorUid", "estado", "actualizadoEn"
+            ])
+          ) ||
+          (
+            pvRol("profesional") &&
+            resource.data.profesionalUid == request.auth.uid &&
+            resource.data.estado in ["Pendiente de firma", "Firmado", "En ejecución", "Finalizado"] &&
+            request.resource.data.estado == resource.data.estado &&
+            request.resource.data.anexoPlanTrabajoNombre is string &&
+            request.resource.data.anexoPlanTrabajoNombre != "" &&
+            request.resource.data.anexoPlanTrabajoRuta is string &&
+            request.resource.data.anexoPlanTrabajoRuta != "" &&
+            request.resource.data.anexoPlanTrabajoActualizadoEn is string &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "anexoPlanTrabajoNombre", "anexoPlanTrabajoRuta",
+              "anexoPlanTrabajoActualizadoEn", "actualizadoEn"
             ])
           ) ||
           (

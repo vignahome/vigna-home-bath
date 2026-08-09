@@ -22,6 +22,14 @@ service firebase.storage {
          request.resource.contentType == 'application/pdf');
     }
 
+    function hojaCalculo(maximo) {
+      return request.resource.size <= maximo &&
+        (request.resource.contentType == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+         request.resource.contentType == 'application/vnd.ms-excel' ||
+         request.resource.contentType == 'text/csv' ||
+         request.resource.contentType == 'application/csv');
+    }
+
     match /profesionales-vigna/profesionales/{uid}/identidad/{archivo} {
       allow read: if esAdmin() || (autenticado() && request.auth.uid == uid);
       allow create: if autenticado() && request.auth.uid == uid &&
@@ -80,6 +88,26 @@ service firebase.storage {
          contrato().clienteUid == request.auth.uid ||
          contrato().profesionalUid == request.auth.uid) &&
         imagenOPdf(15 * 1024 * 1024);
+      allow update, delete: if esAdmin();
+    }
+
+    match /profesionales-vigna/contratos/{contratoId}/anexos/{archivo} {
+      function contratoAnexo() {
+        return firestore.get(/databases/(default)/documents/pv_contratos/$(contratoId)).data;
+      }
+
+      allow read: if esAdmin() || (
+        autenticado() &&
+        (contratoAnexo().clienteUid == request.auth.uid ||
+         contratoAnexo().profesionalUid == request.auth.uid)
+      );
+      allow create: if (
+        esAdmin() || (
+          rolProfesionales("profesional") &&
+          contratoAnexo().profesionalUid == request.auth.uid &&
+          contratoAnexo().estado != "Cerrado"
+        )
+      ) && hojaCalculo(10 * 1024 * 1024);
       allow update, delete: if esAdmin();
     }
 

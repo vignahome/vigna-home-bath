@@ -345,6 +345,7 @@ async function aceptarCotizacion(cotizacionId, opcionIndice) {
       profesionalDocumento: cotizacion.profesionalDocumento || "",
       garantiaDias: Number(cotizacion.garantiaDias || 0), garantiaInicioEn: "", garantiaVenceEn: "",
       condiciones: cotizacion.condiciones, version: 1, estado: "Pendiente de firma", archivoFirmado: "", archivoFirmadoUrl: "",
+      anexoPlanTrabajoNombre: "", anexoPlanTrabajoRuta: "", anexoPlanTrabajoActualizadoEn: "",
       descripcionSolicitud: solicitud.descripcion || "", ubicacion: { departamento: solicitud.departamento, provincia: solicitud.provincia, distrito: solicitud.distrito, fecha: solicitud.fecha },
       creadoEn: ahora(), actualizadoEn: ahora()
     });
@@ -368,6 +369,45 @@ async function registrarContratoFirmado(contratoId, file) {
   });
   await auditar("Contrato firmado registrado", `${contratoId}: ${file.name}`, [contrato.clienteUid, contrato.profesionalUid]);
   return ruta;
+}
+
+async function registrarAnexoPlanTrabajo(contratoId, file) {
+  const { user, contratoRef, contrato } = await contratoAutorizado(contratoId);
+  const autorizado = user.uid === contrato.profesionalUid || await esAdmin(user.uid);
+  if (!autorizado) throw new Error("Solo el profesional contratado o administración puede adjuntar el plan de trabajo.");
+  if (contrato.estado === "Cerrado") throw new Error("El contrato cerrado ya no admite cambios en su plan de trabajo.");
+  if (!(file instanceof File) || !file.size || !/\.(xlsx|xls|csv)$/i.test(file.name)) {
+    throw new Error("Selecciona una hoja válida en formato XLSX, XLS o CSV.");
+  }
+  const ruta = await subirPrivado(`profesionales-vigna/contratos/${contratoId}/anexos`, file, {
+    maxMb: 10,
+    tipos: [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+      "text/csv",
+      "application/csv"
+    ]
+  });
+  const actualizadoEn = ahora();
+  await updateDoc(contratoRef, {
+    anexoPlanTrabajoNombre: file.name,
+    anexoPlanTrabajoRuta: ruta,
+    anexoPlanTrabajoActualizadoEn: actualizadoEn,
+    actualizadoEn
+  });
+  await auditar("Plan de productos y ejecución adjuntado", `${contratoId}: ${file.name}`, [contrato.clienteUid, contrato.profesionalUid]);
+  return ruta;
+}
+
+async function abrirAnexoPlanTrabajo(contratoId) {
+  const { contrato } = await contratoAutorizado(contratoId);
+  if (!contrato.anexoPlanTrabajoRuta || !contrato.anexoPlanTrabajoNombre) {
+    throw new Error("Este contrato todavía no tiene una hoja de productos y pasos adjunta.");
+  }
+  return {
+    nombre: contrato.anexoPlanTrabajoNombre,
+    url: await getDownloadURL(ref(storage, contrato.anexoPlanTrabajoRuta))
+  };
 }
 
 async function abrirContratoFirmado(contratoId) {
@@ -580,6 +620,8 @@ export const ProfesionalesFirebase = Object.freeze({
   aceptarCotizacion,
   registrarContratoFirmado,
   abrirContratoFirmado,
+  registrarAnexoPlanTrabajo,
+  abrirAnexoPlanTrabajo,
   iniciarServicio,
   finalizarServicio,
   cerrarServicio,

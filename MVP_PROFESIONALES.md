@@ -19,6 +19,7 @@ La gestión privada de garantías, reclamos e incidencias se abre desde el menú
 - Cotizaciones económica, recomendada y premium.
 - Garantía con plazo estructurado desde la cotización y vencimiento calculado al cierre conforme.
 - Generación de contrato imprimible y carga del documento firmado.
+- Anexo Excel opcional del contrato para detallar productos, materiales y ejecución paso a paso, con plantilla descargable y acceso privado para las partes y administración.
 - Panel profesional y panel administrativo.
 - Módulo independiente de Asistencia para garantías y reclamos de cliente, profesional y administración.
 - Evidencias privadas vinculadas al contrato mediante Firebase Storage.
