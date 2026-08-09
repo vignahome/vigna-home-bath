@@ -371,6 +371,73 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /pv_notificaciones/{notificacionId} {
+      function reclamoNotificacion() {
+        return getAfter(/databases/$(database)/documents/pv_reclamos/$(request.resource.data.reclamoId)).data;
+      }
+
+      function actorValido() {
+        return esAdmin() ||
+          reclamoNotificacion().clienteUid == request.auth.uid ||
+          reclamoNotificacion().profesionalUid == request.auth.uid;
+      }
+
+      function destinoValido() {
+        return (
+          request.resource.data.destinatarioRol == "cliente" &&
+          request.resource.data.destinatarioUid == reclamoNotificacion().clienteUid
+        ) || (
+          request.resource.data.destinatarioRol == "profesional" &&
+          request.resource.data.destinatarioUid == reclamoNotificacion().profesionalUid
+        ) || (
+          request.resource.data.destinatarioRol == "admin" &&
+          request.resource.data.destinatarioUid == ""
+        );
+      }
+
+      allow create: if autenticado() &&
+        request.resource.data.keys().hasAll([
+          "tipo", "reclamoId", "contratoId", "actorUid", "destinatarioUid",
+          "destinatarioRol", "titulo", "mensaje", "leida", "leidaEn", "creadoEn"
+        ]) &&
+        request.resource.data.keys().hasOnly([
+          "tipo", "reclamoId", "contratoId", "actorUid", "destinatarioUid",
+          "destinatarioRol", "titulo", "mensaje", "leida", "leidaEn", "creadoEn"
+        ]) &&
+        request.resource.data.actorUid == request.auth.uid &&
+        request.resource.data.reclamoId is string &&
+        request.resource.data.contratoId == reclamoNotificacion().contratoId &&
+        request.resource.data.tipo in [
+          "reclamo_abierto", "respuesta_profesional", "admin_revision",
+          "admin_resolver", "admin_cerrar", "cierre_cliente"
+        ] &&
+        request.resource.data.titulo is string &&
+        request.resource.data.titulo.size() > 0 &&
+        request.resource.data.titulo.size() <= 120 &&
+        request.resource.data.mensaje is string &&
+        request.resource.data.mensaje.size() > 0 &&
+        request.resource.data.mensaje.size() <= 500 &&
+        request.resource.data.leida == false &&
+        request.resource.data.leidaEn == "" &&
+        actorValido() &&
+        destinoValido();
+
+      allow read: if (
+        esAdmin() && resource.data.destinatarioRol == "admin"
+      ) || (
+        autenticado() && resource.data.destinatarioUid == request.auth.uid
+      );
+
+      allow update: if (
+        (esAdmin() && resource.data.destinatarioRol == "admin") ||
+        (autenticado() && resource.data.destinatarioUid == request.auth.uid)
+      ) &&
+        request.resource.data.leida == true &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["leida", "leidaEn"]);
+
+      allow delete: if false;
+    }
+
     match /pv_auditoria/{eventoId} {
       allow create: if autenticado() &&
         request.resource.data.actorUid == request.auth.uid &&

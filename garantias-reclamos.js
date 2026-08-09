@@ -6,6 +6,7 @@ import {
   getDocs,
   query,
   runTransaction,
+  updateDoc,
   where,
   writeBatch
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
@@ -24,6 +25,7 @@ const COLECCIONES = Object.freeze({
   usuarios: "pv_usuarios",
   contratos: "pv_contratos",
   reclamos: "pv_reclamos",
+  notificaciones: "pv_notificaciones",
   auditoria: "pv_auditoria"
 });
 
@@ -37,6 +39,7 @@ const estado = {
   rol: "publico",
   contratos: [],
   reclamos: [],
+  notificaciones: [],
   cargando: false
 };
 
@@ -46,6 +49,11 @@ const elementos = {
   modulo: document.getElementById("modulo"),
   estadoSesion: document.getElementById("estadoSesion"),
   cerrarSesion: document.getElementById("cerrarSesion"),
+  abrirNotificaciones: document.getElementById("abrirNotificaciones"),
+  contadorNotificaciones: document.getElementById("contadorNotificaciones"),
+  dialogoNotificaciones: document.getElementById("dialogoNotificaciones"),
+  cerrarNotificaciones: document.getElementById("cerrarNotificaciones"),
+  listaNotificaciones: document.getElementById("listaNotificaciones"),
   formAcceso: document.getElementById("formAcceso"),
   correoUsuario: document.getElementById("correoUsuario"),
   etiquetaRol: document.getElementById("etiquetaRol"),
@@ -129,6 +137,15 @@ async function obtenerPorCampo(coleccion, campo, valor) {
   return snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
 }
 
+async function obtenerNotificaciones(campo, valor) {
+  try {
+    return await obtenerPorCampo(COLECCIONES.notificaciones, campo, valor);
+  } catch (error) {
+    console.warn("Las notificaciones se activarán cuando se publiquen sus reglas Firebase.", error);
+    return [];
+  }
+}
+
 function entradaHistorial(accion, detalle = "") {
   return {
     accion,
@@ -148,6 +165,37 @@ function datosAuditoria(accion, detalle, participantes = []) {
     participantes: [...new Set([estado.usuario.uid, ...participantes.filter(Boolean)])],
     fecha: ahora()
   };
+}
+
+function datosNotificacion({ tipo, reclamoId, contratoId, destinatarioUid = "", destinatarioRol, titulo, mensaje }) {
+  return {
+    tipo,
+    reclamoId,
+    contratoId,
+    actorUid: estado.usuario.uid,
+    destinatarioUid,
+    destinatarioRol,
+    titulo,
+    mensaje,
+    leida: false,
+    leidaEn: "",
+    creadoEn: ahora()
+  };
+}
+
+function agregarNotificacion(escritor, datos) {
+  escritor.set(doc(collection(db, COLECCIONES.notificaciones)), datosNotificacion(datos));
+}
+
+async function guardarNotificaciones(lista) {
+  if (!lista.length) return;
+  const lote = writeBatch(db);
+  lista.forEach((item) => agregarNotificacion(lote, item));
+  try {
+    await lote.commit();
+  } catch (error) {
+    console.warn("La operación principal se completó, pero las notificaciones todavía no están habilitadas en Firebase.", error);
+  }
 }
 
 function validarArchivos(listaArchivos) {
@@ -204,18 +252,27 @@ async function cargarDatos() {
   renderizarLista();
   try {
     if (estado.rol === "admin") {
-      const snapshot = await getDocs(collection(db, COLECCIONES.reclamos));
+      const [snapshot, notificaciones] = await Promise.all([
+        getDocs(collection(db, COLECCIONES.reclamos)),
+        obtenerNotificaciones("destinatarioRol", "admin")
+      ]);
       estado.reclamos = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+      estado.notificaciones = notificaciones;
       estado.contratos = [];
     } else {
       const campo = estado.rol === "cliente" ? "clienteUid" : "profesionalUid";
-      const tareas = [obtenerPorCampo(COLECCIONES.reclamos, campo, estado.usuario.uid)];
+      const tareas = [
+        obtenerPorCampo(COLECCIONES.reclamos, campo, estado.usuario.uid),
+        obtenerNotificaciones("destinatarioUid", estado.usuario.uid)
+      ];
       if (estado.rol === "cliente") tareas.push(obtenerPorCampo(COLECCIONES.contratos, "clienteUid", estado.usuario.uid));
       const resultados = await Promise.all(tareas);
       estado.reclamos = resultados[0];
-      estado.contratos = estado.rol === "cliente" ? resultados[1] : [];
+      estado.notificaciones = resultados[1];
+      estado.contratos = estado.rol === "cliente" ? resultados[2] : [];
     }
     estado.reclamos.sort((a, b) => String(b.actualizadoEn || b.creadoEn || "").localeCompare(String(a.actualizadoEn || a.creadoEn || "")));
+    estado.notificaciones.sort((a, b) => String(b.creadoEn || "").localeCompare(String(a.creadoEn || "")));
   } finally {
     estado.cargando = false;
   }
@@ -229,6 +286,7 @@ function configurarSesionVisual() {
   elementos.accesoDenegado.hidden = !autenticado || autorizado;
   elementos.modulo.hidden = !autorizado;
   elementos.cerrarSesion.hidden = !autenticado;
+  elementos.abrirNotificaciones.hidden = !autorizado;
 
   if (!autenticado) {
     elementos.estadoSesion.innerHTML = "<div><strong>Sesión requerida</strong><small>Ingresa para consultar expedientes privados.</small></div>";
@@ -308,7 +366,7 @@ function accionesHtml(reclamo) {
       <div class="gr-action-buttons">
         <button class="gr-button" name="accion" value="revision" type="submit">Pasar a revisión</button>
         <button class="gr-button gr-primary" name="accion" value="resolver" type="submit">Marcar resuelto</button>
-        <button class="gr-button gr-danger" name="accion" value="cerrar" type="submit">Cerrar expediente</button>
+        <button class="gr-button gr-danger" name="accion" value="cerrar" type="submit">Cerrar sin aceptación del cliente</button>
       </div>
     </form>`;
   }
@@ -354,12 +412,27 @@ function renderizarLista() {
     : '<div class="gr-empty">No existen expedientes para esta vista.</div>';
 }
 
+function renderizarNotificaciones() {
+  const pendientes = estado.notificaciones.filter((item) => !item.leida).length;
+  elementos.contadorNotificaciones.textContent = String(pendientes);
+  elementos.listaNotificaciones.innerHTML = estado.notificaciones.length
+    ? estado.notificaciones.map((item) => `<article class="gr-notification ${item.leida ? "" : "unread"}">
+        <div class="gr-notification-head">
+          <div><h3>${escapar(item.titulo || "Actualización de expediente")}</h3><small>${escapar(fechaLegible(item.creadoEn))} · Expediente ${escapar(item.reclamoId || "—")}</small></div>
+          ${item.leida ? "" : `<button class="gr-button" type="button" data-leer-notificacion="${escapar(item.id)}">Marcar como leída</button>`}
+        </div>
+        <p>${escapar(item.mensaje || "El expediente recibió una actualización.")}</p>
+      </article>`).join("")
+    : '<div class="gr-empty">Todavía no tienes notificaciones.</div>';
+}
+
 function renderizar() {
   configurarSesionVisual();
   if (!estado.usuario || !ROLES_VALIDOS.includes(estado.rol)) return;
   renderizarMetricas();
   renderizarContratos();
   renderizarLista();
+  renderizarNotificaciones();
 }
 
 async function crearReclamo(form) {
@@ -398,6 +471,18 @@ async function crearReclamo(form) {
   lote.set(reclamoRef, reclamo);
   lote.set(doc(collection(db, COLECCIONES.auditoria)), datosAuditoria("Reclamo abierto", `${reclamoRef.id} · contrato ${contrato.id}`, [contrato.profesionalUid]));
   await lote.commit();
+  await guardarNotificaciones([
+    {
+      tipo: "reclamo_abierto", reclamoId: reclamoRef.id, contratoId: contrato.id,
+      destinatarioUid: contrato.profesionalUid, destinatarioRol: "profesional",
+      titulo: "Nuevo reclamo recibido", mensaje: "Un cliente abrió un expediente vinculado a uno de tus contratos cerrados."
+    },
+    {
+      tipo: "reclamo_abierto", reclamoId: reclamoRef.id, contratoId: contrato.id,
+      destinatarioRol: "admin", titulo: "Nuevo reclamo para revisión",
+      mensaje: "Se registró un nuevo expediente que requiere seguimiento administrativo."
+    }
+  ]);
 
   if (archivosSeleccionados.length) {
     const archivos = await subirArchivos(reclamoRef.id, archivosSeleccionados);
@@ -421,10 +506,12 @@ async function responderReclamo(form) {
   if (respuesta.length < 10) throw new Error("La respuesta debe tener al menos 10 caracteres.");
   const archivos = await subirArchivos(reclamoId, form.elements.archivos.files);
   const reclamoRef = doc(db, COLECCIONES.reclamos, reclamoId);
+  let reclamoActual = null;
   await runTransaction(db, async (transaccion) => {
     const snapshot = await transaccion.get(reclamoRef);
     if (!snapshot.exists()) throw new Error("El expediente ya no existe.");
     const actual = snapshot.data();
+    reclamoActual = actual;
     if (actual.profesionalUid !== estado.usuario.uid || !["Abierto", "En revisión"].includes(actual.estado)) {
       throw new Error("El expediente ya no admite una respuesta profesional.");
     }
@@ -438,6 +525,18 @@ async function responderReclamo(form) {
     });
     transaccion.set(doc(collection(db, COLECCIONES.auditoria)), datosAuditoria("Respuesta profesional registrada", reclamoId, [actual.clienteUid]));
   });
+  await guardarNotificaciones([
+    {
+      tipo: "respuesta_profesional", reclamoId, contratoId: reclamoActual.contratoId,
+      destinatarioUid: reclamoActual.clienteUid, destinatarioRol: "cliente",
+      titulo: "El profesional respondió", mensaje: "Tu reclamo recibió una respuesta profesional y ya puede ser revisado."
+    },
+    {
+      tipo: "respuesta_profesional", reclamoId, contratoId: reclamoActual.contratoId,
+      destinatarioRol: "admin", titulo: "Respuesta profesional registrada",
+      mensaje: "El profesional respondió un expediente pendiente de revisión administrativa."
+    }
+  ]);
   mostrarMensaje("Respuesta profesional guardada.");
   await cargarDatos();
 }
@@ -451,10 +550,14 @@ async function resolverReclamo(form, accion) {
   const nuevoEstado = estadosPorAccion[accion];
   if (!nuevoEstado) throw new Error("La acción administrativa no es válida.");
   const reclamoRef = doc(db, COLECCIONES.reclamos, reclamoId);
+  let reclamoActual = null;
+  let tituloNotificacion = "";
+  let mensajeNotificacion = "";
   await runTransaction(db, async (transaccion) => {
     const snapshot = await transaccion.get(reclamoRef);
     if (!snapshot.exists()) throw new Error("El expediente ya no existe.");
     const actual = snapshot.data();
+    reclamoActual = actual;
     if (actual.estado === "Cerrado") throw new Error("Un expediente cerrado no se puede modificar.");
     const accionHistorial = nuevoEstado === "En revisión"
       ? "Revisión administrativa iniciada"
@@ -464,7 +567,23 @@ async function resolverReclamo(form, accion) {
     const historial = [...(actual.historial || []), entradaHistorial(accionHistorial)];
     transaccion.update(reclamoRef, { estado: nuevoEstado, resolucionAdmin: resolucion, historial, actualizadoEn: ahora() });
     transaccion.set(doc(collection(db, COLECCIONES.auditoria)), datosAuditoria(accionHistorial, reclamoId, [actual.clienteUid, actual.profesionalUid]));
+    tituloNotificacion = nuevoEstado === "En revisión" ? "Reclamo en revisión" : nuevoEstado === "Resuelto" ? "Reclamo resuelto" : "Expediente cerrado";
+    mensajeNotificacion = nuevoEstado === "En revisión"
+      ? "Administración inició la revisión formal del expediente."
+      : nuevoEstado === "Resuelto"
+        ? "Administración emitió una resolución. El cliente puede aceptar la solución y cerrar."
+        : "Administración cerró el expediente.";
   });
+  await guardarNotificaciones([
+    {
+      tipo: `admin_${accion}`, reclamoId, contratoId: reclamoActual.contratoId,
+      destinatarioUid: reclamoActual.clienteUid, destinatarioRol: "cliente", titulo: tituloNotificacion, mensaje: mensajeNotificacion
+    },
+    {
+      tipo: `admin_${accion}`, reclamoId, contratoId: reclamoActual.contratoId,
+      destinatarioUid: reclamoActual.profesionalUid, destinatarioRol: "profesional", titulo: tituloNotificacion, mensaje: mensajeNotificacion
+    }
+  ]);
   mostrarMensaje("Expediente actualizado por administración.");
   await cargarDatos();
 }
@@ -472,10 +591,12 @@ async function resolverReclamo(form, accion) {
 async function cerrarReclamoCliente(reclamoId) {
   if (estado.rol !== "cliente") throw new Error("Solo el cliente vinculado puede aceptar la solución.");
   const reclamoRef = doc(db, COLECCIONES.reclamos, reclamoId);
+  let reclamoActual = null;
   await runTransaction(db, async (transaccion) => {
     const snapshot = await transaccion.get(reclamoRef);
     if (!snapshot.exists()) throw new Error("El expediente ya no existe.");
     const actual = snapshot.data();
+    reclamoActual = actual;
     if (actual.clienteUid !== estado.usuario.uid || actual.estado !== "Resuelto") {
       throw new Error("El expediente no está listo para el cierre del cliente.");
     }
@@ -483,8 +604,32 @@ async function cerrarReclamoCliente(reclamoId) {
     transaccion.update(reclamoRef, { estado: "Cerrado", historial, actualizadoEn: ahora() });
     transaccion.set(doc(collection(db, COLECCIONES.auditoria)), datosAuditoria("Reclamo cerrado por el cliente", reclamoId, [actual.profesionalUid]));
   });
+  await guardarNotificaciones([
+    {
+      tipo: "cierre_cliente", reclamoId, contratoId: reclamoActual.contratoId,
+      destinatarioUid: reclamoActual.profesionalUid, destinatarioRol: "profesional",
+      titulo: "El cliente cerró el expediente", mensaje: "El cliente aceptó la solución y cerró el reclamo."
+    },
+    {
+      tipo: "cierre_cliente", reclamoId, contratoId: reclamoActual.contratoId,
+      destinatarioRol: "admin", titulo: "Expediente cerrado por el cliente",
+      mensaje: "El cliente aceptó la solución y completó el cierre del expediente."
+    }
+  ]);
   mostrarMensaje("Solución aceptada. El expediente quedó cerrado.");
   await cargarDatos();
+}
+
+async function marcarNotificacionLeida(notificacionId) {
+  const notificacion = estado.notificaciones.find((item) => item.id === notificacionId);
+  if (!notificacion || notificacion.leida) return;
+  await updateDoc(doc(db, COLECCIONES.notificaciones, notificacionId), {
+    leida: true,
+    leidaEn: ahora()
+  });
+  notificacion.leida = true;
+  notificacion.leidaEn = ahora();
+  renderizarNotificaciones();
 }
 
 async function abrirArchivo(ruta) {
@@ -509,8 +654,29 @@ elementos.formAcceso.addEventListener("submit", async (evento) => {
 });
 
 elementos.cerrarSesion.addEventListener("click", async () => {
+  elementos.dialogoNotificaciones.close();
   await signOut(auth);
   mostrarMensaje("Sesión cerrada.");
+});
+
+elementos.abrirNotificaciones.addEventListener("click", () => {
+  renderizarNotificaciones();
+  elementos.dialogoNotificaciones.showModal();
+});
+
+elementos.cerrarNotificaciones.addEventListener("click", () => elementos.dialogoNotificaciones.close());
+
+elementos.listaNotificaciones.addEventListener("click", async (evento) => {
+  const boton = evento.target.closest("[data-leer-notificacion]");
+  if (!boton) return;
+  boton.disabled = true;
+  try {
+    await marcarNotificacionLeida(boton.dataset.leerNotificacion);
+  } catch (error) {
+    console.error(error);
+    mostrarMensaje(mensajeError(error), true);
+    boton.disabled = false;
+  }
 });
 
 elementos.formReclamo.addEventListener("submit", async (evento) => {
@@ -534,10 +700,12 @@ elementos.listaReclamos.addEventListener("submit", async (evento) => {
   const resolucion = evento.target.closest("[data-form-resolucion]");
   if (!respuesta && !resolucion) return;
   evento.preventDefault();
+  const accionAdministrativa = evento.submitter?.value;
+  if (resolucion && accionAdministrativa === "cerrar" && !window.confirm("Este cierre omite la aceptación final del cliente. ¿Confirmas que administración debe cerrar el expediente directamente?")) return;
   bloquear(evento.target, true);
   try {
     if (respuesta) await responderReclamo(respuesta);
-    if (resolucion) await resolverReclamo(resolucion, evento.submitter?.value);
+    if (resolucion) await resolverReclamo(resolucion, accionAdministrativa);
   } catch (error) {
     console.error(error);
     mostrarMensaje(mensajeError(error), true);
@@ -570,6 +738,7 @@ onAuthStateChanged(auth, async (usuario) => {
   estado.rol = usuario ? await obtenerRol(usuario.uid) : "publico";
   estado.contratos = [];
   estado.reclamos = [];
+  estado.notificaciones = [];
   configurarSesionVisual();
   if (usuario && ROLES_VALIDOS.includes(estado.rol)) {
     try {

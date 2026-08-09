@@ -109,6 +109,22 @@ label small { color: var(--muted); font-weight: 400; }
 .gr-toast { position: fixed; right: 18px; bottom: 18px; z-index: 100; max-width: min(430px, calc(100vw - 36px)); padding: 14px 18px; border: 1px solid var(--gold); border-radius: 12px; background: #1a1a1a; color: #fff; box-shadow: 0 16px 45px rgba(0, 0, 0, .55); }
 .gr-toast.error { border-color: #8a3030; color: #ffb0b0; }
 
+#abrirNotificaciones { position: relative; }
+#contadorNotificaciones { display: inline-grid; min-width: 22px; height: 22px; margin-left: 4px; padding: 0 6px; place-items: center; border-radius: 999px; background: var(--metallic); color: #1a0f00; font-size: 11px; font-weight: 900; }
+.gr-notifications { width: min(680px, calc(100% - 24px)); max-height: min(760px, 88vh); padding: 24px; border: 1px solid var(--gold); border-radius: var(--radius); background: #0e0e0e; color: var(--white); box-shadow: 0 35px 120px rgba(0, 0, 0, .78); }
+.gr-notifications::backdrop { background: rgba(0, 0, 0, .82); }
+.gr-notifications-head { display: flex; align-items: start; justify-content: space-between; gap: 20px; padding-bottom: 16px; border-bottom: 1px solid #383838; }
+.gr-notifications-head h2 { margin: 4px 0 0; font-size: 30px; }
+.gr-notifications-head button { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #555; border-radius: 50%; background: #1e1e1e; color: #fff; font-size: 24px; }
+.gr-notifications-list { display: grid; gap: 10px; margin-top: 16px; }
+.gr-notification { padding: 15px; border: 1px solid #3b3b3b; border-radius: 13px; background: #171717; }
+.gr-notification.unread { border-color: #8c620b; background: #1d170b; }
+.gr-notification-head { display: flex; align-items: start; justify-content: space-between; gap: 14px; }
+.gr-notification h3 { margin: 0; color: var(--gold-light); font-size: 17px; }
+.gr-notification p { margin: 7px 0; color: #e7e7e2; }
+.gr-notification small { color: var(--muted); }
+.gr-notification .gr-button { min-height: 35px; padding: 6px 10px; font-size: 12px; white-space: nowrap; }
+
 @media (max-width: 900px) {
   .gr-hero { grid-template-columns: 1fr; padding-top: 44px; }
   .gr-session-card { max-width: 520px; }
@@ -132,4 +148,6 @@ label small { color: var(--muted); font-weight: 400; }
   .gr-grid-two { grid-template-columns: 1fr; }
   .gr-filter { width: 100%; }
   .gr-form-actions .gr-button, .gr-action-buttons .gr-button { width: 100%; }
+  .gr-notifications { padding: 17px; }
+  .gr-notification-head { align-items: stretch; flex-direction: column; }
 }

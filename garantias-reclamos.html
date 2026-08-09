@@ -15,6 +15,7 @@
     </a>
     <nav aria-label="Navegación del módulo">
       <a href="mvp-profesionales.html">Volver a profesionales</a>
+      <button id="abrirNotificaciones" type="button" hidden>Notificaciones <span id="contadorNotificaciones">0</span></button>
       <button id="cerrarSesion" type="button" hidden>Cerrar sesión</button>
     </nav>
   </header>
@@ -116,6 +117,14 @@
       </section>
     </section>
   </main>
+
+  <dialog class="gr-notifications" id="dialogoNotificaciones">
+    <div class="gr-notifications-head">
+      <div><p class="gr-eyebrow">ACTUALIZACIONES</p><h2>Notificaciones</h2></div>
+      <button id="cerrarNotificaciones" type="button" aria-label="Cerrar notificaciones">×</button>
+    </div>
+    <div class="gr-notifications-list" id="listaNotificaciones"></div>
+  </dialog>
 
   <div class="gr-toast" id="mensaje" role="status" aria-live="polite" hidden></div>
   <script type="module" src="garantias-reclamos.js?v=1"></script>

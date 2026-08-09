@@ -44,6 +44,10 @@ exigir(js.includes('"cliente", "profesional", "admin"'), "faltan los tres roles 
 exigir(js.includes("signInWithEmailAndPassword"), "falta Firebase Auth");
 exigir(js.includes('reclamos: "pv_reclamos"'), "falta la conexión a Firestore");
 exigir(js.includes("uploadBytes"), "falta la conexión a Firebase Storage");
+exigir(js.includes('notificaciones: "pv_notificaciones"'), "falta la colección aislada de notificaciones");
+exigir(js.includes("guardarNotificaciones"), "faltan los avisos automáticos por cambio de estado");
+exigir(js.includes("marcarNotificacionLeida"), "falta el control de notificaciones leídas");
+exigir(js.includes("Este cierre omite la aceptación final del cliente"), "el cierre administrativo directo debe pedir confirmación");
 exigir(js.includes("form?.elements?.namedItem(nombre)"), "los formularios deben poder leerse después de bloquear sus controles");
 exigir(js.includes("} finally {\n    estado.cargando = false;\n  }\n  renderizar();"), "el listado debe renderizarse después de finalizar la carga");
 exigir(principal.includes('href="garantias-reclamos.html"'), "el MVP no enlaza el módulo independiente");
@@ -53,6 +57,7 @@ exigir(hosting.includes('"garantias-reclamos.css"'), "Hosting no incluye los est
 exigir(!bootstrap.includes("mvp-profesionales-reclamos.js"), "el panel flotante anterior todavía se carga");
 exigir(!fs.existsSync(path.join(raiz, "mvp-profesionales-reclamos.js")), "el archivo roto anterior todavía existe");
 exigir(firestore.includes("match /pv_reclamos/{reclamoId}"), "faltan reglas Firestore para reclamos");
+exigir(firestore.includes("match /pv_notificaciones/{notificacionId}"), "faltan reglas Firestore para notificaciones");
 exigir(firestore.includes("allow delete: if false"), "los reclamos deben ser indelebles desde el cliente web");
 exigir(storage.includes("match /profesionales-vigna/reclamos/{reclamoId}/{uid}/{archivo}"), "faltan reglas Storage para evidencias");
 exigir(llavesBalanceadas(firestore), "las llaves de firestore.rules no están balanceadas");

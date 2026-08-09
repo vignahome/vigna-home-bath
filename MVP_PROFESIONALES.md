@@ -21,6 +21,7 @@ La gestión privada de garantías, reclamos e incidencias se abre desde el menú
 - Panel profesional y panel administrativo.
 - Módulo independiente de garantías y reclamos para cliente, profesional y administración.
 - Evidencias privadas vinculadas al contrato mediante Firebase Storage.
+- Notificaciones automáticas por apertura, respuesta, revisión, resolución y cierre de reclamos.
 - Auditoría básica de todas las operaciones.
 - Diseño responsive negro y dorado metálico.
 
