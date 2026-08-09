@@ -54,6 +54,18 @@ function insertarAcceso() {
   document.body.appendChild(dialogo);
 }
 
+function asegurarAsistenciaFlotante() {
+  const enlace = document.getElementById("pvAssistanceFab")
+    || document.querySelector('.assistance-link[href="garantias-reclamos.html"]')
+    || document.querySelector('#mainNav a[href="garantias-reclamos.html"]');
+  if (!enlace) return;
+  enlace.id = "pvAssistanceFab";
+  enlace.className = "assistance-fab";
+  enlace.setAttribute("aria-label", "Asistencia");
+  enlace.setAttribute("title", "Asistencia");
+  if (enlace.parentElement !== document.body) document.body.appendChild(enlace);
+}
+
 function escaparHtml(valor = "") {
   return String(valor).replace(/[&<>"']/g, (caracter) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
@@ -392,6 +404,7 @@ document.addEventListener("click", async (event) => {
   }
 }, true);
 
+asegurarAsistenciaFlotante();
 insertarAcceso();
 insertarRevisionDocumentos();
 insertarPasswords();

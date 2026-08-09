@@ -58,6 +58,8 @@ exigir(js.includes("} finally {\n    estado.cargando = false;\n  }\n  renderizar
 exigir(principal.includes('href="garantias-reclamos.html"'), "el MVP no enlaza el módulo independiente");
 exigir(principal.includes('aria-label="Asistencia"'), "el acceso principal no se llama Asistencia");
 exigir(principal.includes('class="assistance-fab"'), "falta el botón flotante de Asistencia con símbolo de auriculares");
+exigir(interfazNube.includes("asegurarAsistenciaFlotante"), "falta reforzar la posición flotante fuera del menú");
+exigir(interfazNube.includes("document.body.appendChild(enlace)"), "Asistencia debe colocarse directamente sobre el cuerpo de la página");
 exigir(principal.includes('id="pvNotificationsDialog"'), "falta el centro global de notificaciones en la página principal");
 exigir(!html.includes('id="abrirNotificaciones"'), "las notificaciones no deben permanecer en la página de Asistencia");
 exigir(html.includes("<h1>Asistencia</h1>"), "el módulo independiente no se presenta como Asistencia");
