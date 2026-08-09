@@ -270,6 +270,10 @@ async function crearCotizacion(form) {
   ]);
   const perfil = perfilSnapshot.data() || {};
   const identidad = identidadSnapshot.data() || {};
+  const garantiaDias = Number(form.get("garantiaDias") || 0);
+  if (!Number.isInteger(garantiaDias) || garantiaDias < 1 || garantiaDias > 3650) {
+    throw new Error("Selecciona una vigencia de garantía válida.");
+  }
   const cotizacionRef = doc(collection(db, COLECCIONES.cotizaciones));
   const cotizacion = {
     id: cotizacionRef.id, solicitudId, profesionalUid: user.uid, clienteUid: solicitud.clienteUid,
@@ -280,7 +284,7 @@ async function crearCotizacion(form) {
       { nombre: "Recomendada", precio: Number(form.get("recomendadaPrecio") || 0), detalle: texto(form, "recomendadaDetalle") },
       { nombre: "Premium", precio: Number(form.get("premiumPrecio") || 0), detalle: texto(form, "premiumDetalle") }
     ],
-    condiciones: texto(form, "condiciones"), version: 1, estado: "Enviada", creadoEn: ahora(), actualizadoEn: ahora()
+    garantiaDias, condiciones: texto(form, "condiciones"), version: 1, estado: "Enviada", creadoEn: ahora(), actualizadoEn: ahora()
   };
   await setDoc(cotizacionRef, cotizacion);
   await auditar("Cotización enviada", `${cotizacionRef.id} para ${solicitudId}`, [user.uid, solicitud.clienteUid]);
@@ -311,6 +315,7 @@ async function aceptarCotizacion(cotizacionId, opcionIndice) {
       clienteNombre: nombreCompleto(cliente), clienteTipoDocumento: cliente.tipoDocumento || "", clienteDocumento: cliente.documento || "",
       profesionalNombre: cotizacion.profesionalNombre || "", profesionalTipoDocumento: cotizacion.profesionalTipoDocumento || "",
       profesionalDocumento: cotizacion.profesionalDocumento || "",
+      garantiaDias: Number(cotizacion.garantiaDias || 0), garantiaInicioEn: "", garantiaVenceEn: "",
       condiciones: cotizacion.condiciones, version: 1, estado: "Pendiente de firma", archivoFirmado: "", archivoFirmadoUrl: "",
       descripcionSolicitud: solicitud.descripcion || "", ubicacion: { departamento: solicitud.departamento, provincia: solicitud.provincia, distrito: solicitud.distrito, fecha: solicitud.fecha },
       creadoEn: ahora(), actualizadoEn: ahora()
@@ -395,6 +400,7 @@ async function cerrarServicio(contratoId, calificacion, comentario) {
   const contratoRef = doc(db, COLECCIONES.contratos, contratoId);
   const resenaRef = doc(db, COLECCIONES.resenas, contratoId);
   let participantes = [];
+  let vigenciaGarantia = null;
   await runTransaction(db, async (tx) => {
     const snapshot = await tx.get(contratoRef);
     if (!snapshot.exists()) throw new Error("El contrato ya no existe.");
@@ -402,13 +408,19 @@ async function cerrarServicio(contratoId, calificacion, comentario) {
     if (user.uid !== contrato.clienteUid) throw new Error("Solo el cliente del contrato puede confirmar la conformidad.");
     if (contrato.estado !== "Finalizado") throw new Error("El profesional todavía no ha finalizado el servicio.");
     participantes = [contrato.clienteUid, contrato.profesionalUid];
+    const cerradoEn = ahora();
+    const garantiaDias = Number(contrato.garantiaDias || 0);
+    const garantiaVenceEn = garantiaDias > 0
+      ? new Date(Date.now() + garantiaDias * 24 * 60 * 60 * 1000).toISOString()
+      : "";
+    vigenciaGarantia = garantiaDias > 0 ? { garantiaInicioEn: cerradoEn, garantiaVenceEn } : null;
     tx.update(contratoRef, {
       estado: "Cerrado",
       calificacion: valor,
       comentarioCliente: opinion.slice(0, 1000),
       cerradoPorUid: user.uid,
-      cerradoEn: ahora(),
-      actualizadoEn: ahora()
+      cerradoEn,
+      actualizadoEn: cerradoEn
     });
     tx.set(resenaRef, {
       contratoId,
@@ -420,6 +432,13 @@ async function cerrarServicio(contratoId, calificacion, comentario) {
       creadoEn: ahora()
     });
   });
+  if (vigenciaGarantia) {
+    try {
+      await updateDoc(contratoRef, { ...vigenciaGarantia, actualizadoEn: ahora() });
+    } catch (error) {
+      console.warn("El servicio quedó cerrado; la vigencia estructurada se activará cuando se publiquen las reglas Firebase actualizadas.", error);
+    }
+  }
   await auditar("Servicio confirmado y calificado", `${contratoId}: ${valor}/5`, participantes);
 }
 

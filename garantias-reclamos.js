@@ -246,6 +246,39 @@ function contratoNombre(contrato) {
   return contrato.profesion || contrato.opcion || contrato.detalle || "Servicio profesional";
 }
 
+function vencimientoGarantia(contrato) {
+  if (contrato.garantiaVenceEn) {
+    const fecha = new Date(contrato.garantiaVenceEn);
+    if (!Number.isNaN(fecha.getTime())) return fecha;
+  }
+  const dias = Number(contrato.garantiaDias || 0);
+  const base = contrato.garantiaInicioEn || contrato.cerradoEn || contrato.actualizadoEn;
+  const inicio = new Date(base || "");
+  if (dias > 0 && !Number.isNaN(inicio.getTime())) {
+    return new Date(inicio.getTime() + dias * 24 * 60 * 60 * 1000);
+  }
+  return null;
+}
+
+function garantiaVigente(contrato) {
+  const vencimiento = vencimientoGarantia(contrato);
+  return !vencimiento || vencimiento.getTime() >= Date.now();
+}
+
+function tieneReclamoActivo(contratoId) {
+  return estado.reclamos.some((reclamo) => reclamo.contratoId === contratoId && reclamo.estado !== "Cerrado");
+}
+
+function contratoDisponibleParaReclamo(contrato) {
+  return contrato.estado === "Cerrado" && garantiaVigente(contrato) && !tieneReclamoActivo(contrato.id);
+}
+
+function etiquetaGarantia(contrato) {
+  const vencimiento = vencimientoGarantia(contrato);
+  if (!vencimiento) return "Garantía sin plazo estructurado";
+  return `Garantía hasta ${new Intl.DateTimeFormat("es-PE", { dateStyle: "medium" }).format(vencimiento)}`;
+}
+
 async function cargarDatos() {
   if (!estado.usuario || !ROLES_VALIDOS.includes(estado.rol)) return;
   estado.cargando = true;
@@ -324,11 +357,11 @@ function renderizarMetricas() {
 
 function renderizarContratos() {
   if (estado.rol !== "cliente") return;
-  const cerrados = estado.contratos.filter((contrato) => contrato.estado === "Cerrado");
-  elementos.contratoReclamo.innerHTML = cerrados.length
-    ? `<option value="">Selecciona un contrato</option>${cerrados.map((contrato) => `<option value="${escapar(contrato.id)}">${escapar(contrato.id)} · ${escapar(contratoNombre(contrato))}</option>`).join("")}`
-    : '<option value="">No tienes contratos cerrados disponibles</option>';
-  elementos.formReclamo.querySelector('button[type="submit"]').disabled = !cerrados.length;
+  const disponibles = estado.contratos.filter(contratoDisponibleParaReclamo);
+  elementos.contratoReclamo.innerHTML = disponibles.length
+    ? `<option value="">Selecciona un contrato</option>${disponibles.map((contrato) => `<option value="${escapar(contrato.id)}">${escapar(contrato.id)} · ${escapar(contratoNombre(contrato))} · ${escapar(etiquetaGarantia(contrato))}</option>`).join("")}`
+    : '<option value="">No tienes contratos con garantía disponible</option>';
+  elementos.formReclamo.querySelector('button[type="submit"]').disabled = !disponibles.length;
 }
 
 function historialHtml(reclamo) {
@@ -442,6 +475,8 @@ async function crearReclamo(form) {
   if (!contrato || contrato.estado !== "Cerrado" || contrato.clienteUid !== estado.usuario.uid) {
     throw new Error("El contrato cerrado seleccionado no es válido.");
   }
+  if (!garantiaVigente(contrato)) throw new Error("La garantía de este contrato ya venció.");
+  if (tieneReclamoActivo(contrato.id)) throw new Error("Este contrato ya tiene un expediente activo. Debes cerrarlo antes de abrir otro.");
   const descripcion = textoFormulario(form, "descripcion");
   const solucionSolicitada = textoFormulario(form, "solucionSolicitada");
   if (descripcion.length < 20 || solucionSolicitada.length < 10) throw new Error("Completa la descripción y la solución solicitada.");

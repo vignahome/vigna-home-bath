@@ -17,11 +17,13 @@ La gestión privada de garantías, reclamos e incidencias se abre desde el menú
 - Portafolio antes/después con video opcional declarado.
 - Solicitudes de servicio con archivos.
 - Cotizaciones económica, recomendada y premium.
+- Garantía con plazo estructurado desde la cotización y vencimiento calculado al cierre conforme.
 - Generación de contrato imprimible y carga del documento firmado.
 - Panel profesional y panel administrativo.
 - Módulo independiente de garantías y reclamos para cliente, profesional y administración.
 - Evidencias privadas vinculadas al contrato mediante Firebase Storage.
 - Notificaciones automáticas por apertura, respuesta, revisión, resolución y cierre de reclamos.
+- Bloqueo de reclamos fuera de garantía o duplicados mientras exista otro expediente activo del contrato.
 - Auditoría básica de todas las operaciones.
 - Diseño responsive negro y dorado metálico.
 

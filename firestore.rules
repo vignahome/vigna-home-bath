@@ -231,7 +231,28 @@ service cloud.firestore {
             request.resource.data.calificacion <= 5 &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly([
               "estado", "calificacion", "comentarioCliente",
-              "cerradoPorUid", "cerradoEn", "actualizadoEn"
+              "cerradoPorUid", "cerradoEn", "garantiaInicioEn",
+              "garantiaVenceEn", "actualizadoEn"
+            ])
+          ) ||
+          (
+            pvRol("cliente") &&
+            resource.data.clienteUid == request.auth.uid &&
+            resource.data.estado == "Cerrado" &&
+            request.resource.data.estado == "Cerrado" &&
+            resource.data.keys().hasAll([
+              "garantiaDias", "garantiaInicioEn", "garantiaVenceEn"
+            ]) &&
+            resource.data.garantiaDias is int &&
+            resource.data.garantiaDias > 0 &&
+            resource.data.garantiaInicioEn == "" &&
+            resource.data.garantiaVenceEn == "" &&
+            request.resource.data.garantiaInicioEn is string &&
+            request.resource.data.garantiaVenceEn is string &&
+            request.resource.data.garantiaInicioEn != "" &&
+            request.resource.data.garantiaVenceEn != "" &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "garantiaInicioEn", "garantiaVenceEn", "actualizadoEn"
             ])
           )
         )
