@@ -7,6 +7,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   query,
   runTransaction,
   setDoc,
@@ -532,6 +533,21 @@ async function cargarDatos() {
 
 const observarSesion = (callback) => onAuthStateChanged(auth, callback);
 
+async function observarActividad(callback, onError = console.error) {
+  const user = exigirUsuario();
+  const rol = await obtenerRol(user.uid);
+  const consulta = rol === "admin"
+    ? collection(db, COLECCIONES.auditoria)
+    : query(collection(db, COLECCIONES.auditoria), where("participantes", "array-contains", user.uid));
+  return onSnapshot(consulta, (snapshot) => {
+    const actividad = snapshot.docs.map((item) => {
+      const datos = item.data();
+      return { id: item.id, ...datos, actor: datos.actorEmail || datos.actorUid || "Sistema" };
+    });
+    callback(actividad);
+  }, onError);
+}
+
 export const ProfesionalesFirebase = Object.freeze({
   COLECCIONES,
   registrarProfesional,
@@ -552,6 +568,7 @@ export const ProfesionalesFirebase = Object.freeze({
   abrirEvidenciaServicio,
   cambiarEstadoProfesional,
   cargarDatos,
+  observarActividad,
   observarSesion,
   usuarioActual: () => auth.currentUser,
   nombreCompleto

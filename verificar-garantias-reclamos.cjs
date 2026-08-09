@@ -68,6 +68,9 @@ exigir(interfazNube.includes("datos?.auditoria || []"), "el centro global no usa
 exigir(interfazNube.includes("function destinoNotificacion(item)"), "las notificaciones no determinan su acción directa");
 exigir(interfazNube.includes('location.href = "garantias-reclamos.html"'), "los avisos de reclamo no abren Asistencia");
 exigir(interfazNube.includes("data-pv-notification-target"), "faltan acciones en los avisos globales");
+exigir(firebaseProfesionales.includes("onSnapshot"), "falta la escucha Firestore en tiempo real");
+exigir(firebaseProfesionales.includes("async function observarActividad"), "falta el observador global de actividad");
+exigir(interfazNube.includes("recibirActividadEnTiempoReal"), "la interfaz no actualiza las notificaciones en vivo");
 exigir(principal.includes('name="garantiaDias"'), "la cotización no solicita una vigencia de garantía");
 exigir(firebaseProfesionales.includes("vigenciaGarantia"), "el cierre no prepara la vigencia estructurada de garantía");
 exigir(hosting.includes('"garantias-reclamos.html"'), "Hosting no incluye la página independiente");

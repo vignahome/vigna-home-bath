@@ -4,6 +4,8 @@ let rolActual = "publico";
 let operacionEnCurso = false;
 let notificacionesGlobales = [];
 let usuarioNotificaciones = null;
+let detenerActividad = null;
+let temporizadorAvisoVivo = null;
 
 const esperarMVP = () => window.VignaProfesionalesMVP
   ? Promise.resolve(window.VignaProfesionalesMVP)
@@ -163,6 +165,22 @@ function marcarNotificacionesVistas() {
   if (!usuarioNotificaciones?.uid) return;
   guardarRevisionNotificaciones(usuarioNotificaciones.uid);
   pintarNotificacionesGlobales();
+}
+
+function mostrarNotificacionEnVivo(item) {
+  const aviso = document.getElementById("toast");
+  if (!aviso || !item) return;
+  aviso.textContent = `Nueva notificación: ${item.accion || "Actividad actualizada"}`;
+  aviso.classList.add("show");
+  window.clearTimeout(temporizadorAvisoVivo);
+  temporizadorAvisoVivo = window.setTimeout(() => aviso.classList.remove("show"), 4200);
+}
+
+function recibirActividadEnTiempoReal(actividad, user) {
+  const anteriores = new Set(notificacionesGlobales.map((item) => item.id).filter(Boolean));
+  actualizarNotificacionesGlobales({ auditoria: actividad }, user);
+  const nueva = notificacionesGlobales.find((item) => item.id && !anteriores.has(item.id));
+  if (anteriores.size && nueva) mostrarNotificacionEnVivo(nueva);
 }
 
 function insertarRevisionDocumentos() {
@@ -446,7 +464,17 @@ insertarAcceso();
 insertarRevisionDocumentos();
 insertarPasswords();
 api.observarSesion(async (user) => {
+  if (detenerActividad) {
+    detenerActividad();
+    detenerActividad = null;
+  }
   rolActual = await api.obtenerRol(user?.uid);
   actualizarNavegacion(user);
   await refrescarNube();
+  if (user && api.usuarioActual()?.uid === user.uid) {
+    detenerActividad = await api.observarActividad(
+      (actividad) => recibirActividadEnTiempoReal(actividad, user),
+      (error) => console.warn("La actividad en tiempo real no está disponible temporalmente.", error)
+    );
+  }
 });
