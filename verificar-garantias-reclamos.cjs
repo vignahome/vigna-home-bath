@@ -57,7 +57,7 @@ exigir(js.includes("form?.elements?.namedItem(nombre)"), "los formularios deben 
 exigir(js.includes("} finally {\n    estado.cargando = false;\n  }\n  renderizar();"), "el listado debe renderizarse después de finalizar la carga");
 exigir(principal.includes('href="garantias-reclamos.html"'), "el MVP no enlaza el módulo independiente");
 exigir(principal.includes('aria-label="Asistencia"'), "el acceso principal no se llama Asistencia");
-exigir(principal.includes('class="assistance-link"'), "falta el acceso con símbolo de auriculares");
+exigir(principal.includes('class="assistance-fab"'), "falta el botón flotante de Asistencia con símbolo de auriculares");
 exigir(principal.includes('id="pvNotificationsDialog"'), "falta el centro global de notificaciones en la página principal");
 exigir(!html.includes('id="abrirNotificaciones"'), "las notificaciones no deben permanecer en la página de Asistencia");
 exigir(html.includes("<h1>Asistencia</h1>"), "el módulo independiente no se presenta como Asistencia");
