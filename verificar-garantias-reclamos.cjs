@@ -44,6 +44,7 @@ exigir(js.includes('"cliente", "profesional", "admin"'), "faltan los tres roles 
 exigir(js.includes("signInWithEmailAndPassword"), "falta Firebase Auth");
 exigir(js.includes('reclamos: "pv_reclamos"'), "falta la conexión a Firestore");
 exigir(js.includes("uploadBytes"), "falta la conexión a Firebase Storage");
+exigir(js.includes("form?.elements?.namedItem(nombre)"), "los formularios deben poder leerse después de bloquear sus controles");
 exigir(principal.includes('href="garantias-reclamos.html"'), "el MVP no enlaza el módulo independiente");
 exigir(hosting.includes('"garantias-reclamos.html"'), "Hosting no incluye la página independiente");
 exigir(hosting.includes('"garantias-reclamos.js"'), "Hosting no incluye el controlador");

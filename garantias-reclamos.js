@@ -85,7 +85,8 @@ function fechaLegible(valor) {
 }
 
 function textoFormulario(form, nombre) {
-  return String(new FormData(form).get(nombre) || "").trim();
+  const control = form?.elements?.namedItem(nombre);
+  return String(control?.value || "").trim();
 }
 
 function mostrarMensaje(texto, error = false) {
