@@ -9,6 +9,7 @@ let temporizadorAvisoVivo = null;
 let temporizadorSincronizacion = null;
 let actividadInicializada = false;
 let filtroNotificaciones = "todas";
+let revisionNotificacionesRemota = 0;
 
 const esperarMVP = () => window.VignaProfesionalesMVP
   ? Promise.resolve(window.VignaProfesionalesMVP)
@@ -89,17 +90,24 @@ function claveRevisionNotificaciones(uid) {
 
 function ultimaRevisionNotificaciones(uid) {
   try {
-    return Number(localStorage.getItem(claveRevisionNotificaciones(uid)) || 0);
+    return Math.max(Number(localStorage.getItem(claveRevisionNotificaciones(uid)) || 0), revisionNotificacionesRemota);
   } catch {
-    return 0;
+    return revisionNotificacionesRemota;
   }
 }
 
-function guardarRevisionNotificaciones(uid) {
+async function guardarRevisionNotificaciones(uid) {
+  const marcaTiempo = Date.now();
+  revisionNotificacionesRemota = marcaTiempo;
   try {
-    localStorage.setItem(claveRevisionNotificaciones(uid), String(Date.now()));
+    localStorage.setItem(claveRevisionNotificaciones(uid), String(marcaTiempo));
   } catch {
     // La lista completa sigue disponible aunque el navegador bloquee el almacenamiento local.
+  }
+  try {
+    await api.guardarRevisionNotificaciones(new Date(marcaTiempo).toISOString());
+  } catch (error) {
+    console.warn("La marca de lectura se conservará solo en este dispositivo hasta habilitar las reglas actualizadas.", error);
   }
 }
 
@@ -186,9 +194,9 @@ function actualizarNotificacionesGlobales(datos, user) {
   pintarNotificacionesGlobales();
 }
 
-function marcarNotificacionesVistas() {
+async function marcarNotificacionesVistas() {
   if (!usuarioNotificaciones?.uid) return;
-  guardarRevisionNotificaciones(usuarioNotificaciones.uid);
+  await guardarRevisionNotificaciones(usuarioNotificaciones.uid);
   pintarNotificacionesGlobales();
 }
 
@@ -364,6 +372,7 @@ document.addEventListener("click", async (event) => {
     const mvp = await esperarMVP();
     if (tipo === "contrato" && id) mvp.abrirContrato(id);
     if (tipo === "cotizacion" && id) mvp.abrirCotizacion(id);
+    if (tipo === "solicitud" && id) mvp.enfocarSolicitud(id);
     return;
   }
   if (event.target.closest("#pvNotificationsButton")) {
@@ -375,7 +384,7 @@ document.addEventListener("click", async (event) => {
     return;
   }
   if (event.target.closest("#pvNotificationsSeen")) {
-    marcarNotificacionesVistas();
+    await marcarNotificacionesVistas();
     return;
   }
   const acceso = event.target.closest("[data-pv-access]");
@@ -505,12 +514,21 @@ insertarRevisionDocumentos();
 insertarPasswords();
 api.observarSesion(async (user) => {
   actividadInicializada = false;
+  revisionNotificacionesRemota = 0;
   window.clearTimeout(temporizadorSincronizacion);
   if (detenerActividad) {
     detenerActividad();
     detenerActividad = null;
   }
   rolActual = await api.obtenerRol(user?.uid);
+  if (user) {
+    try {
+      const revision = await api.obtenerRevisionNotificaciones();
+      revisionNotificacionesRemota = Date.parse(revision || "") || 0;
+    } catch (error) {
+      console.warn("Se usará el estado local de notificaciones hasta habilitar las preferencias en Firebase.", error);
+    }
+  }
   actualizarNavegacion(user);
   await refrescarNube();
   if (user && api.usuarioActual()?.uid === user.uid) {

@@ -194,7 +194,7 @@
       container.innerHTML = data.solicitudes.map((s) => {
         const client = data.clientes.find((c) => c.id === s.clienteId);
         const professional = data.profesionales.find((p) => p.id === s.profesionalId);
-        return `<article class="list-item"><div><h3>${escapar(s.id)} - ${escapar(s.profesion)}</h3><p>${escapar(s.descripcion)}</p><p>${escapar(nombreCompleto(client))} · ${escapar(s.departamento)}, ${escapar(s.distrito)} · ${escapar(s.presupuesto)}</p><p>Profesional: ${professional ? escapar(nombreCompleto(professional)) : "Por asignar"} · Archivos: ${s.archivosCantidad}</p></div><span class="status-chip ${estadoClase(s.estado)}">${escapar(s.estado)}</span></article>`;
+        return `<article class="list-item" data-solicitud-id="${escapar(s.id)}" tabindex="-1"><div><h3>${escapar(s.id)} - ${escapar(s.profesion)}</h3><p>${escapar(s.descripcion)}</p><p>${escapar(nombreCompleto(client))} · ${escapar(s.departamento)}, ${escapar(s.distrito)} · ${escapar(s.presupuesto)}</p><p>Profesional: ${professional ? escapar(nombreCompleto(professional)) : "Por asignar"} · Archivos: ${Number(s.archivosCantidad) || 0}</p></div><span class="status-chip ${estadoClase(s.estado)}">${escapar(s.estado)}</span></article>`;
       }).join("");
     }
     const requestOptions = data.solicitudes.map((s) => `<option value="${s.id}">${escapar(s.id)} - ${escapar(s.profesion)} - ${escapar(s.distrito)}</option>`).join("");
@@ -274,6 +274,10 @@
     ]));
     document.getElementById("admin-clientes").innerHTML = tableHtml(["ID", "Cliente", "Documento", "Ubicación", "Archivos", "Estado", "Acciones"], data.clientes.map((c) => [c.id, nombreCompleto(c), `${c.tipoDocumento} ${c.documento}`, `${c.departamento} - ${c.provincia} - ${c.distrito} · ${c.zona || "Sin zona"}`, `${c.documentosDeclarados || 0} declarados`, c.estado, htmlSeguro(`<button class="tiny-button" data-review-client="${c.id}">Revisar documentos</button>`)]));
     document.getElementById("admin-solicitudes").innerHTML = tableHtml(["ID", "Profesión", "Lugar", "Presupuesto", "Estado"], data.solicitudes.map((s) => [s.id, s.profesion, `${s.departamento} - ${s.distrito}`, s.presupuesto, s.estado]));
+    document.querySelectorAll("#admin-solicitudes tbody tr").forEach((fila, indice) => {
+      fila.dataset.solicitudId = data.solicitudes[indice]?.id || "";
+      fila.tabIndex = -1;
+    });
     document.getElementById("admin-contratos").innerHTML = tableHtml(["ID", "Solicitud", "Profesional", "Total", "Estado", "Archivo", "Acciones"], data.contratos.map((c) => { const p = data.profesionales.find((x) => x.id === c.profesionalId); return [c.id, c.solicitudId, nombreCompleto(p), dinero(c.total), c.estado, c.archivoFirmado || "Pendiente", c.archivoFirmado ? htmlSeguro(`<button class="tiny-button" data-open-signed-contract="${c.id}">Abrir contrato firmado</button>`) : "—"]; }));
     document.getElementById("admin-auditoria").innerHTML = data.auditoria.map((a) => `<div class="audit-line"><strong>${escapar(a.accion)}</strong> · ${escapar(a.actor)}<small>${new Date(a.fecha).toLocaleString("es-PE")} · ${escapar(a.detalle)}</small></div>`).join("");
   }
@@ -432,11 +436,40 @@
     guardar("Cotización enviada", `${q.id} para ${q.solicitudId}`, nombreCompleto(data.profesionales.find((p) => p.id === panelProfesionalId))); event.currentTarget.reset(); toast("Cotización con tres opciones enviada.");
   });
 
+  function enfocarSolicitud(id) {
+    const solicitud = data.solicitudes.find((item) => item.id === id);
+    if (!solicitud) return false;
+    let destino = null;
+    if (data.rol === "admin") {
+      setView("admin");
+      document.querySelector('[data-admin-tab="solicitudes"]')?.click();
+      destino = [...document.querySelectorAll("#admin-solicitudes [data-solicitud-id]")]
+        .find((elemento) => elemento.dataset.solicitudId === id);
+    } else if (data.rol === "profesional") {
+      setView("panel");
+      const selector = document.getElementById("cotizacionSolicitud");
+      if (selector && [...selector.options].some((opcion) => opcion.value === id)) selector.value = id;
+      destino = document.getElementById("formCotizacion");
+    } else {
+      setView("solicitud");
+      destino = [...document.querySelectorAll("#listaSolicitudes [data-solicitud-id]")]
+        .find((elemento) => elemento.dataset.solicitudId === id);
+    }
+    if (!destino) return false;
+    destino.classList.add("direct-target");
+    requestAnimationFrame(() => {
+      destino.scrollIntoView({ behavior: "smooth", block: "center" });
+      destino.focus?.({ preventScroll: true });
+    });
+    return true;
+  }
+
   initSelectors(); syncPrincipal(); renderAll();
   window.VignaProfesionalesMVP = {
     getData: () => structuredClone(data),
     abrirContrato: (id) => openContract(id),
     abrirCotizacion: (id) => openQuote(id),
+    enfocarSolicitud: (id) => enfocarSolicitud(id),
     mostrarVista: (vista) => setView(vista),
     setData: (nuevo) => {
       if (!nuevo || typeof nuevo !== "object") return;

@@ -35,7 +35,8 @@ const COLECCIONES = Object.freeze({
   cotizaciones: "pv_cotizaciones",
   contratos: "pv_contratos",
   resenas: "pv_resenas",
-  auditoria: "pv_auditoria"
+  auditoria: "pv_auditoria",
+  preferenciasNotificaciones: "pv_preferencias_notificaciones"
 });
 
 const ahora = () => new Date().toISOString();
@@ -217,6 +218,23 @@ async function iniciarSesion(correo, password) {
 
 async function cerrarSesion() {
   await signOut(auth);
+}
+
+async function obtenerRevisionNotificaciones() {
+  const user = exigirUsuario();
+  const snapshot = await getDoc(doc(db, COLECCIONES.preferenciasNotificaciones, user.uid));
+  return snapshot.exists() ? String(snapshot.data().notificacionesVistasEn || "") : "";
+}
+
+async function guardarRevisionNotificaciones(fecha) {
+  const user = exigirUsuario();
+  const notificacionesVistasEn = fecha || ahora();
+  await setDoc(doc(db, COLECCIONES.preferenciasNotificaciones, user.uid), {
+    uid: user.uid,
+    notificacionesVistasEn,
+    actualizadoEn: ahora()
+  }, { merge: true });
+  return notificacionesVistasEn;
 }
 
 async function crearSolicitud(form) {
@@ -570,6 +588,8 @@ export const ProfesionalesFirebase = Object.freeze({
   cargarDatos,
   observarActividad,
   observarSesion,
+  obtenerRevisionNotificaciones,
+  guardarRevisionNotificaciones,
   usuarioActual: () => auth.currentUser,
   nombreCompleto
 });

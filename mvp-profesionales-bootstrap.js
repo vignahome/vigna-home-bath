@@ -1,2 +1,2 @@
-import "./mvp-profesionales-cloud-ui.js?v=14";
-await import("./mvp-profesionales.js?v=8");
+import "./mvp-profesionales-cloud-ui.js?v=15";
+await import("./mvp-profesionales.js?v=9");

@@ -76,7 +76,9 @@ exigir(js.includes('data-expediente-id="${escapar(reclamo.id)}"'), "los expedien
 exigir(css.includes(".gr-case-target"), "falta el resaltado visual del expediente solicitado");
 exigir(principalJs.includes("abrirContrato: (id) => openContract(id)"), "la notificación no puede abrir un contrato exacto");
 exigir(principalJs.includes("abrirCotizacion: (id) => openQuote(id)"), "la notificación no puede abrir una cotización exacta");
-exigir(principal.includes('mvp-profesionales-bootstrap.js?v=12'), "la página principal no carga la navegación directa actualizada");
+exigir(principalJs.includes("enfocarSolicitud: (id) => enfocarSolicitud(id)"), "la notificación no puede enfocar una solicitud exacta");
+exigir(interfazNube.includes("mvp.enfocarSolicitud(id)"), "la acción de solicitud no usa su identificador");
+exigir(principal.includes('mvp-profesionales-bootstrap.js?v=13'), "la página principal no carga la navegación directa actualizada");
 exigir(interfazNube.includes('"garantias-reclamos.html"'), "los avisos de reclamo no abren Asistencia");
 exigir(interfazNube.includes("data-pv-notification-target"), "faltan acciones en los avisos globales");
 exigir(firebaseProfesionales.includes("onSnapshot"), "falta la escucha Firestore en tiempo real");
@@ -84,6 +86,9 @@ exigir(js.includes("function suscribirActualizaciones()"), "Asistencia no prepar
 exigir(js.includes("detenerReclamos = onSnapshot"), "los expedientes de Asistencia no se actualizan en vivo");
 exigir(js.includes("detenerContratos = onSnapshot"), "los contratos disponibles no se actualizan en vivo");
 exigir(firebaseProfesionales.includes("async function observarActividad"), "falta el observador global de actividad");
+exigir(firebaseProfesionales.includes('preferenciasNotificaciones: "pv_preferencias_notificaciones"'), "falta persistir las lecturas de notificaciones");
+exigir(firebaseProfesionales.includes("async function guardarRevisionNotificaciones"), "falta guardar la lectura entre dispositivos");
+exigir(interfazNube.includes("revisionNotificacionesRemota"), "la interfaz no combina la lectura local y remota");
 exigir(interfazNube.includes("recibirActividadEnTiempoReal"), "la interfaz no actualiza las notificaciones en vivo");
 exigir(interfazNube.includes("temporizadorSincronizacion"), "la actividad nueva no sincroniza el resto de los paneles");
 exigir(interfazNube.includes("actividadInicializada = true"), "la primera notificación posterior a una lista vacía puede perderse");
@@ -99,6 +104,11 @@ exigir(!bootstrap.includes("mvp-profesionales-reclamos.js"), "el panel flotante 
 exigir(!fs.existsSync(path.join(raiz, "mvp-profesionales-reclamos.js")), "el archivo roto anterior todavía existe");
 exigir(firestore.includes("match /pv_reclamos/{reclamoId}"), "faltan reglas Firestore para reclamos");
 exigir(firestore.includes("match /pv_notificaciones/{notificacionId}"), "faltan reglas Firestore para notificaciones");
+exigir(firestore.includes("match /pv_preferencias_notificaciones/{uid}"), "faltan reglas para preferencias privadas de notificaciones");
+exigir(firestore.includes('request.resource.data.estado == "Pendiente de firma"'), "la creación de contratos no exige su estado inicial");
+exigir(firestore.includes("cotizacionSeleccionada().opciones[2].precio"), "las reglas no validan el precio contra la cotización");
+exigir(firestore.includes('"estado", "profesionalUid", "actualizadoEn"'), "la actualización de solicitudes permite modificar campos no autorizados");
+exigir(!firestore.includes('resource.data.estado != "Aceptada"'), "el profesional todavía puede reescribir una cotización enviada");
 exigir(firestore.includes('"garantiaInicioEn", "garantiaVenceEn", "actualizadoEn"'), "las reglas no permiten registrar la vigencia de garantía");
 exigir(firestore.includes("allow delete: if false"), "los reclamos deben ser indelebles desde el cliente web");
 exigir(storage.includes("match /profesionales-vigna/reclamos/{reclamoId}/{uid}/{archivo}"), "faltan reglas Storage para evidencias");
