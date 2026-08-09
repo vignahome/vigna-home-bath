@@ -84,6 +84,8 @@ label small { color: var(--muted); font-weight: 400; }
 .gr-list { display: grid; gap: 16px; }
 .gr-empty { padding: 46px 24px; border: 1px dashed #555; border-radius: var(--radius); color: var(--muted); text-align: center; }
 .gr-case { position: relative; overflow: hidden; padding: 22px; border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(150deg, #191919, #101010); }
+.gr-case-target { border-color: var(--gold-light); box-shadow: 0 0 0 4px rgba(232, 180, 50, .16), 0 18px 50px rgba(0, 0, 0, .42); animation: gr-highlight 1.5s ease; }
+@keyframes gr-highlight { 0% { transform: scale(.985); filter: brightness(1.35); } 100% { transform: none; filter: none; } }
 .gr-case::before { content: ""; position: absolute; top: 0; right: 0; left: 0; height: 3px; background: var(--metallic); }
 .gr-case-head { display: flex; align-items: start; justify-content: space-between; gap: 18px; }
 .gr-case-head h3 { margin: 5px 0 3px; font-size: 23px; }

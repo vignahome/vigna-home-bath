@@ -435,6 +435,9 @@
   initSelectors(); syncPrincipal(); renderAll();
   window.VignaProfesionalesMVP = {
     getData: () => structuredClone(data),
+    abrirContrato: (id) => openContract(id),
+    abrirCotizacion: (id) => openQuote(id),
+    mostrarVista: (vista) => setView(vista),
     setData: (nuevo) => {
       if (!nuevo || typeof nuevo !== "object") return;
       data = { ...seedData(), ...nuevo, version: 1 };

@@ -18,8 +18,10 @@ requeridos.forEach((archivo) => exigir(fs.existsSync(path.join(raiz, archivo)), 
 
 const html = leer("garantias-reclamos.html");
 const js = leer("garantias-reclamos.js");
+const css = leer("garantias-reclamos.css");
 const bootstrap = leer("mvp-profesionales-bootstrap.js");
 const principal = leer("mvp-profesionales.html");
+const principalJs = leer("mvp-profesionales.js");
 const firebaseProfesionales = leer("mvp-profesionales-firebase.js");
 const interfazNube = leer("mvp-profesionales-cloud-ui.js");
 const hosting = leer("preparar-hosting-profesionales.js");
@@ -40,8 +42,8 @@ const llavesBalanceadas = (contenido) => {
   return nivel === 0;
 };
 
-exigir(html.includes('src="garantias-reclamos.js?v=2"'), "la página no carga su controlador actualizado");
-exigir(html.includes('href="garantias-reclamos.css?v=1"'), "la página no carga sus estilos");
+exigir(html.includes('src="garantias-reclamos.js?v=3"'), "la página no carga su controlador actualizado");
+exigir(html.includes('href="garantias-reclamos.css?v=2"'), "la página no carga sus estilos actualizados");
 exigir(js.includes('"cliente", "profesional", "admin"'), "faltan los tres roles autorizados");
 exigir(js.includes("signInWithEmailAndPassword"), "falta Firebase Auth");
 exigir(js.includes('reclamos: "pv_reclamos"'), "falta la conexión a Firestore");
@@ -66,7 +68,16 @@ exigir(html.includes("<h1>Asistencia</h1>"), "el módulo independiente no se pre
 exigir(interfazNube.includes("actualizarNotificacionesGlobales(datos, user)"), "la página principal no carga toda la actividad auditada");
 exigir(interfazNube.includes("datos?.auditoria || []"), "el centro global no usa la auditoría completa");
 exigir(interfazNube.includes("function destinoNotificacion(item)"), "las notificaciones no determinan su acción directa");
-exigir(interfazNube.includes('location.href = "garantias-reclamos.html"'), "los avisos de reclamo no abren Asistencia");
+exigir(interfazNube.includes("function referenciaNotificacion(item)"), "las notificaciones no identifican el registro exacto");
+exigir(interfazNube.includes("data-pv-notification-id"), "las acciones no conservan el identificador del registro");
+exigir(interfazNube.includes("?expediente=${encodeURIComponent(id)}"), "Asistencia no recibe el expediente solicitado");
+exigir(js.includes('new URLSearchParams(location.search).get("expediente")'), "Asistencia no lee el expediente de la notificación");
+exigir(js.includes('data-expediente-id="${escapar(reclamo.id)}"'), "los expedientes no pueden enfocarse de forma segura");
+exigir(css.includes(".gr-case-target"), "falta el resaltado visual del expediente solicitado");
+exigir(principalJs.includes("abrirContrato: (id) => openContract(id)"), "la notificación no puede abrir un contrato exacto");
+exigir(principalJs.includes("abrirCotizacion: (id) => openQuote(id)"), "la notificación no puede abrir una cotización exacta");
+exigir(principal.includes('mvp-profesionales-bootstrap.js?v=12'), "la página principal no carga la navegación directa actualizada");
+exigir(interfazNube.includes('"garantias-reclamos.html"'), "los avisos de reclamo no abren Asistencia");
 exigir(interfazNube.includes("data-pv-notification-target"), "faltan acciones en los avisos globales");
 exigir(firebaseProfesionales.includes("onSnapshot"), "falta la escucha Firestore en tiempo real");
 exigir(js.includes("function suscribirActualizaciones()"), "Asistencia no prepara sus actualizaciones en tiempo real");

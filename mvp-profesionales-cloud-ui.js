@@ -103,18 +103,37 @@ function guardarRevisionNotificaciones(uid) {
   }
 }
 
+function referenciaNotificacion(item) {
+  const detalle = String(item?.detalle || "").trim();
+  const id = detalle.match(/^([a-zA-Z0-9_-]+)/)?.[1] || "";
+  const accion = String(item?.accion || "").toLocaleLowerCase("es");
+  if (!id) return { tipo: "", id: "" };
+  if (/reclamo|expediente|resolución administrativa|revisión administrativa|respuesta profesional/.test(accion)) return { tipo: "expediente", id };
+  if (/cotización/.test(accion)) return { tipo: "cotizacion", id };
+  if (/contrato|servicio/.test(accion)) return { tipo: "contrato", id };
+  if (/solicitud/.test(accion)) return { tipo: "solicitud", id };
+  return { tipo: "", id: "" };
+}
+
 function destinoNotificacion(item) {
   const texto = `${item?.accion || ""} ${item?.detalle || ""}`.toLocaleLowerCase("es");
-  if (/reclamo|expediente|resolución administrativa|respuesta profesional/.test(texto)) {
-    return { destino: "asistencia", etiqueta: "Abrir Asistencia" };
+  const referencia = referenciaNotificacion(item);
+  if (/reclamo|expediente|resolución administrativa|revisión administrativa|respuesta profesional/.test(texto)) {
+    return { destino: "asistencia", etiqueta: "Abrir expediente", ...referencia };
   }
-  if (/cotización|contrato|servicio|portafolio/.test(texto)) {
-    return { destino: "panel", etiqueta: "Abrir mi panel" };
+  if (/cotización/.test(texto)) {
+    return { destino: rolActual === "admin" ? "admin" : "panel", etiqueta: "Abrir cotización", ...referencia };
+  }
+  if (/contrato|servicio/.test(texto)) {
+    return { destino: rolActual === "admin" ? "admin" : "panel", etiqueta: "Abrir contrato", ...referencia };
+  }
+  if (/portafolio/.test(texto)) {
+    return { destino: "panel", etiqueta: "Abrir mi panel", ...referencia };
   }
   if (/solicitud/.test(texto)) {
     return rolActual === "profesional"
-      ? { destino: "panel", etiqueta: "Revisar solicitud" }
-      : { destino: "solicitud", etiqueta: "Abrir solicitudes" };
+      ? { destino: "panel", etiqueta: "Revisar solicitud", ...referencia }
+      : { destino: rolActual === "admin" ? "admin" : "solicitud", etiqueta: "Abrir solicitudes", ...referencia };
   }
   if (/registrado|estado profesional|revisión/.test(texto)) {
     return rolActual === "admin"
@@ -154,7 +173,7 @@ function pintarNotificacionesGlobales() {
         <div><h3>${escaparHtml(item.accion || "Actualización")}</h3>
         <p>${escaparHtml(item.detalle || "Actividad registrada en Profesionales Vigna’s.")}</p>
         <div class="pv-notification-footer"><small>${escaparHtml(fechaNotificacion(item.fecha))} · ${escaparHtml(item.actor || item.actorEmail || item.actorUid || "Sistema")}</small>
-        <button class="tiny-button pv-notification-action" type="button" data-pv-notification-target="${escaparHtml(accion.destino)}">${escaparHtml(accion.etiqueta)}</button></div></div>
+        <button class="tiny-button pv-notification-action" type="button" data-pv-notification-target="${escaparHtml(accion.destino)}" data-pv-notification-type="${escaparHtml(accion.tipo || "")}" data-pv-notification-id="${escaparHtml(accion.id || "")}">${escaparHtml(accion.etiqueta)}</button></div></div>
       </article>`;
     }).join("")
     : `<div class="pv-notifications-empty">${filtroNotificaciones === "no-leidas" ? "No tienes notificaciones pendientes." : "Todavía no existe actividad registrada para esta cuenta."}</div>`;
@@ -333,13 +352,18 @@ document.addEventListener("click", async (event) => {
   const destinoAviso = event.target.closest("[data-pv-notification-target]");
   if (destinoAviso) {
     const destino = destinoAviso.dataset.pvNotificationTarget;
+    const tipo = destinoAviso.dataset.pvNotificationType || "";
+    const id = destinoAviso.dataset.pvNotificationId || "";
     document.getElementById("pvNotificationsDialog")?.close();
     if (destino === "asistencia") {
-      location.href = "garantias-reclamos.html";
+      location.href = id ? `garantias-reclamos.html?expediente=${encodeURIComponent(id)}` : "garantias-reclamos.html";
       return;
     }
     const botonVista = document.querySelector(`[data-view="${destino}"]`);
     if (botonVista && !botonVista.hidden) botonVista.click();
+    const mvp = await esperarMVP();
+    if (tipo === "contrato" && id) mvp.abrirContrato(id);
+    if (tipo === "cotizacion" && id) mvp.abrirCotizacion(id);
     return;
   }
   if (event.target.closest("#pvNotificationsButton")) {

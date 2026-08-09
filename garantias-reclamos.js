@@ -46,6 +46,8 @@ const estado = {
 
 let detenerReclamos = null;
 let detenerContratos = null;
+const expedienteSolicitado = new URLSearchParams(location.search).get("expediente") || "";
+let expedienteEnfocado = false;
 
 const elementos = {
   acceso: document.getElementById("acceso"),
@@ -439,7 +441,7 @@ function reclamoHtml(reclamo) {
   const resolucion = reclamo.resolucionAdmin
     ? `<div class="gr-copy-box"><strong>Resolución administrativa</strong><p>${escapar(reclamo.resolucionAdmin)}</p></div>`
     : "";
-  return `<article class="gr-case">
+  return `<article class="gr-case" data-expediente-id="${escapar(reclamo.id)}" tabindex="-1">
     <div class="gr-case-head">
       <div><p class="gr-eyebrow">${escapar(reclamo.categoria || "RECLAMO")}</p><h3>${escapar(reclamo.categoria || "Expediente de servicio")}</h3><div class="gr-case-id">Expediente ${escapar(reclamo.id)}</div></div>
       <span class="gr-status" data-state="${escapar(reclamo.estado || "Abierto")}">${escapar(reclamo.estado || "Abierto")}</span>
@@ -466,6 +468,18 @@ function renderizarLista() {
   elementos.listaReclamos.innerHTML = lista.length
     ? lista.map(reclamoHtml).join("")
     : '<div class="gr-empty">No existen expedientes para esta vista.</div>';
+  if (expedienteSolicitado && !expedienteEnfocado) {
+    const destino = [...elementos.listaReclamos.querySelectorAll("[data-expediente-id]")]
+      .find((elemento) => elemento.dataset.expedienteId === expedienteSolicitado);
+    if (destino) {
+      expedienteEnfocado = true;
+      destino.classList.add("gr-case-target");
+      requestAnimationFrame(() => {
+        destino.scrollIntoView({ behavior: "smooth", block: "center" });
+        destino.focus({ preventScroll: true });
+      });
+    }
+  }
 }
 
 function renderizar() {
