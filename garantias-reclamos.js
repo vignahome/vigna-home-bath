@@ -216,10 +216,10 @@ async function cargarDatos() {
       estado.contratos = estado.rol === "cliente" ? resultados[1] : [];
     }
     estado.reclamos.sort((a, b) => String(b.actualizadoEn || b.creadoEn || "").localeCompare(String(a.actualizadoEn || a.creadoEn || "")));
-    renderizar();
   } finally {
     estado.cargando = false;
   }
+  renderizar();
 }
 
 function configurarSesionVisual() {
