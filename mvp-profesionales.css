@@ -114,3 +114,7 @@ form :disabled{cursor:wait;opacity:.7}
 .verified-review-client{color:var(--muted);font-size:.88rem}
 .verified-review p{margin:10px 0 0;line-height:1.55}
 .verified-review-empty{color:var(--muted);font-style:italic}
+
+/* Acceso al módulo independiente de garantías y reclamos */
+.mvp-nav a{border:0;border-radius:10px;background:transparent;color:#ddd;padding:10px 12px;text-decoration:none}
+.mvp-nav a:hover{background:var(--metallic);color:#1a0e00;font-weight:800}

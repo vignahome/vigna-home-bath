@@ -255,9 +255,54 @@ service cloud.firestore {
 
 
     match /pv_reclamos/{reclamoId} {
+      function participantesSinCambios() {
+        return request.resource.data.clienteUid == resource.data.clienteUid &&
+          request.resource.data.profesionalUid == resource.data.profesionalUid &&
+          request.resource.data.contratoId == resource.data.contratoId &&
+          request.resource.data.solicitudId == resource.data.solicitudId &&
+          request.resource.data.cotizacionId == resource.data.cotizacionId;
+      }
+
+      function agregaHistorial(rol) {
+        return request.resource.data.historial is list &&
+          resource.data.historial is list &&
+          request.resource.data.historial.size() == resource.data.historial.size() + 1 &&
+          request.resource.data.historial[request.resource.data.historial.size() - 1].actorUid == request.auth.uid &&
+          request.resource.data.historial[request.resource.data.historial.size() - 1].rol == rol;
+      }
+
       allow create: if pvRol("cliente") &&
+        request.resource.data.keys().hasAll([
+          "contratoId", "solicitudId", "cotizacionId", "clienteUid", "profesionalUid",
+          "categoria", "descripcion", "solucionSolicitada", "estado", "archivosCliente",
+          "archivosProfesional", "respuestaProfesional", "resolucionAdmin", "historial",
+          "creadoEn", "actualizadoEn"
+        ]) &&
+        request.resource.data.keys().hasOnly([
+          "contratoId", "solicitudId", "cotizacionId", "clienteUid", "profesionalUid",
+          "categoria", "descripcion", "solucionSolicitada", "estado", "archivosCliente",
+          "archivosProfesional", "respuestaProfesional", "resolucionAdmin", "historial",
+          "creadoEn", "actualizadoEn"
+        ]) &&
         request.resource.data.clienteUid == request.auth.uid &&
         request.resource.data.estado == "Abierto" &&
+        request.resource.data.categoria in ["Defecto", "Trabajo incompleto", "Daño", "Incumplimiento", "Otro"] &&
+        request.resource.data.descripcion is string &&
+        request.resource.data.descripcion.size() >= 20 &&
+        request.resource.data.descripcion.size() <= 2500 &&
+        request.resource.data.solucionSolicitada is string &&
+        request.resource.data.solucionSolicitada.size() >= 10 &&
+        request.resource.data.solucionSolicitada.size() <= 1200 &&
+        request.resource.data.archivosCliente is list &&
+        request.resource.data.archivosCliente.size() == 0 &&
+        request.resource.data.archivosProfesional is list &&
+        request.resource.data.archivosProfesional.size() == 0 &&
+        request.resource.data.respuestaProfesional == "" &&
+        request.resource.data.resolucionAdmin == "" &&
+        request.resource.data.historial is list &&
+        request.resource.data.historial.size() == 1 &&
+        request.resource.data.historial[0].actorUid == request.auth.uid &&
+        request.resource.data.historial[0].rol == "cliente" &&
         request.resource.data.contratoId is string &&
         exists(/databases/$(database)/documents/pv_contratos/$(request.resource.data.contratoId)) &&
         get(/databases/$(database)/documents/pv_contratos/$(request.resource.data.contratoId)).data.clienteUid == request.auth.uid &&
@@ -270,14 +315,32 @@ service cloud.firestore {
          resource.data.profesionalUid == request.auth.uid)
       );
 
-      allow update: if esAdmin() || (
+      allow update: if (
+        pvRol("cliente") &&
+        resource.data.clienteUid == request.auth.uid &&
+        resource.data.estado == "Abierto" &&
+        request.resource.data.estado == "Abierto" &&
+        participantesSinCambios() &&
+        resource.data.archivosCliente.size() == 0 &&
+        request.resource.data.archivosCliente is list &&
+        request.resource.data.archivosCliente.size() > 0 &&
+        request.resource.data.archivosCliente.size() <= 6 &&
+        agregaHistorial("cliente") &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "archivosCliente", "actualizadoEn", "historial"
+        ])
+      ) || (
         pvRol("profesional") &&
         resource.data.profesionalUid == request.auth.uid &&
-        request.resource.data.clienteUid == resource.data.clienteUid &&
-        request.resource.data.profesionalUid == resource.data.profesionalUid &&
-        request.resource.data.contratoId == resource.data.contratoId &&
+        participantesSinCambios() &&
         request.resource.data.estado == "Respondido" &&
         resource.data.estado in ["Abierto", "En revisión"] &&
+        request.resource.data.respuestaProfesional is string &&
+        request.resource.data.respuestaProfesional.size() >= 10 &&
+        request.resource.data.respuestaProfesional.size() <= 2500 &&
+        request.resource.data.archivosProfesional is list &&
+        request.resource.data.archivosProfesional.size() <= 6 &&
+        agregaHistorial("profesional") &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           "respuestaProfesional", "archivosProfesional", "estado", "actualizadoEn", "historial"
         ])
@@ -286,8 +349,22 @@ service cloud.firestore {
         resource.data.clienteUid == request.auth.uid &&
         resource.data.estado == "Resuelto" &&
         request.resource.data.estado == "Cerrado" &&
+        participantesSinCambios() &&
+        agregaHistorial("cliente") &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           "estado", "actualizadoEn", "historial"
+        ])
+      ) || (
+        esAdmin() &&
+        resource.data.estado != "Cerrado" &&
+        participantesSinCambios() &&
+        request.resource.data.estado in ["En revisión", "Resuelto", "Cerrado"] &&
+        request.resource.data.resolucionAdmin is string &&
+        request.resource.data.resolucionAdmin.size() >= 10 &&
+        request.resource.data.resolucionAdmin.size() <= 2500 &&
+        agregaHistorial("admin") &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "estado", "resolucionAdmin", "actualizadoEn", "historial"
         ])
       );
 

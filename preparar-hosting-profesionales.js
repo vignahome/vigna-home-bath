@@ -11,6 +11,9 @@ const ARCHIVOS = [
   "mvp-profesionales-firebase.js",
   "mvp-profesionales-cloud-ui.js",
   "mvp-profesionales-bootstrap.js",
+  "garantias-reclamos.html",
+  "garantias-reclamos.css",
+  "garantias-reclamos.js",
   LOGO
 ];
 

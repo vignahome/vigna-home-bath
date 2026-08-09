@@ -2,9 +2,11 @@
 
 Este módulo autocontenido permite validar hoy el flujo completo sin modificar la tienda, los pagos o el módulo profesional legado.
 
-## Acceso
+## Acceso local
 
 Abrir `mvp-profesionales.html` con Live Server.
+
+La gestión privada de garantías, reclamos e incidencias se abre desde el menú del MVP o directamente en `garantias-reclamos.html`.
 
 ## Funciones incluidas
 
@@ -17,14 +19,16 @@ Abrir `mvp-profesionales.html` con Live Server.
 - Cotizaciones económica, recomendada y premium.
 - Generación de contrato imprimible y carga del documento firmado.
 - Panel profesional y panel administrativo.
+- Módulo independiente de garantías y reclamos para cliente, profesional y administración.
+- Evidencias privadas vinculadas al contrato mediante Firebase Storage.
 - Auditoría básica de todas las operaciones.
 - Diseño responsive negro y dorado metálico.
 
-## Persistencia
+## Persistencia y acceso
 
-Esta versión usa `localStorage` (`vigna_profesionales_mvp_v1`) para que el flujo pueda probarse sin tocar los datos reales. Los archivos se guardan como nombres/metadatos, y las imágenes del portafolio se comprimen para demostración.
+El modo conectado usa el proyecto Firebase `vigna-plomeros`: Authentication para las sesiones, Firestore para perfiles, contratos, reclamos y auditoría, y Storage para evidencias privadas. Las reglas limitan cada expediente a su cliente, profesional y administradores autorizados en `admins/{uid}`.
 
-No debe publicarse como producción. La siguiente etapa conecta el mismo modelo a Firebase Auth, Firestore y Storage con reglas por rol y propietario.
+La capa local de demostración se conserva únicamente como respaldo visual cuando Firebase no está disponible.
 
 ## Reiniciar la demostración
 
