@@ -395,7 +395,7 @@ async function registrarAnexoPlanTrabajo(contratoId, file) {
     anexoPlanTrabajoActualizadoEn: actualizadoEn,
     actualizadoEn
   });
-  await auditar("Plan de productos y ejecución adjuntado", `${contratoId}: ${file.name}`, [contrato.clienteUid, contrato.profesionalUid]);
+  await auditar("Anexo Excel del contrato adjuntado", `${contratoId}: ${file.name}`, [contrato.clienteUid, contrato.profesionalUid]);
   return ruta;
 }
 

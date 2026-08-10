@@ -79,7 +79,7 @@ exigir(principalJs.includes("abrirContrato: (id) => openContract(id)"), "la noti
 exigir(principalJs.includes("abrirCotizacion: (id) => openQuote(id)"), "la notificación no puede abrir una cotización exacta");
 exigir(principalJs.includes("enfocarSolicitud: (id) => enfocarSolicitud(id)"), "la notificación no puede enfocar una solicitud exacta");
 exigir(interfazNube.includes("mvp.enfocarSolicitud(id)"), "la acción de solicitud no usa su identificador");
-exigir(principal.includes('mvp-profesionales-bootstrap.js?v=14'), "la página principal no carga la integración contractual actualizada");
+exigir(principal.includes('mvp-profesionales-bootstrap.js?v=15'), "la página principal no carga la integración contractual actualizada");
 exigir(interfazNube.includes('"garantias-reclamos.html"'), "los avisos de reclamo no abren Asistencia");
 exigir(interfazNube.includes("data-pv-notification-target"), "faltan acciones en los avisos globales");
 exigir(firebaseProfesionales.includes("onSnapshot"), "falta la escucha Firestore en tiempo real");
@@ -119,6 +119,8 @@ exigir(storage.includes("match /profesionales-vigna/contratos/{contratoId}/anexo
 exigir(storage.includes("function hojaCalculo(maximo)"), "Storage no valida archivos Excel o CSV");
 exigir(firebaseProfesionales.includes("async function registrarAnexoPlanTrabajo"), "falta guardar el anexo contractual en Firebase");
 exigir(firebaseProfesionales.includes("async function abrirAnexoPlanTrabajo"), "falta abrir el anexo contractual de forma privada");
+exigir(firebaseProfesionales.includes('auditar("Anexo Excel del contrato adjuntado"'), "el anexo Excel no genera una notificación contractual");
+exigir(interfazNube.includes('if (/contrato|servicio/.test(accion)) return { tipo: "contrato", id };'), "la notificación del anexo no conserva el contrato exacto");
 exigir(interfazNube.includes("api.registrarAnexoPlanTrabajo"), "la interfaz conectada no carga el anexo contractual");
 exigir(principalJs.includes("data-upload-work-plan"), "el contrato no ofrece adjuntar el plan opcional");
 exigir(principalJs.includes("plantilla-productos-paso-a-paso-vigna.xlsx"), "el contrato no permite descargar la plantilla Excel");

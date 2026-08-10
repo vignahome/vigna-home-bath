@@ -1,4 +1,4 @@
-import { ProfesionalesFirebase as api } from "./mvp-profesionales-firebase.js?v=2";
+import { ProfesionalesFirebase as api } from "./mvp-profesionales-firebase.js?v=3";
 
 let rolActual = "publico";
 let operacionEnCurso = false;
