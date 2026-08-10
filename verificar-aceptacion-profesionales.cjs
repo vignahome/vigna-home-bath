@@ -5,6 +5,9 @@ const css = fs.readFileSync("mvp-profesionales.css", "utf8");
 const firestore = fs.readFileSync("firestore.rules", "utf8");
 const storage = fs.readFileSync("storage.rules", "utf8");
 const matriz = fs.readFileSync("PROFESIONALES-ACEPTACION.md", "utf8");
+const firebase = JSON.parse(fs.readFileSync("firebase.json", "utf8"));
+const proyecto = JSON.parse(fs.readFileSync(".firebaserc", "utf8"));
+const indices = JSON.parse(fs.readFileSync("firestore.indexes.json", "utf8"));
 const exigir = (valor, mensaje) => { if (!valor) throw new Error(`Verificación fallida: ${mensaje}`); };
 
 const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((item) => item[1]);
@@ -18,6 +21,9 @@ exigir(!firestore.includes("match /pv_profesionales_privados/{uid} {\n      allo
 exigir(!firestore.includes("match /pv_contratos/{contratoId} {\n      allow read: if true"), "los contratos quedaron públicos");
 exigir(storage.includes("allow update, delete: if false"), "faltan bloqueos de mutación en Storage");
 exigir(matriz.includes("Pendiente de confirmación o proveedor externo"), "falta separar decisiones externas");
-exigir(matriz.includes("expresamente fuera del alcance autorizado"), "falta respetar la prohibición de despliegue");
+exigir(matriz.includes("pendiente únicamente de una sesión autenticada"), "falta registrar el bloqueo real de publicación");
+exigir(proyecto.projects?.default === "vigna-plomeros", "el proyecto Firebase predeterminado no es el autorizado");
+exigir(firebase.firestore?.indexes === "firestore.indexes.json", "falta declarar el archivo de índices");
+exigir(Array.isArray(indices.indexes) && Array.isArray(indices.fieldOverrides), "el archivo de índices no es válido");
 
 console.log("Aceptación estructural, responsive, privacidad y alcance: verificada.");

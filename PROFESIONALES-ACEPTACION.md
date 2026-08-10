@@ -18,6 +18,7 @@ Rama autorizada: `agent/profesionales-vigna-mvp`
 - Asistencia, reclamos, notificaciones globales y trazabilidad por participante.
 - Roles administrativos, KPI y exportaciones de operación/auditoría.
 - Reglas Firestore y Storage sin lectura pública de identidad, contratos o expedientes.
+- Proyecto Firebase e índices declarados, publicación aislada y comandos de despliegue reproducibles.
 - Diseño adaptable para escritorio, tableta y móvil.
 
 Prueba visual local ejecutada en 1440 px, 1024 px y 390 px: sin errores de página, ID duplicados ni desbordamiento horizontal. La prueba detectó y permitió corregir una inicialización de métricas sin reseñas.
@@ -33,10 +34,10 @@ Estos puntos no deben activarse por suposición:
 5. Proveedores de correo, SMS o WhatsApp y plantillas aprobadas.
 6. Mapas/geocodificación y reglas finales de distancia o recargos.
 7. Cuentas administrativas y asignación nominal de roles en `admins/{uid}`.
-8. Índices de Firestore que Firebase solicite con datos reales.
-9. Publicación de reglas y hosting. Requiere despliegue, expresamente fuera del alcance autorizado.
-10. Prueba de aceptación con usuarios reales y aprobación para fusionar con `main`.
+8. Índices compuestos adicionales que Firebase solicite al ejercitar consultas con datos reales.
+9. Publicación de reglas y hosting: preparada y autorizada, pendiente únicamente de una sesión autenticada con permisos sobre `vigna-plomeros`.
+10. Prueba de aceptación con usuarios reales y aprobación expresa para fusionar con `main`.
 
 ## Criterio de salida
 
-El código puede continuar sobrescribiéndose en esta rama. No se considera producción hasta resolver los puntos anteriores, desplegar las reglas autorizadas y ejecutar una prueba completa con cuentas reales de cliente, profesional y administración.
+El código puede continuar sobrescribiéndose en esta rama. No se considera producción hasta resolver los puntos anteriores, ejecutar `npm run deploy:firebase` desde una sesión autorizada y completar una prueba con cuentas reales de cliente, profesional y administración.
