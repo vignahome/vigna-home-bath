@@ -12,6 +12,7 @@ exigir(firebase.includes('exigirPermisoAdmin("moderacion")'), "la moderación no
 exigir(firebase.includes('exigirPermisoAdmin("soporte")'), "el soporte no está segmentado");
 exigir(firebase.includes('exigirPermisoAdmin("finanzas")'), "finanzas no está segmentado");
 exigir(reglas.includes("function adminPuede(rol)"), "las reglas no reconocen permisos por rol");
+exigir(reglas.includes('adminRol() == "admin"'), "las cuentas administrativas heredadas no conservan permisos de superadministración");
 exigir(reglas.includes('adminPuede("moderacion")'), "las reglas no protegen moderación");
 exigir(reglas.includes('adminPuede("soporte")'), "las reglas no protegen soporte");
 exigir(reglas.includes('adminPuede("finanzas")'), "las reglas no protegen finanzas");

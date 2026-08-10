@@ -15,7 +15,7 @@ service cloud.firestore {
     }
 
     function adminPuede(rol) {
-      return esAdmin() && (adminRol() == "superadmin" || adminRol() == rol);
+      return esAdmin() && (adminRol() == "superadmin" || adminRol() == "admin" || adminRol() == rol);
     }
 
     match /admins/{uid} {
