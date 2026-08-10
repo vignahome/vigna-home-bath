@@ -249,6 +249,7 @@
       herramientas.hidden = true;
       document.getElementById("professionalPlanCard").hidden = true;
       document.getElementById("professionalSpecialtiesCard").hidden = true;
+      document.getElementById("professionalRequestsCard").hidden = true;
       listadoTitulo.textContent = "Cotizaciones y contratos";
       document.getElementById("panelMetricas").innerHTML = [
         ["Solicitudes", data.solicitudes.length],
@@ -266,6 +267,7 @@
     herramientas.hidden = false;
     document.getElementById("professionalPlanCard").hidden = false;
     document.getElementById("professionalSpecialtiesCard").hidden = false;
+    document.getElementById("professionalRequestsCard").hidden = false;
     listadoTitulo.textContent = "Cotizaciones y contratos";
 
     const p = data.profesionales.find((item) => item.id === panelProfesionalId) || data.profesionales[0];
@@ -280,6 +282,10 @@
     document.getElementById("panelMetricas").innerHTML = [
       ["Profesiones registradas", especialidades.length], ["Solicitudes compatibles", requests.length], ["Cotizaciones", quotes.length], ["Contratos", contracts.length]
     ].map(([label, value]) => `<div class="metric"><small>${label}</small><strong>${value}</strong></div>`).join("");
+    document.getElementById("professionalRequests").innerHTML = requests.length ? requests.map((request) => {
+      const yaCotizada = quotes.some((quote) => quote.solicitudId === request.id);
+      return `<article class="list-item" data-professional-request="${escapar(request.id)}" tabindex="-1"><div><h3>${escapar(request.profesion)} · ${escapar(request.distrito)}</h3><p>${escapar(request.subcategoria || request.descripcion || "Servicio solicitado")}</p><p>${escapar(request.situacionActual || "Sin detalle de situación actual.")}</p><small>${escapar(request.presupuesto || "Presupuesto por definir")} · ${escapar(request.urgencia || "Flexible")} · ${escapar(request.fecha || "Fecha por coordinar")}</small></div><div class="table-actions"><span class="status-chip ${estadoClase(request.estado)}">${escapar(request.estado)}</span><button class="${yaCotizada ? "secondary-button" : "gold-button"}" type="button" data-quote-request="${escapar(request.id)}">${yaCotizada ? "Actualizar cotización" : "Cotizar"}</button></div></article>`;
+    }).join("") : '<div class="empty-state"><p>No hay solicitudes compatibles por el momento.</p></div>';
     const portfolio = p.portafolio || [];
     document.getElementById("listaPortafolio").innerHTML = portfolio.length ? portfolio.map((item) => `<article class="portfolio-card"><div class="before-after"><figure><img src="${item.antes}" alt="Antes"><figcaption>ANTES</figcaption></figure><figure><img src="${item.despues}" alt="Después"><figcaption>DESPUÉS</figcaption></figure></div><div class="portfolio-copy"><div class="table-actions"><span class="status-chip ${estadoClase(item.estado)}">${escapar(item.estado || "Pendiente")}</span><small>${escapar(item.categoria || "Proyecto")}</small></div><h3>${escapar(item.titulo)}</h3><p><strong>Reto:</strong> ${escapar(item.reto || item.descripcion || "")}</p><p><strong>Solución:</strong> ${escapar(item.solucion || "")}</p><small>${escapar(item.ubicacion || "")} ${item.duracion ? `· ${escapar(item.duracion)}` : ""} · ${item.videoNombre ? `Video: ${escapar(item.videoNombre)}` : `${Number(item.proceso?.length || 0)} fotos de proceso`}</small>${item.observacion ? `<p class="private-note">Observación: ${escapar(item.observacion)}</p>` : ""}</div></article>`).join("") : '<div class="empty-state"><p>Agrega tu primer proyecto verificable.</p></div>';
     const plan = p.planRegistro || {};
@@ -532,6 +538,14 @@
       if (profileDialog?.open) profileDialog.close();
       document.getElementById("solicitudProfesional").value = request.dataset.request;
       setView("solicitud");
+    }
+    const quoteRequest = event.target.closest("[data-quote-request]"); if (quoteRequest) {
+      const quoteSelector = document.getElementById("cotizacionSolicitud");
+      quoteSelector.value = quoteRequest.dataset.quoteRequest;
+      const quoteForm = document.getElementById("formCotizacion");
+      quoteForm.classList.add("direct-target");
+      quoteForm.scrollIntoView({ behavior: "smooth", block: "start" });
+      quoteSelector.focus({ preventScroll: true });
     }
     const open = event.target.closest("[data-open-quote]"); if (open) openQuote(open.dataset.openQuote);
     const openContractButton = event.target.closest("[data-open-contract]"); if (openContractButton) openContract(openContractButton.dataset.openContract);
