@@ -20,6 +20,8 @@ Rama autorizada: `agent/profesionales-vigna-mvp`
 - Reglas Firestore y Storage sin lectura pública de identidad, contratos o expedientes.
 - Diseño adaptable para escritorio, tableta y móvil.
 
+Prueba visual local ejecutada en 1440 px, 1024 px y 390 px: sin errores de página, ID duplicados ni desbordamiento horizontal. La prueba detectó y permitió corregir una inicialización de métricas sin reseñas.
+
 ## Pendiente de confirmación o proveedor externo
 
 Estos puntos no deben activarse por suposición:

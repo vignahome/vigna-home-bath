@@ -307,7 +307,8 @@
     const pending = data.profesionales.filter((p) => p.estado === "Pendiente").length;
     const cotizadas = new Set(data.cotizaciones.map((item) => item.solicitudId)).size;
     const cerrados = data.contratos.filter((item) => item.estado === "Cerrado").length;
-    const promedio = data.resenas.length ? data.resenas.reduce((suma, item) => suma + Number(item.calificacion || 0), 0) / data.resenas.length : 0;
+    const resenas = data.resenas || [];
+    const promedio = resenas.length ? resenas.reduce((suma, item) => suma + Number(item.calificacion || 0), 0) / resenas.length : 0;
     const planesActivos = (data.planesProfesionales || []).filter((item) => item.estado === "Activo").length;
     const conversion = data.solicitudes.length ? Math.round((data.contratos.length / data.solicitudes.length) * 100) : 0;
     const rolAdmin = data.adminRol || "superadmin";
