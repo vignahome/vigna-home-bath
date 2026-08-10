@@ -486,6 +486,15 @@ document.addEventListener("click", async (event) => {
     document.getElementById("contractDialog")?.close();
     return;
   }
+  const confirmarFirmado = event.target.closest("[data-confirm-signed-contract]");
+  if (confirmarFirmado) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (!document.getElementById("contractHashAcceptance")?.checked) return alert("Confirma que revisaste esta versión del documento.");
+    await ejecutar(null, () => api.confirmarContratoFirmado(confirmarFirmado.dataset.confirmSignedContract), "Documento contractual confirmado.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
   const subirPlanTrabajo = event.target.closest("[data-upload-work-plan]");
   if (subirPlanTrabajo) {
     event.preventDefault();

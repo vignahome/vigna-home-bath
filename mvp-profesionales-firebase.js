@@ -426,17 +426,47 @@ async function aceptarCotizacion(cotizacionId, opcionIndice) {
 
 async function registrarContratoFirmado(contratoId, file) {
   const { user, contratoRef, contrato } = await contratoAutorizado(contratoId);
+  if (![contrato.clienteUid, contrato.profesionalUid].includes(user.uid)) throw new Error("Solo las partes del contrato pueden registrar el documento firmado.");
+  if (!(file instanceof File) || !file.size) throw new Error("Selecciona el documento firmado.");
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  const documentoHashSha256 = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
   const ruta = await subirPrivado(`profesionales-vigna/contratos/${contratoId}`, file, { maxMb: 15, tipos: ["application/pdf", "image/"] });
   await updateDoc(contratoRef, {
     archivoFirmado: file.name,
     archivoFirmadoRuta: ruta,
     archivoFirmadoUrl: deleteField(),
-    firmadoPorUid: user.uid,
-    estado: "Firmado",
+    documentoHashSha256,
+    documentoSubidoPorUid: user.uid,
+    confirmacionesFirma: { cliente: user.uid === contrato.clienteUid, profesional: user.uid === contrato.profesionalUid },
+    estado: "Pendiente de confirmación",
     actualizadoEn: ahora()
   });
-  await auditar("Contrato firmado registrado", `${contratoId}: ${file.name}`, [contrato.clienteUid, contrato.profesionalUid]);
+  await auditar("Contrato firmado registrado", `${contratoId}: ${file.name} · SHA-256 ${documentoHashSha256}`, [contrato.clienteUid, contrato.profesionalUid]);
   return ruta;
+}
+
+async function confirmarContratoFirmado(contratoId) {
+  const user = exigirUsuario();
+  const contratoRef = doc(db, COLECCIONES.contratos, contratoId);
+  let participantes = [];
+  await runTransaction(db, async (tx) => {
+    const snapshot = await tx.get(contratoRef);
+    if (!snapshot.exists()) throw new Error("El contrato ya no existe.");
+    const contrato = snapshot.data();
+    participantes = [contrato.clienteUid, contrato.profesionalUid];
+    if (!participantes.includes(user.uid)) throw new Error("Solo las partes del contrato pueden confirmar.");
+    if (contrato.estado !== "Pendiente de confirmación") throw new Error("El contrato no está pendiente de confirmación bilateral.");
+    if (!contrato.documentoHashSha256 || !contrato.archivoFirmadoRuta) throw new Error("Falta la huella verificable del documento.");
+    const confirmaciones = { ...(contrato.confirmacionesFirma || {}) };
+    if (user.uid === contrato.clienteUid) confirmaciones.cliente = true;
+    if (user.uid === contrato.profesionalUid) confirmaciones.profesional = true;
+    tx.update(contratoRef, {
+      confirmacionesFirma: confirmaciones,
+      estado: confirmaciones.cliente && confirmaciones.profesional ? "Firmado" : "Pendiente de confirmación",
+      actualizadoEn: ahora()
+    });
+  });
+  await auditar("Contrato confirmado por una parte", `${contratoId}: ${user.uid}`, participantes);
 }
 
 async function registrarAnexoPlanTrabajo(contratoId, file) {
@@ -956,6 +986,7 @@ export const ProfesionalesFirebase = Object.freeze({
   crearCotizacion,
   aceptarCotizacion,
   registrarContratoFirmado,
+  confirmarContratoFirmado,
   abrirContratoFirmado,
   registrarAnexoPlanTrabajo,
   abrirAnexoPlanTrabajo,
