@@ -13,6 +13,9 @@ exigir(firebase.includes("async function confirmarContratoFirmado"), "falta la o
 exigir(interfaz.includes("data-confirm-signed-contract"), "falta la acción visible de confirmación");
 exigir(interfaz.includes("Confirmación bilateral"), "falta el estado visible de las firmas");
 exigir(interfaz.includes("Abrir documento confirmado"), "el archivo inmutable se presenta incorrectamente como contrato actualizado");
+exigir(interfaz.includes("Abrir documento histórico"), "los contratos heredados no se identifican como históricos");
+exigir(interfaz.includes("No existen confirmaciones pendientes para este documento"), "un contrato histórico aparenta confirmaciones pendientes inexistentes");
+exigir(interfaz.includes("confirmacionCompleta"), "la etiqueta del documento no depende de la confirmación real");
 exigir(interfaz.includes("El archivo original permanece inmutable"), "falta explicar la diferencia entre el archivo y el expediente vigente");
 exigir(interfaz.includes("Imprimir expediente actualizado"), "falta una salida del estado contractual vigente");
 exigir(!interfaz.includes(">Abrir contrato firmado</button>"), "se conserva una etiqueta engañosa para el archivo original");
