@@ -527,7 +527,12 @@
     const nav = event.target.closest("[data-view]"); if (nav) return setView(nav.dataset.view);
     if (event.target.closest("[data-close-dialog]")) event.target.closest("dialog").close();
     const profile = event.target.closest("[data-profile]"); if (profile) showProfile(profile.dataset.profile);
-    const request = event.target.closest("[data-request]"); if (request) { document.getElementById("solicitudProfesional").value = request.dataset.request; setView("solicitud"); }
+    const request = event.target.closest("[data-request]"); if (request) {
+      const profileDialog = document.getElementById("profileDialog");
+      if (profileDialog?.open) profileDialog.close();
+      document.getElementById("solicitudProfesional").value = request.dataset.request;
+      setView("solicitud");
+    }
     const open = event.target.closest("[data-open-quote]"); if (open) openQuote(open.dataset.openQuote);
     const openContractButton = event.target.closest("[data-open-contract]"); if (openContractButton) openContract(openContractButton.dataset.openContract);
     const choose = event.target.closest("[data-contract-quote]"); if (choose) createContract(choose.dataset.contractQuote, Number(choose.dataset.option));
