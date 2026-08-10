@@ -874,6 +874,42 @@ async function cambiarEstadoEspecialidad(especialidadId, estado, observacion = "
   await auditar("Especialidad profesional actualizada", `${snapshot.data().profesion}: ${estado}`, [snapshot.data().profesionalUid]);
 }
 
+async function actualizarEspecialidad(especialidadId, datos, files = []) {
+  const user = exigirUsuario();
+  if (await obtenerRol(user.uid) !== "profesional") throw new Error("Solo el profesional puede actualizar su especialidad.");
+  const especialidadRef = doc(db, COLECCIONES.profesionesProfesional, especialidadId);
+  const snapshot = await getDoc(especialidadRef);
+  if (!snapshot.exists() || snapshot.data().profesionalUid !== user.uid) throw new Error("La especialidad no pertenece a tu cuenta.");
+  const existentes = Array.isArray(snapshot.data().evidencias) ? snapshot.data().evidencias : [];
+  const adjuntos = [...files].filter((file) => file instanceof File && file.size).slice(0, Math.max(0, 6 - existentes.length));
+  const nuevas = [];
+  for (const file of adjuntos) {
+    const ruta = await subirPrivado(`profesionales-vigna/profesionales/${user.uid}/especialidades/${especialidadId}`, file, { maxMb: 12, tipos: ["image/", "application/pdf"] });
+    nuevas.push({ nombre: file.name, ruta, tipo: file.type || "application/octet-stream", creadoEn: ahora() });
+  }
+  const descripcion = String(datos.descripcion || "").trim();
+  const experiencia = Math.max(0, Math.min(80, Number(datos.experiencia || 0)));
+  await updateDoc(especialidadRef, {
+    principal: datos.principal === true,
+    experiencia,
+    descripcion: descripcion.slice(0, 1500),
+    evidencias: [...existentes, ...nuevas],
+    actualizadoEn: ahora()
+  });
+  await auditar("Especialidad profesional actualizada", `${snapshot.data().profesion}: ${nuevas.length} evidencia(s) nueva(s)`, [user.uid]);
+}
+
+async function abrirEvidenciaEspecialidad(especialidadId, ruta) {
+  const user = exigirUsuario();
+  const snapshot = await getDoc(doc(db, COLECCIONES.profesionesProfesional, especialidadId));
+  if (!snapshot.exists()) throw new Error("La especialidad ya no existe.");
+  const especialidad = snapshot.data();
+  if (especialidad.profesionalUid !== user.uid && !(await esAdmin(user.uid))) throw new Error("No tienes acceso a esta evidencia.");
+  const evidencia = (especialidad.evidencias || []).find((item) => item.ruta === ruta);
+  if (!evidencia) throw new Error("La evidencia no está registrada.");
+  return { nombre: evidencia.nombre, url: await getDownloadURL(ref(storage, evidencia.ruta)) };
+}
+
 const PLANES = Object.freeze({
   Mensual: { precio: 39.90, meses: 1 },
   Semestral: { precio: 199.90, meses: 6 },
@@ -1096,6 +1132,8 @@ export const ProfesionalesFirebase = Object.freeze({
   abrirEvidenciaEjecucion,
   cambiarEstadoProfesional,
   cambiarEstadoEspecialidad,
+  actualizarEspecialidad,
+  abrirEvidenciaEspecialidad,
   solicitarPlanProfesional,
   activarPlanProfesional,
   cargarDatos,

@@ -342,6 +342,16 @@ document.addEventListener("submit", async (event) => {
     return;
   }
   const datos = new FormData(form);
+  if (form.matches("[data-specialty-form]")) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(form, () => api.actualizarEspecialidad(form.dataset.specialtyForm, {
+      principal: datos.get("principal") === "on",
+      experiencia: datos.get("experiencia"),
+      descripcion: datos.get("descripcion")
+    }, datos.getAll("evidencias")), "Especialidad y evidencias actualizadas.");
+    return;
+  }
   if (form.id === "milestoneForm") {
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -507,6 +517,22 @@ document.addEventListener("click", async (event) => {
       enlace.click();
       enlace.remove();
     }, "Adjunto contractual abierto de forma segura.");
+    return;
+  }
+  const abrirEspecialidad = event.target.closest("[data-open-specialty-file]");
+  if (abrirEspecialidad) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(null, async () => {
+      const evidencia = await api.abrirEvidenciaEspecialidad(abrirEspecialidad.dataset.openSpecialtyFile, abrirEspecialidad.dataset.filePath);
+      const enlace = document.createElement("a");
+      enlace.href = evidencia.url;
+      enlace.target = "_blank";
+      enlace.rel = "noopener";
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+    }, "Evidencia de especialidad abierta de forma segura.");
     return;
   }
   const subir = event.target.closest("[data-upload-contract]");

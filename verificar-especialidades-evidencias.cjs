@@ -1,0 +1,18 @@
+const fs = require("node:fs");
+const leer = (ruta) => fs.readFileSync(ruta, "utf8");
+const html = leer("mvp-profesionales.html");
+const interfaz = leer("mvp-profesionales.js");
+const nube = leer("mvp-profesionales-cloud-ui.js");
+const firebase = leer("mvp-profesionales-firebase.js");
+const storage = leer("storage.rules");
+const exigir = (valor, mensaje) => { if (!valor) throw new Error(`Verificación fallida: ${mensaje}`); };
+
+exigir(html.includes('id="professionalSpecialties"'), "falta el editor de profesiones");
+exigir(interfaz.includes("data-specialty-form"), "las profesiones no se editan por separado");
+exigir(interfaz.includes("data-open-specialty-file"), "las constancias no son revisables");
+exigir(firebase.includes("async function actualizarEspecialidad"), "falta actualización independiente");
+exigir(firebase.includes("async function abrirEvidenciaEspecialidad"), "falta apertura privada de evidencia");
+exigir(nube.includes("api.actualizarEspecialidad"), "el editor no está conectado a Firebase");
+exigir(storage.includes("especialidades/{especialidadId}/{archivo}"), "faltan reglas de certificados privados");
+
+console.log("Especialidades independientes y certificados privados: integración verificada.");
