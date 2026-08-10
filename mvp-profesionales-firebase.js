@@ -40,6 +40,8 @@ const COLECCIONES = Object.freeze({
   hitos: "pv_hitos",
   pagosDeclarados: "pv_pagos_declarados",
   ordenesCambio: "pv_ordenes_cambio",
+  mensajesContrato: "pv_mensajes_contrato",
+  actuacionesContrato: "pv_actuaciones_contrato",
   resenas: "pv_resenas",
   auditoria: "pv_auditoria",
   preferenciasNotificaciones: "pv_preferencias_notificaciones"
@@ -519,6 +521,69 @@ async function abrirContratoFirmado(contratoId) {
   };
 }
 
+async function enviarMensajeContrato(contratoId, mensaje, file = null) {
+  const { user, contrato } = await contratoAutorizado(contratoId);
+  const contenido = String(mensaje || "").trim();
+  if (contenido.length < 1 || contenido.length > 2000) throw new Error("El mensaje debe tener entre 1 y 2000 caracteres.");
+  const mensajeRef = doc(collection(db, COLECCIONES.mensajesContrato));
+  let adjunto = null;
+  if (file instanceof File && file.size) {
+    const ruta = await subirPrivado(`profesionales-vigna/contratos/${contratoId}/mensajes/${mensajeRef.id}`, file, { maxMb: 15, tipos: ["image/", "application/pdf", "video/"] });
+    adjunto = { nombre: file.name, ruta, tipo: file.type || "application/octet-stream" };
+  }
+  const rol = user.uid === contrato.clienteUid ? "cliente" : user.uid === contrato.profesionalUid ? "profesional" : "admin";
+  await setDoc(mensajeRef, {
+    id: mensajeRef.id, contratoId, solicitudId: contrato.solicitudId, clienteUid: contrato.clienteUid,
+    profesionalUid: contrato.profesionalUid, autorUid: user.uid, autorRol: rol, mensaje: contenido,
+    adjunto, creadoEn: ahora()
+  });
+  await auditar("Mensaje contractual enviado", `${contratoId}: ${contenido.slice(0, 120)}`, [contrato.clienteUid, contrato.profesionalUid]);
+}
+
+async function abrirAdjuntoMensaje(contratoId, mensajeId) {
+  await contratoAutorizado(contratoId);
+  const snapshot = await getDoc(doc(db, COLECCIONES.mensajesContrato, mensajeId));
+  const mensaje = snapshot.data();
+  if (!snapshot.exists() || mensaje.contratoId !== contratoId || !mensaje.adjunto?.ruta) throw new Error("El adjunto ya no está disponible.");
+  return { nombre: mensaje.adjunto.nombre, url: await getDownloadURL(ref(storage, mensaje.adjunto.ruta)) };
+}
+
+async function solicitarActuacionContrato(contratoId, tipo, motivo) {
+  const { user, contrato } = await contratoAutorizado(contratoId);
+  const tipos = ["Pausa", "Reanudación", "Cancelación"];
+  if (!tipos.includes(tipo)) throw new Error("Actuación contractual no permitida.");
+  if (tipo === "Reanudación" && contrato.estado !== "Pausado") throw new Error("Solo puede solicitarse la reanudación de un contrato pausado.");
+  if (tipo !== "Reanudación" && !["Firmado", "En ejecución"].includes(contrato.estado)) throw new Error("El estado actual no admite esta solicitud.");
+  const detalle = String(motivo || "").trim();
+  if (detalle.length < 10 || detalle.length > 1500) throw new Error("Explica el motivo en 10 a 1500 caracteres.");
+  const actuacionRef = doc(collection(db, COLECCIONES.actuacionesContrato));
+  const solicitanteRol = user.uid === contrato.clienteUid ? "cliente" : user.uid === contrato.profesionalUid ? "profesional" : "admin";
+  await setDoc(actuacionRef, {
+    id: actuacionRef.id, contratoId, clienteUid: contrato.clienteUid, profesionalUid: contrato.profesionalUid,
+    tipo, motivo: detalle, solicitanteUid: user.uid, solicitanteRol, estado: "Solicitada", resolucion: "",
+    creadoEn: ahora(), actualizadoEn: ahora()
+  });
+  await auditar(`${tipo} contractual solicitada`, `${contratoId}: ${detalle.slice(0, 120)}`, [contrato.clienteUid, contrato.profesionalUid]);
+}
+
+async function resolverActuacionContrato(actuacionId, decision, resolucion) {
+  const user = exigirUsuario();
+  if (!(await esAdmin(user.uid))) throw new Error("La resolución requiere autorización administrativa.");
+  if (!["Aceptada", "Rechazada"].includes(decision)) throw new Error("Decisión no permitida.");
+  const detalle = String(resolucion || "").trim();
+  if (detalle.length < 10 || detalle.length > 1500) throw new Error("Registra una resolución de 10 a 1500 caracteres.");
+  const actuacionRef = doc(db, COLECCIONES.actuacionesContrato, actuacionId);
+  const snapshot = await getDoc(actuacionRef);
+  if (!snapshot.exists() || snapshot.data().estado !== "Solicitada") throw new Error("La actuación ya no está pendiente.");
+  const actuacion = snapshot.data();
+  const estadoContrato = actuacion.tipo === "Pausa" ? "Pausado" : actuacion.tipo === "Reanudación" ? "En ejecución" : "Cancelado";
+  await runTransaction(db, async (tx) => {
+    tx.update(actuacionRef, { estado: decision, resolucion: detalle, resueltoPorUid: user.uid, resueltoEn: ahora(), actualizadoEn: ahora() });
+    if (decision === "Aceptada") tx.update(doc(db, COLECCIONES.contratos, actuacion.contratoId), { estado: estadoContrato, actualizadoEn: ahora() });
+  });
+  await auditar(`${actuacion.tipo} contractual ${decision.toLowerCase()}`, `${actuacion.contratoId}: ${detalle.slice(0, 120)}`, [actuacion.clienteUid, actuacion.profesionalUid]);
+}
+
 
 async function iniciarServicio(contratoId) {
   const { user, contratoRef, contrato } = await contratoAutorizado(contratoId);
@@ -855,6 +920,8 @@ async function cargarDatos() {
   let especialidades = [];
   let planesProfesionales = [];
   let portafolios = [];
+  let mensajesContrato = [];
+  let actuacionesContrato = [];
   try {
     resenas = await todos(COLECCIONES.resenas);
   } catch (error) {
@@ -893,14 +960,14 @@ async function cargarDatos() {
   };
   if (!user) {
     anexarProfesional();
-    return { version: 1, profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, especialidades, planesProfesionales, portafolios, resenas, auditoria, nube: true, rol };
+    return { version: 1, profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, mensajesContrato, actuacionesContrato, especialidades, planesProfesionales, portafolios, resenas, auditoria, nube: true, rol };
   }
 
   if (rol === "admin") {
-    [profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, especialidades, planesProfesionales, portafolios, auditoria] = await Promise.all([
+    [profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, mensajesContrato, actuacionesContrato, especialidades, planesProfesionales, portafolios, auditoria] = await Promise.all([
       todos(COLECCIONES.profesionales), todos(COLECCIONES.clientes), todos(COLECCIONES.solicitudes),
       todos(COLECCIONES.cotizaciones), todos(COLECCIONES.contratos), todos(COLECCIONES.hitos),
-      todos(COLECCIONES.pagosDeclarados), todos(COLECCIONES.ordenesCambio), todos(COLECCIONES.profesionesProfesional),
+      todos(COLECCIONES.pagosDeclarados), todos(COLECCIONES.ordenesCambio), todos(COLECCIONES.mensajesContrato), todos(COLECCIONES.actuacionesContrato), todos(COLECCIONES.profesionesProfesional),
       todos(COLECCIONES.planesProfesionales), todos(COLECCIONES.portafolios), todos(COLECCIONES.auditoria)
     ]);
     const privados = await todos(COLECCIONES.profesionalesPrivados);
@@ -910,11 +977,13 @@ async function cargarDatos() {
       privado: privadosPorUid.get(item.uid || item.id) || null
     }));
   } else if (rol === "cliente") {
-    const [clienteSnapshot, solicitudesCliente, cotizacionesCliente, contratosCliente, hitosCliente, pagosCliente, ordenesCliente, auditoriaCliente] = await Promise.all([
+    const [clienteSnapshot, solicitudesCliente, cotizacionesCliente, contratosCliente, hitosCliente, pagosCliente, ordenesCliente, mensajesCliente, actuacionesCliente, auditoriaCliente] = await Promise.all([
       getDoc(doc(db, COLECCIONES.clientes, user.uid)), porCampo(COLECCIONES.solicitudes, "clienteUid", user.uid),
       porCampo(COLECCIONES.cotizaciones, "clienteUid", user.uid), porCampo(COLECCIONES.contratos, "clienteUid", user.uid),
       porCampo(COLECCIONES.hitos, "clienteUid", user.uid), porCampo(COLECCIONES.pagosDeclarados, "clienteUid", user.uid),
       porCampo(COLECCIONES.ordenesCambio, "clienteUid", user.uid),
+      porCampo(COLECCIONES.mensajesContrato, "clienteUid", user.uid),
+      porCampo(COLECCIONES.actuacionesContrato, "clienteUid", user.uid),
       porArray(COLECCIONES.auditoria, "participantes", user.uid)
     ]);
     clientes = clienteSnapshot.exists() ? [{ id: clienteSnapshot.id, ...clienteSnapshot.data() }] : [];
@@ -924,6 +993,8 @@ async function cargarDatos() {
     hitos = hitosCliente;
     pagosDeclarados = pagosCliente;
     ordenesCambio = ordenesCliente;
+    mensajesContrato = mensajesCliente;
+    actuacionesContrato = actuacionesCliente;
     auditoria = auditoriaCliente;
   } else if (rol === "profesional") {
     const perfil = await getDoc(doc(db, COLECCIONES.profesionales, user.uid));
@@ -942,17 +1013,18 @@ async function cargarDatos() {
     for (const profesion of (perfilDatos.profesiones || []).slice(0, 10)) {
       compatibles.push(...await porCampo(COLECCIONES.solicitudes, "profesion", profesion));
     }
-    [cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, auditoria] = await Promise.all([
+    [cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, mensajesContrato, actuacionesContrato, auditoria] = await Promise.all([
       porCampo(COLECCIONES.cotizaciones, "profesionalUid", user.uid), porCampo(COLECCIONES.contratos, "profesionalUid", user.uid),
       porCampo(COLECCIONES.hitos, "profesionalUid", user.uid), porCampo(COLECCIONES.pagosDeclarados, "profesionalUid", user.uid),
       porCampo(COLECCIONES.ordenesCambio, "profesionalUid", user.uid),
+      porCampo(COLECCIONES.mensajesContrato, "profesionalUid", user.uid), porCampo(COLECCIONES.actuacionesContrato, "profesionalUid", user.uid),
       porArray(COLECCIONES.auditoria, "participantes", user.uid)
     ]);
     solicitudes = [...new Map([...asignadas, ...compatibles].map((item) => [item.id, item])).values()];
   }
   anexarProfesional();
   const adaptar = (items) => items.map((item) => ({ ...item, clienteId: item.clienteUid || item.clienteId, profesionalId: item.profesionalUid || item.profesionalId, actor: item.actorEmail || item.actorUid || "Sistema" }));
-  return { version: 1, profesionales: adaptar(profesionales), clientes: adaptar(clientes), solicitudes: adaptar(solicitudes), cotizaciones: adaptar(cotizaciones), contratos: adaptar(contratos), hitos: adaptar(hitos), pagosDeclarados: adaptar(pagosDeclarados), ordenesCambio: adaptar(ordenesCambio), especialidades: adaptar(especialidades), planesProfesionales: adaptar(planesProfesionales), portafolios: adaptar(portafolios), resenas: adaptar(resenas), auditoria: adaptar(auditoria), nube: true, rol };
+  return { version: 1, profesionales: adaptar(profesionales), clientes: adaptar(clientes), solicitudes: adaptar(solicitudes), cotizaciones: adaptar(cotizaciones), contratos: adaptar(contratos), hitos: adaptar(hitos), pagosDeclarados: adaptar(pagosDeclarados), ordenesCambio: adaptar(ordenesCambio), mensajesContrato: adaptar(mensajesContrato), actuacionesContrato: adaptar(actuacionesContrato), especialidades: adaptar(especialidades), planesProfesionales: adaptar(planesProfesionales), portafolios: adaptar(portafolios), resenas: adaptar(resenas), auditoria: adaptar(auditoria), nube: true, rol };
 }
 
 const observarSesion = (callback) => onAuthStateChanged(auth, callback);
@@ -988,6 +1060,10 @@ export const ProfesionalesFirebase = Object.freeze({
   registrarContratoFirmado,
   confirmarContratoFirmado,
   abrirContratoFirmado,
+  enviarMensajeContrato,
+  abrirAdjuntoMensaje,
+  solicitarActuacionContrato,
+  resolverActuacionContrato,
   registrarAnexoPlanTrabajo,
   abrirAnexoPlanTrabajo,
   iniciarServicio,

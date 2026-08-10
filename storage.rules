@@ -105,6 +105,22 @@ service firebase.storage {
       allow update, delete: if esAdmin();
     }
 
+    match /profesionales-vigna/contratos/{contratoId}/mensajes/{mensajeId}/{archivo} {
+      function contratoMensaje() {
+        return firestore.get(/databases/(default)/documents/pv_contratos/$(contratoId)).data;
+      }
+
+      allow read: if esAdmin() || (autenticado() &&
+        (contratoMensaje().clienteUid == request.auth.uid || contratoMensaje().profesionalUid == request.auth.uid));
+      allow create: if autenticado() &&
+        (contratoMensaje().clienteUid == request.auth.uid || contratoMensaje().profesionalUid == request.auth.uid || esAdmin()) &&
+        request.resource.size <= 15 * 1024 * 1024 &&
+        (request.resource.contentType.matches('image/.*') ||
+         request.resource.contentType.matches('video/.*') ||
+         request.resource.contentType == 'application/pdf');
+      allow update, delete: if false;
+    }
+
     match /profesionales-vigna/contratos/{contratoId}/anexos/{archivo} {
       function contratoAnexo() {
         return firestore.get(/databases/(default)/documents/pv_contratos/$(contratoId)).data;

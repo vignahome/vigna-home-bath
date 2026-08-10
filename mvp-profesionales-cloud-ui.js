@@ -373,6 +373,23 @@ document.addEventListener("submit", async (event) => {
     document.getElementById("contractDialog")?.close();
     return;
   }
+  if (form.id === "contractMessageForm") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const boton = form.querySelector("[data-send-contract-message]");
+    const adjunto = datos.get("adjunto");
+    await ejecutar(form, () => api.enviarMensajeContrato(boton.dataset.sendContractMessage, datos.get("mensaje"), adjunto instanceof File && adjunto.size ? adjunto : null), "Mensaje agregado al expediente contractual.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  if (form.id === "contractActuationForm") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const boton = form.querySelector("[data-request-actuation]");
+    await ejecutar(form, () => api.solicitarActuacionContrato(boton.dataset.requestActuation, datos.get("tipo"), datos.get("motivo")), "Solicitud contractual registrada y notificada.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
   const acciones = {
     formProfesional: [() => api.registrarProfesional(datos), "Perfil profesional enviado a revisión."],
     formCliente: [() => api.registrarCliente(datos), "Cuenta de cliente enviada a revisión."],
@@ -474,6 +491,22 @@ document.addEventListener("click", async (event) => {
       enlace.click();
       enlace.remove();
     }, "Plan de productos y ejecución abierto de forma segura.");
+    return;
+  }
+  const abrirMensaje = event.target.closest("[data-open-message-file]");
+  if (abrirMensaje) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(null, async () => {
+      const adjunto = await api.abrirAdjuntoMensaje(abrirMensaje.dataset.contractId, abrirMensaje.dataset.openMessageFile);
+      const enlace = document.createElement("a");
+      enlace.href = adjunto.url;
+      enlace.target = "_blank";
+      enlace.rel = "noopener";
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+    }, "Adjunto contractual abierto de forma segura.");
     return;
   }
   const subir = event.target.closest("[data-upload-contract]");
@@ -647,6 +680,15 @@ document.addEventListener("click", async (event) => {
     event.stopImmediatePropagation();
     if (!confirm(`¿Confirmas que corresponde activar el plan ${activarPlan.dataset.planType}?`)) return;
     await ejecutar(null, () => api.activarPlanProfesional(activarPlan.dataset.adminActivatePlan, activarPlan.dataset.planType), "Plan profesional activado y perfil habilitado según su estado.");
+    return;
+  }
+  const resolverActuacion = event.target.closest("[data-resolve-actuation]");
+  if (resolverActuacion) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const resolucion = resolverActuacion.closest(".execution-inline-form")?.querySelector("[data-actuation-resolution]")?.value || "";
+    await ejecutar(null, () => api.resolverActuacionContrato(resolverActuacion.dataset.resolveActuation, resolverActuacion.dataset.decision, resolucion), `Actuación ${resolverActuacion.dataset.decision.toLowerCase()}.`);
+    document.getElementById("contractDialog")?.close();
     return;
   }
   const revisarProfesional = event.target.closest("[data-review-professional]");

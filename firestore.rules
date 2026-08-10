@@ -442,6 +442,53 @@ service cloud.firestore {
       allow delete: if esAdmin();
     }
 
+    match /pv_mensajes_contrato/{mensajeId} {
+      function contratoMensaje() {
+        return get(/databases/$(database)/documents/pv_contratos/$(request.resource.data.contratoId)).data;
+      }
+
+      allow create: if autenticado() &&
+        request.resource.data.id == mensajeId &&
+        request.resource.data.autorUid == request.auth.uid &&
+        request.resource.data.mensaje is string &&
+        request.resource.data.mensaje.size() > 0 &&
+        request.resource.data.mensaje.size() <= 2000 &&
+        (esAdmin() || contratoMensaje().clienteUid == request.auth.uid || contratoMensaje().profesionalUid == request.auth.uid) &&
+        request.resource.data.clienteUid == contratoMensaje().clienteUid &&
+        request.resource.data.profesionalUid == contratoMensaje().profesionalUid;
+      allow read: if esAdmin() || (autenticado() &&
+        (resource.data.clienteUid == request.auth.uid || resource.data.profesionalUid == request.auth.uid));
+      allow update, delete: if false;
+    }
+
+    match /pv_actuaciones_contrato/{actuacionId} {
+      function contratoActuacion() {
+        return get(/databases/$(database)/documents/pv_contratos/$(request.resource.data.contratoId)).data;
+      }
+
+      allow create: if autenticado() &&
+        request.resource.data.id == actuacionId &&
+        request.resource.data.solicitanteUid == request.auth.uid &&
+        request.resource.data.tipo in ["Pausa", "Reanudación", "Cancelación"] &&
+        request.resource.data.estado == "Solicitada" &&
+        request.resource.data.motivo is string &&
+        request.resource.data.motivo.size() >= 10 &&
+        request.resource.data.motivo.size() <= 1500 &&
+        (esAdmin() || contratoActuacion().clienteUid == request.auth.uid || contratoActuacion().profesionalUid == request.auth.uid) &&
+        request.resource.data.clienteUid == contratoActuacion().clienteUid &&
+        request.resource.data.profesionalUid == contratoActuacion().profesionalUid;
+      allow read: if esAdmin() || (autenticado() &&
+        (resource.data.clienteUid == request.auth.uid || resource.data.profesionalUid == request.auth.uid));
+      allow update: if esAdmin() && resource.data.estado == "Solicitada" &&
+        request.resource.data.estado in ["Aceptada", "Rechazada"] &&
+        request.resource.data.resolucion is string &&
+        request.resource.data.resolucion.size() >= 10 &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "estado", "resolucion", "resueltoPorUid", "resueltoEn", "actualizadoEn"
+        ]);
+      allow delete: if false;
+    }
+
     match /pv_hitos/{hitoId} {
       function contratoHito() {
         return get(/databases/$(database)/documents/pv_contratos/$(request.resource.data.contratoId)).data;
