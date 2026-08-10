@@ -148,11 +148,13 @@ service cloud.firestore {
     match /pv_profesiones_profesional/{especialidadId} {
       allow read: if resource.data.estado == "Aprobada" || esAdmin() ||
         (autenticado() && resource.data.profesionalUid == request.auth.uid);
-      allow create: if pvRol("profesional") &&
+      allow create: if adminPuede("moderacion") || (
+        pvRol("profesional") &&
         request.resource.data.id == especialidadId &&
         request.resource.data.profesionalUid == request.auth.uid &&
         request.resource.data.estado == "Pendiente" &&
-        request.resource.data.principal is bool;
+        request.resource.data.principal is bool
+      );
       allow update: if adminPuede("moderacion") || (
         pvRol("profesional") && resource.data.profesionalUid == request.auth.uid &&
         request.resource.data.profesionalUid == resource.data.profesionalUid &&

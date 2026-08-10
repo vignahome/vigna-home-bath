@@ -5,6 +5,7 @@ const interfaz = leer("mvp-profesionales.js");
 const nube = leer("mvp-profesionales-cloud-ui.js");
 const firebase = leer("mvp-profesionales-firebase.js");
 const storage = leer("storage.rules");
+const firestore = leer("firestore.rules");
 const exigir = (valor, mensaje) => { if (!valor) throw new Error(`Verificación fallida: ${mensaje}`); };
 
 exigir(html.includes('id="professionalSpecialties"'), "falta el editor de profesiones");
@@ -20,6 +21,7 @@ exigir(firebase.includes("async function abrirEvidenciaEspecialidad"), "falta ap
 exigir(nube.includes("api.actualizarEspecialidad"), "el editor no está conectado a Firebase");
 exigir(nube.includes("api.crearEspecialidad"), "el registro de profesiones no está conectado a Firebase");
 exigir(nube.includes("api.migrarProfesionesLegadas"), "la migración administrativa no está conectada a Firebase");
+exigir(firestore.includes('allow create: if adminPuede("moderacion") || ('), "administración no puede crear profesiones pendientes durante la migración");
 exigir(storage.includes("especialidades/{especialidadId}/{archivo}"), "faltan reglas de certificados privados");
 
 console.log("Especialidades independientes y certificados privados: integración verificada.");
