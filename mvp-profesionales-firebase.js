@@ -874,6 +874,58 @@ async function cambiarEstadoEspecialidad(especialidadId, estado, observacion = "
   await auditar("Especialidad profesional actualizada", `${snapshot.data().profesion}: ${estado}`, [snapshot.data().profesionalUid]);
 }
 
+async function crearEspecialidad(datos = {}) {
+  const user = exigirUsuario();
+  if (await obtenerRol(user.uid) !== "profesional") throw new Error("Solo el profesional puede registrar una profesión.");
+  const profesion = String(datos.profesion || "").trim().slice(0, 120);
+  if (profesion.length < 3) throw new Error("Selecciona una profesión válida.");
+
+  const propias = await porCampo(COLECCIONES.profesionesProfesional, "profesionalUid", user.uid);
+  if (propias.some((item) => String(item.profesion || "").trim().toLocaleLowerCase("es") === profesion.toLocaleLowerCase("es"))) {
+    throw new Error("Esta profesión ya está registrada en tu perfil.");
+  }
+  if (propias.length >= 10) throw new Error("Puedes registrar hasta 10 profesiones.");
+
+  const perfilRef = doc(db, COLECCIONES.profesionales, user.uid);
+  const idSeguro = limpiarNombre(profesion.toLocaleLowerCase("es")).replace(/^[-.]+|[-.]+$/g, "") || "profesion";
+  const especialidadRef = doc(db, COLECCIONES.profesionesProfesional, `${user.uid}-${idSeguro}`);
+  const principal = propias.length === 0 || datos.principal === true;
+  const experiencia = Math.max(0, Math.min(80, Number(datos.experiencia || 0)));
+  const descripcion = String(datos.descripcion || "").trim().slice(0, 1500);
+  const fecha = ahora();
+
+  await runTransaction(db, async (tx) => {
+    const [perfilSnapshot, especialidadSnapshot] = await Promise.all([tx.get(perfilRef), tx.get(especialidadRef)]);
+    if (!perfilSnapshot.exists()) throw new Error("No se encontró el perfil profesional.");
+    if (especialidadSnapshot.exists()) throw new Error("Esta profesión ya está registrada en tu perfil.");
+    const perfil = perfilSnapshot.data();
+    const profesiones = [...new Set([...(perfil.profesiones || []), profesion])].slice(0, 10);
+    propias.forEach((item) => {
+      if (principal && item.principal) tx.update(doc(db, COLECCIONES.profesionesProfesional, item.id), { principal: false, actualizadoEn: fecha });
+    });
+    tx.set(especialidadRef, {
+      id: especialidadRef.id,
+      profesionalUid: user.uid,
+      profesion,
+      principal,
+      experiencia,
+      descripcion,
+      evidencias: [],
+      estado: "Pendiente",
+      calificacion: 0,
+      trabajos: 0,
+      creadoEn: fecha,
+      actualizadoEn: fecha
+    });
+    tx.update(perfilRef, {
+      profesiones,
+      profesionPrincipal: principal ? profesion : (perfil.profesionPrincipal || profesiones[0]),
+      actualizadoEn: fecha
+    });
+  });
+  await auditar("Profesión registrada", `${profesion}: pendiente de revisión`, [user.uid]);
+}
+
 async function actualizarEspecialidad(especialidadId, datos, files = []) {
   const user = exigirUsuario();
   if (await obtenerRol(user.uid) !== "profesional") throw new Error("Solo el profesional puede actualizar su especialidad.");
@@ -889,13 +941,29 @@ async function actualizarEspecialidad(especialidadId, datos, files = []) {
   }
   const descripcion = String(datos.descripcion || "").trim();
   const experiencia = Math.max(0, Math.min(80, Number(datos.experiencia || 0)));
-  await updateDoc(especialidadRef, {
+  const contenidoCambiado = descripcion !== String(snapshot.data().descripcion || "") ||
+    experiencia !== Number(snapshot.data().experiencia || 0) || nuevas.length > 0;
+  const fecha = ahora();
+  const actualizacion = {
     principal: datos.principal === true,
     experiencia,
     descripcion: descripcion.slice(0, 1500),
     evidencias: [...existentes, ...nuevas],
-    actualizadoEn: ahora()
-  });
+    actualizadoEn: fecha
+  };
+  if (contenidoCambiado) actualizacion.estado = "Pendiente";
+  const operaciones = [updateDoc(especialidadRef, actualizacion)];
+  if (datos.principal === true) {
+    const propias = await porCampo(COLECCIONES.profesionesProfesional, "profesionalUid", user.uid);
+    propias.filter((item) => item.id !== especialidadId && item.principal).forEach((item) => {
+      operaciones.push(updateDoc(doc(db, COLECCIONES.profesionesProfesional, item.id), { principal: false, actualizadoEn: fecha }));
+    });
+    operaciones.push(updateDoc(doc(db, COLECCIONES.profesionales, user.uid), {
+      profesionPrincipal: snapshot.data().profesion,
+      actualizadoEn: fecha
+    }));
+  }
+  await Promise.all(operaciones);
   await auditar("Especialidad profesional actualizada", `${snapshot.data().profesion}: ${nuevas.length} evidencia(s) nueva(s)`, [user.uid]);
 }
 
@@ -1132,6 +1200,7 @@ export const ProfesionalesFirebase = Object.freeze({
   abrirEvidenciaEjecucion,
   cambiarEstadoProfesional,
   cambiarEstadoEspecialidad,
+  crearEspecialidad,
   actualizarEspecialidad,
   abrirEvidenciaEspecialidad,
   solicitarPlanProfesional,

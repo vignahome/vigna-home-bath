@@ -156,9 +156,9 @@ service cloud.firestore {
       allow update: if adminPuede("moderacion") || (
         pvRol("profesional") && resource.data.profesionalUid == request.auth.uid &&
         request.resource.data.profesionalUid == resource.data.profesionalUid &&
-        request.resource.data.estado == resource.data.estado &&
+        (request.resource.data.estado == resource.data.estado || request.resource.data.estado == "Pendiente") &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          "principal", "experiencia", "descripcion", "evidencias", "actualizadoEn"
+          "principal", "experiencia", "descripcion", "evidencias", "estado", "actualizadoEn"
         ])
       );
       allow delete: if adminPuede("moderacion");

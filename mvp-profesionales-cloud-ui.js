@@ -1,4 +1,4 @@
-import { ProfesionalesFirebase as api } from "./mvp-profesionales-firebase.js?v=3";
+import { ProfesionalesFirebase as api } from "./mvp-profesionales-firebase.js?v=4";
 
 let rolActual = "publico";
 let operacionEnCurso = false;
@@ -342,6 +342,17 @@ document.addEventListener("submit", async (event) => {
     return;
   }
   const datos = new FormData(form);
+  if (form.matches("[data-specialty-create]")) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(form, () => api.crearEspecialidad({
+      profesion: datos.get("profesion"),
+      principal: datos.get("principal") === "on",
+      experiencia: datos.get("experiencia"),
+      descripcion: datos.get("descripcion")
+    }), "Profesión registrada y enviada a revisión.");
+    return;
+  }
   if (form.matches("[data-specialty-form]")) {
     event.preventDefault();
     event.stopImmediatePropagation();
