@@ -617,6 +617,14 @@ document.addEventListener("click", async (event) => {
     await ejecutar(null, () => api.cambiarEstadoEspecialidad(especialidad.dataset.adminSpecialty, especialidad.dataset.state), `Especialidad ${especialidad.dataset.state.toLowerCase()}.`);
     return;
   }
+  const portafolio = event.target.closest("[data-admin-portfolio]");
+  if (portafolio) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const observacion = portafolio.dataset.state === "Aprobado" ? "" : prompt("Indica el motivo u observación para el profesional:", "") || "";
+    await ejecutar(null, () => api.moderarPortafolio(portafolio.dataset.adminPortfolio, portafolio.dataset.state, observacion), `Portafolio ${portafolio.dataset.state.toLowerCase()}.`);
+    return;
+  }
   const solicitarPlan = event.target.closest("[data-request-plan]");
   if (solicitarPlan) {
     event.preventDefault();

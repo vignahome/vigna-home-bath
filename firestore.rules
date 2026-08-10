@@ -201,6 +201,10 @@ service cloud.firestore {
       allow create: if pvRol("cliente") &&
         request.resource.data.clienteUid == request.auth.uid &&
         request.resource.data.autorizacion == true &&
+        request.resource.data.tipoNecesidad is string &&
+        request.resource.data.subcategoria is string &&
+        request.resource.data.situacionActual is string &&
+        request.resource.data.resultadoEsperado is string &&
         request.resource.data.estado == "Enviada";
       allow read: if esAdmin() || (
         autenticado() && (
@@ -224,6 +228,18 @@ service cloud.firestore {
       allow delete: if esAdmin();
     }
 
+    match /pv_portafolios/{proyectoId} {
+      allow read: if resource.data.estado == "Aprobado" || esAdmin() ||
+        (autenticado() && resource.data.profesionalUid == request.auth.uid);
+      allow create: if pvRol("profesional") &&
+        request.resource.data.id == proyectoId &&
+        request.resource.data.profesionalUid == request.auth.uid &&
+        request.resource.data.consentimientoPublicacion == true &&
+        request.resource.data.estado == "Pendiente";
+      allow update: if esAdmin();
+      allow delete: if esAdmin();
+    }
+
     match /pv_cotizaciones/{cotizacionId} {
       allow create: if pvRol("profesional") &&
         request.resource.data.profesionalUid == request.auth.uid &&
@@ -237,6 +253,12 @@ service cloud.firestore {
         request.resource.data.garantiaDias is int &&
         request.resource.data.garantiaDias >= 1 &&
         request.resource.data.garantiaDias <= 3650 &&
+        request.resource.data.validaHasta is string &&
+        request.resource.data.disponibilidadEstimada is string &&
+        request.resource.data.exclusiones is string &&
+        request.resource.data.version is int &&
+        request.resource.data.version >= 1 &&
+        request.resource.data.cotizacionRaizId is string &&
         request.resource.data.opciones is list &&
         request.resource.data.opciones.size() == 3 &&
         request.resource.data.opciones[0].precio > 0 &&

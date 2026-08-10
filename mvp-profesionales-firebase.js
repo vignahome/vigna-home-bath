@@ -1,7 +1,6 @@
 import { db, auth, storage } from "./firebase.js";
 import {
   addDoc,
-  arrayUnion,
   collection,
   deleteField,
   doc,
@@ -33,6 +32,7 @@ const COLECCIONES = Object.freeze({
   profesionesProfesional: "pv_profesiones_profesional",
   coberturas: "pv_coberturas",
   planesProfesionales: "pv_planes_profesionales",
+  portafolios: "pv_portafolios",
   clientes: "pv_clientes",
   solicitudes: "pv_solicitudes",
   cotizaciones: "pv_cotizaciones",
@@ -282,8 +282,11 @@ async function crearSolicitud(form) {
   }
   const solicitud = {
     id: solicitudRef.id, clienteUid: user.uid, profesionalUid: texto(form, "profesionalId"), profesion: texto(form, "profesion"),
+    origen: texto(form, "origen"), tipoNecesidad: texto(form, "tipoNecesidad"), subcategoria: texto(form, "subcategoria"),
     departamento: texto(form, "departamento"), provincia: texto(form, "provincia"), distrito: texto(form, "distrito"),
-    presupuesto: texto(form, "presupuesto"), fecha: texto(form, "fecha"), urgencia: texto(form, "urgencia"),
+    presupuesto: texto(form, "presupuesto"), fecha: texto(form, "fecha"), fechaFin: texto(form, "fechaFin"),
+    modalidadFecha: texto(form, "modalidadFecha"), urgencia: texto(form, "urgencia"), responsableMateriales: texto(form, "responsableMateriales"),
+    situacionActual: texto(form, "situacionActual"), resultadoEsperado: texto(form, "resultadoEsperado"), restricciones: texto(form, "restricciones"),
     descripcion: texto(form, "descripcion"), adjuntos: urls, archivosCantidad: urls.length, autorizacion: form.get("autorizacion") === "on",
     estado: "Enviada", creadoEn: ahora(), actualizadoEn: ahora()
   };
@@ -302,19 +305,41 @@ async function crearSolicitud(form) {
 async function agregarPortafolio(form) {
   const user = exigirUsuario();
   if (await obtenerRol(user.uid) !== "profesional") throw new Error("Solo un profesional puede administrar su portafolio.");
+  if (form.get("consentimientoPublicacion") !== "on") throw new Error("Confirma la autorización de publicación.");
+  const proyectoRef = doc(collection(db, COLECCIONES.portafolios));
   const antes = archivo(form, "antes");
   const despues = archivo(form, "despues");
   const video = archivo(form, "video");
-  const base = `profesionales-vigna/profesionales/${user.uid}/portafolio`;
+  const proceso = form.getAll("proceso").filter((item) => item instanceof File && item.size).slice(0, 8);
+  const base = `profesionales-vigna/profesionales/${user.uid}/portafolio/${proyectoRef.id}`;
   const [antesUrl, despuesUrl, videoUrl] = await Promise.all([
     subir(base, antes, { maxMb: 12, tipos: ["image/"] }),
     subir(base, despues, { maxMb: 12, tipos: ["image/"] }),
     subir(base, video, { maxMb: 80, tipos: ["video/"] })
   ]);
-  const proyecto = { id: crypto.randomUUID(), titulo: texto(form, "titulo"), descripcion: texto(form, "descripcion"), antes: antesUrl, despues: despuesUrl, videoUrl, videoNombre: video?.name || "", creadoEn: ahora(), estado: "Pendiente" };
-  await updateDoc(doc(db, COLECCIONES.profesionales, user.uid), { portafolio: arrayUnion(proyecto), actualizadoEn: ahora() });
+  const procesoUrls = [];
+  for (const imagen of proceso) procesoUrls.push(await subir(base, imagen, { maxMb: 12, tipos: ["image/"] }));
+  const proyecto = {
+    id: proyectoRef.id, profesionalUid: user.uid, titulo: texto(form, "titulo"), categoria: texto(form, "categoria"),
+    ubicacion: texto(form, "ubicacion"), duracion: texto(form, "duracion"), etiquetas: listaTexto(form.get("etiquetas")),
+    reto: texto(form, "reto"), solucion: texto(form, "solucion"), productos: texto(form, "productos"),
+    antes: antesUrl, despues: despuesUrl, proceso: procesoUrls, videoUrl, videoNombre: video?.name || "",
+    consentimientoPublicacion: true, estado: "Pendiente", observacion: "", creadoEn: ahora(), actualizadoEn: ahora()
+  };
+  await setDoc(proyectoRef, proyecto);
   await auditar("Proyecto de portafolio agregado", `${user.uid}: ${proyecto.titulo}`, [user.uid]);
   return proyecto;
+}
+
+async function moderarPortafolio(proyectoId, estado, observacion = "") {
+  const user = exigirUsuario();
+  if (!(await esAdmin(user.uid))) throw new Error("Se requiere autorización administrativa.");
+  if (!["Aprobado", "Observado", "Rechazado", "Oculto"].includes(estado)) throw new Error("Estado de portafolio no permitido.");
+  const proyectoRef = doc(db, COLECCIONES.portafolios, proyectoId);
+  const snapshot = await getDoc(proyectoRef);
+  if (!snapshot.exists()) throw new Error("El proyecto ya no existe.");
+  await updateDoc(proyectoRef, { estado, observacion: String(observacion || "").slice(0, 500), revisadoPorUid: user.uid, revisadoEn: ahora(), actualizadoEn: ahora() });
+  await auditar("Portafolio moderado", `${proyectoId}: ${estado}`, [snapshot.data().profesionalUid]);
 }
 
 async function crearCotizacion(form) {
@@ -334,17 +359,24 @@ async function crearCotizacion(form) {
   if (!Number.isInteger(garantiaDias) || garantiaDias < 1 || garantiaDias > 3650) {
     throw new Error("Selecciona una vigencia de garantía válida.");
   }
+  const cotizacionesProfesional = await porCampo(COLECCIONES.cotizaciones, "profesionalUid", user.uid);
+  const anteriores = cotizacionesProfesional.filter((item) => item.solicitudId === solicitudId).sort((a, b) => Number(b.version || 0) - Number(a.version || 0));
+  const anterior = anteriores[0] || null;
   const cotizacionRef = doc(collection(db, COLECCIONES.cotizaciones));
+  const opcion = (prefijo, nombre) => ({
+    nombre, precio: Number(form.get(`${prefijo}Precio`) || 0), detalle: texto(form, `${prefijo}Detalle`),
+    materiales: Number(form.get(`${prefijo}Materiales`) || 0), manoObra: Number(form.get(`${prefijo}ManoObra`) || 0),
+    duracion: texto(form, `${prefijo}Duracion`)
+  });
   const cotizacion = {
     id: cotizacionRef.id, solicitudId, profesionalUid: user.uid, clienteUid: solicitud.clienteUid,
     profesionalNombre: nombreCompleto(perfil), profesionalTipoDocumento: identidad.tipoDocumento || "",
     profesionalDocumento: identidad.documento || "",
-    opciones: [
-      { nombre: "Económica", precio: Number(form.get("economicaPrecio") || 0), detalle: texto(form, "economicaDetalle") },
-      { nombre: "Recomendada", precio: Number(form.get("recomendadaPrecio") || 0), detalle: texto(form, "recomendadaDetalle") },
-      { nombre: "Premium", precio: Number(form.get("premiumPrecio") || 0), detalle: texto(form, "premiumDetalle") }
-    ],
-    garantiaDias, condiciones: texto(form, "condiciones"), version: 1, estado: "Enviada", creadoEn: ahora(), actualizadoEn: ahora()
+    opciones: [opcion("economica", "Económica"), opcion("recomendada", "Recomendada"), opcion("premium", "Premium")],
+    garantiaDias, validaHasta: texto(form, "validaHasta"), disponibilidadEstimada: texto(form, "disponibilidadEstimada"),
+    responsableMateriales: texto(form, "responsableMateriales"), exclusiones: texto(form, "exclusiones"), condiciones: texto(form, "condiciones"),
+    cotizacionRaizId: anterior?.cotizacionRaizId || anterior?.id || cotizacionRef.id, reemplazaA: anterior?.id || "",
+    version: Number(anterior?.version || 0) + 1, estado: "Enviada", creadoEn: ahora(), actualizadoEn: ahora()
   };
   await setDoc(cotizacionRef, cotizacion);
   await auditar("Cotización enviada", `${cotizacionRef.id} para ${solicitudId}`, [user.uid, solicitud.clienteUid]);
@@ -378,6 +410,8 @@ async function aceptarCotizacion(cotizacionId, opcionIndice) {
       profesionalNombre: cotizacion.profesionalNombre || "", profesionalTipoDocumento: cotizacion.profesionalTipoDocumento || "",
       profesionalDocumento: cotizacion.profesionalDocumento || "",
       garantiaDias: Number(cotizacion.garantiaDias || 0), garantiaInicioEn: "", garantiaVenceEn: "",
+      responsableMateriales: cotizacion.responsableMateriales || "Por definir", exclusiones: cotizacion.exclusiones || "",
+      cotizacionVersion: Number(cotizacion.version || 1), cotizacionRaizId: cotizacion.cotizacionRaizId || cotizacion.id,
       condiciones: cotizacion.condiciones, version: 1, estado: "Pendiente de firma", archivoFirmado: "", archivoFirmadoUrl: "",
       anexoPlanTrabajoNombre: "", anexoPlanTrabajoRuta: "", anexoPlanTrabajoActualizadoEn: "",
       descripcionSolicitud: solicitud.descripcion || "", ubicacion: { departamento: solicitud.departamento, provincia: solicitud.provincia, distrito: solicitud.distrito, fecha: solicitud.fecha },
@@ -790,6 +824,7 @@ async function cargarDatos() {
   let ordenesCambio = [];
   let especialidades = [];
   let planesProfesionales = [];
+  let portafolios = [];
   try {
     resenas = await todos(COLECCIONES.resenas);
   } catch (error) {
@@ -800,6 +835,11 @@ async function cargarDatos() {
   } catch (error) {
     console.warn("Las especialidades independientes se activarán cuando se publiquen las reglas actualizadas.", error);
   }
+  try {
+    portafolios = await porCampo(COLECCIONES.portafolios, "estado", "Aprobado");
+  } catch (error) {
+    console.warn("El portafolio moderado se activará cuando se publiquen las reglas actualizadas.", error);
+  }
   const anexarProfesional = () => {
     const especialidadesPorUid = new Map();
     especialidades.forEach((item) => {
@@ -808,23 +848,30 @@ async function cargarDatos() {
       especialidadesPorUid.set(item.profesionalUid, lista);
     });
     const planesPorUid = new Map(planesProfesionales.map((item) => [item.profesionalUid || item.uid || item.id, item]));
+    const portafoliosPorUid = new Map();
+    portafolios.forEach((item) => {
+      const lista = portafoliosPorUid.get(item.profesionalUid) || [];
+      lista.push(item);
+      portafoliosPorUid.set(item.profesionalUid, lista);
+    });
     profesionales = profesionales.map((item) => ({
       ...item,
       especialidades: especialidadesPorUid.get(item.uid || item.id) || [],
-      planRegistro: planesPorUid.get(item.uid || item.id) || null
+      planRegistro: planesPorUid.get(item.uid || item.id) || null,
+      portafolio: [...new Map([...(portafoliosPorUid.get(item.uid || item.id) || []), ...(item.portafolio || [])].map((proyecto) => [proyecto.id, proyecto])).values()]
     }));
   };
   if (!user) {
     anexarProfesional();
-    return { version: 1, profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, especialidades, planesProfesionales, resenas, auditoria, nube: true, rol };
+    return { version: 1, profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, especialidades, planesProfesionales, portafolios, resenas, auditoria, nube: true, rol };
   }
 
   if (rol === "admin") {
-    [profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, especialidades, planesProfesionales, auditoria] = await Promise.all([
+    [profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, especialidades, planesProfesionales, portafolios, auditoria] = await Promise.all([
       todos(COLECCIONES.profesionales), todos(COLECCIONES.clientes), todos(COLECCIONES.solicitudes),
       todos(COLECCIONES.cotizaciones), todos(COLECCIONES.contratos), todos(COLECCIONES.hitos),
       todos(COLECCIONES.pagosDeclarados), todos(COLECCIONES.ordenesCambio), todos(COLECCIONES.profesionesProfesional),
-      todos(COLECCIONES.planesProfesionales), todos(COLECCIONES.auditoria)
+      todos(COLECCIONES.planesProfesionales), todos(COLECCIONES.portafolios), todos(COLECCIONES.auditoria)
     ]);
     const privados = await todos(COLECCIONES.profesionalesPrivados);
     const privadosPorUid = new Map(privados.map((item) => [item.uid || item.id, item]));
@@ -852,12 +899,14 @@ async function cargarDatos() {
     const perfil = await getDoc(doc(db, COLECCIONES.profesionales, user.uid));
     if (perfil.exists() && !profesionales.some((item) => item.id === user.uid)) profesionales.unshift({ id: perfil.id, ...perfil.data() });
     const perfilDatos = perfil.data() || {};
-    const [especialidadesPropias, planPropio] = await Promise.all([
+    const [especialidadesPropias, planPropio, portafolioPropio] = await Promise.all([
       porCampo(COLECCIONES.profesionesProfesional, "profesionalUid", user.uid),
-      getDoc(doc(db, COLECCIONES.planesProfesionales, user.uid))
+      getDoc(doc(db, COLECCIONES.planesProfesionales, user.uid)),
+      porCampo(COLECCIONES.portafolios, "profesionalUid", user.uid)
     ]);
     especialidades = [...new Map([...especialidades, ...especialidadesPropias].map((item) => [item.id, item])).values()];
     planesProfesionales = planPropio.exists() ? [{ id: planPropio.id, ...planPropio.data() }] : [];
+    portafolios = [...new Map([...portafolios, ...portafolioPropio].map((item) => [item.id, item])).values()];
     const asignadas = await porCampo(COLECCIONES.solicitudes, "profesionalUid", user.uid);
     const compatibles = [];
     for (const profesion of (perfilDatos.profesiones || []).slice(0, 10)) {
@@ -873,7 +922,7 @@ async function cargarDatos() {
   }
   anexarProfesional();
   const adaptar = (items) => items.map((item) => ({ ...item, clienteId: item.clienteUid || item.clienteId, profesionalId: item.profesionalUid || item.profesionalId, actor: item.actorEmail || item.actorUid || "Sistema" }));
-  return { version: 1, profesionales: adaptar(profesionales), clientes: adaptar(clientes), solicitudes: adaptar(solicitudes), cotizaciones: adaptar(cotizaciones), contratos: adaptar(contratos), hitos: adaptar(hitos), pagosDeclarados: adaptar(pagosDeclarados), ordenesCambio: adaptar(ordenesCambio), especialidades: adaptar(especialidades), planesProfesionales: adaptar(planesProfesionales), resenas: adaptar(resenas), auditoria: adaptar(auditoria), nube: true, rol };
+  return { version: 1, profesionales: adaptar(profesionales), clientes: adaptar(clientes), solicitudes: adaptar(solicitudes), cotizaciones: adaptar(cotizaciones), contratos: adaptar(contratos), hitos: adaptar(hitos), pagosDeclarados: adaptar(pagosDeclarados), ordenesCambio: adaptar(ordenesCambio), especialidades: adaptar(especialidades), planesProfesionales: adaptar(planesProfesionales), portafolios: adaptar(portafolios), resenas: adaptar(resenas), auditoria: adaptar(auditoria), nube: true, rol };
 }
 
 const observarSesion = (callback) => onAuthStateChanged(auth, callback);
@@ -903,6 +952,7 @@ export const ProfesionalesFirebase = Object.freeze({
   esAdmin,
   crearSolicitud,
   agregarPortafolio,
+  moderarPortafolio,
   crearCotizacion,
   aceptarCotizacion,
   registrarContratoFirmado,

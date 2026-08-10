@@ -206,13 +206,22 @@
           <label>Cliente<select name="clienteId" id="solicitudCliente" required></select></label>
           <label>Profesional preferido<select name="profesionalId" id="solicitudProfesional"><option value="">Cualquiera compatible</option></select></label>
           <label>Profesión requerida<select name="profesion" id="solicitudProfesion" required></select></label>
+          <label>Origen de la solicitud<select name="origen"><option>Buscador</option><option>Perfil profesional</option><option>Asistencia</option><option>Recomendación</option></select></label>
+          <label>Tipo de necesidad<select name="tipoNecesidad" required><option value="">Selecciona</option><option>Instalación nueva</option><option>Reparación</option><option>Mantenimiento</option><option>Diagnóstico</option><option>Remodelación</option><option>Otro</option></select></label>
+          <label>Subcategoría<input name="subcategoria" required placeholder="Ej. cambio de grifería"></label>
           <label>Departamento<input name="departamento" required value="Lima"></label>
           <label>Provincia<input name="provincia" required value="Lima"></label>
           <label>Distrito<input name="distrito" required placeholder="Surco"></label>
           <label>Presupuesto estimado<select name="presupuesto"><option>Por definir</option><option>Hasta S/ 500</option><option>S/ 500 - 1,500</option><option>S/ 1,500 - 4,000</option><option>Más de S/ 4,000</option></select></label>
           <label>Fecha preferida<input name="fecha" type="date" required></label>
           <label>Urgencia<select name="urgencia"><option>Flexible</option><option>Esta semana</option><option>Urgente</option></select></label>
-          <label class="span-three">Descripción<textarea name="descripcion" required minlength="25" placeholder="Describe el trabajo, medidas, materiales existentes y resultado esperado."></textarea></label>
+          <label>Modalidad de fecha<select name="modalidadFecha"><option>Fecha exacta</option><option>Rango de fechas</option><option>Por coordinar</option></select></label>
+          <label>Fecha final opcional<input name="fechaFin" type="date"></label>
+          <label>Quién compra materiales<select name="responsableMateriales"><option>Por definir</option><option>Cliente</option><option>Profesional</option><option>Mixto</option></select></label>
+          <label class="span-three">Situación actual<textarea name="situacionActual" required minlength="15" placeholder="Qué existe hoy, medidas y condición actual."></textarea></label>
+          <label class="span-three">Resultado esperado<textarea name="resultadoEsperado" required minlength="15" placeholder="Describe cómo debe quedar terminado."></textarea></label>
+          <label class="span-three">Restricciones y acceso<textarea name="restricciones" placeholder="Horarios, estacionamiento, ascensor, permisos, mascotas u otras restricciones."></textarea></label>
+          <label class="span-three">Descripción adicional<textarea name="descripcion" required minlength="25" placeholder="Agrega todos los detalles técnicos que ayuden a cotizar sin supuestos."></textarea></label>
           <label class="span-three">Fotos, video o documento<input name="archivos" type="file" accept="image/*,video/*,.pdf" multiple></label>
         </div>
         <div class="consent-box">
@@ -230,13 +239,19 @@
       <div class="metrics" id="panelMetricas"></div>
       <div class="dashboard-grid">
         <article class="dashboard-card">
-          <div class="section-heading small"><div><h2>Álbum antes y después</h2><p>Hasta un video por proyecto.</p></div></div>
+          <div class="section-heading small"><div><h2>Portafolio verificable</h2><p>Cada proyecto se publica después de revisión administrativa.</p></div></div>
           <form id="formPortafolio" class="mini-form">
             <label>Título del trabajo<input name="titulo" required></label>
-            <label>Descripción<textarea name="descripcion" required></textarea></label>
+            <div class="form-grid two"><label>Categoría<input name="categoria" required></label><label>Ubicación general<input name="ubicacion" placeholder="Lima, Surco"></label></div>
+            <div class="form-grid two"><label>Duración<input name="duracion" placeholder="3 días"></label><label>Etiquetas<input name="etiquetas" placeholder="baño, grifería, remodelación"></label></div>
+            <label>Problema o reto<textarea name="reto" required></textarea></label>
+            <label>Solución aplicada<textarea name="solucion" required></textarea></label>
+            <label>Productos o materiales utilizados<textarea name="productos" placeholder="Marca, modelo y cantidad cuando corresponda."></textarea></label>
             <div class="form-grid two"><label>Foto antes<input name="antes" type="file" accept="image/*" required></label><label>Foto después<input name="despues" type="file" accept="image/*" required></label></div>
+            <label>Fotos del proceso (hasta 8)<input name="proceso" type="file" accept="image/*" multiple></label>
             <label>Video opcional<input name="video" type="file" accept="video/*"></label>
-            <button class="gold-button" type="submit">Agregar proyecto</button>
+            <label><input name="consentimientoPublicacion" type="checkbox" required> Confirmo que tengo autorización para publicar estas imágenes y que no exponen datos personales.</label>
+            <button class="gold-button" type="submit">Enviar a revisión</button>
           </form>
           <div id="listaPortafolio" class="portfolio-grid"></div>
         </article>
@@ -245,10 +260,13 @@
           <form id="formCotizacion" class="mini-form">
             <label>Solicitud<select name="solicitudId" id="cotizacionSolicitud" required></select></label>
             <div class="quote-editor">
-              <fieldset><legend>Económica</legend><input name="economicaPrecio" type="number" min="0" placeholder="Precio" required><textarea name="economicaDetalle" placeholder="Incluye..."></textarea></fieldset>
-              <fieldset><legend>Recomendada</legend><input name="recomendadaPrecio" type="number" min="0" placeholder="Precio" required><textarea name="recomendadaDetalle" placeholder="Incluye..."></textarea></fieldset>
-              <fieldset><legend>Premium</legend><input name="premiumPrecio" type="number" min="0" placeholder="Precio" required><textarea name="premiumDetalle" placeholder="Incluye..."></textarea></fieldset>
+              <fieldset><legend>Económica</legend><input name="economicaPrecio" type="number" min="0" placeholder="Precio total" required><input name="economicaMateriales" type="number" min="0" placeholder="Materiales"><input name="economicaManoObra" type="number" min="0" placeholder="Mano de obra"><input name="economicaDuracion" placeholder="Duración"><textarea name="economicaDetalle" placeholder="Alcance e inclusiones"></textarea></fieldset>
+              <fieldset><legend>Recomendada</legend><input name="recomendadaPrecio" type="number" min="0" placeholder="Precio total" required><input name="recomendadaMateriales" type="number" min="0" placeholder="Materiales"><input name="recomendadaManoObra" type="number" min="0" placeholder="Mano de obra"><input name="recomendadaDuracion" placeholder="Duración"><textarea name="recomendadaDetalle" placeholder="Alcance e inclusiones"></textarea></fieldset>
+              <fieldset><legend>Premium</legend><input name="premiumPrecio" type="number" min="0" placeholder="Precio total" required><input name="premiumMateriales" type="number" min="0" placeholder="Materiales"><input name="premiumManoObra" type="number" min="0" placeholder="Mano de obra"><input name="premiumDuracion" placeholder="Duración"><textarea name="premiumDetalle" placeholder="Alcance e inclusiones"></textarea></fieldset>
             </div>
+            <div class="form-grid two"><label>Válida hasta<input name="validaHasta" type="date" required></label><label>Disponibilidad estimada<input name="disponibilidadEstimada" required placeholder="Ej. desde el lunes"></label></div>
+            <label>Responsable de materiales<select name="responsableMateriales"><option>Profesional</option><option>Cliente</option><option>Mixto</option></select></label>
+            <label>Exclusiones<textarea name="exclusiones" required placeholder="Trabajos, permisos o suministros que no están incluidos."></textarea></label>
             <label>Vigencia de la garantía
               <select name="garantiaDias" required>
                 <option value="">Selecciona un plazo</option>
