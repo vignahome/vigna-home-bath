@@ -1,4 +1,4 @@
-import { ProfesionalesFirebase as api } from "./mvp-profesionales-firebase.js?v=4";
+import { ProfesionalesFirebase as api } from "./mvp-profesionales-firebase.js?v=5";
 
 let rolActual = "publico";
 let operacionEnCurso = false;
@@ -687,6 +687,13 @@ document.addEventListener("click", async (event) => {
     event.preventDefault();
     event.stopImmediatePropagation();
     await ejecutar(null, () => api.cambiarEstadoProfesional(admin.dataset.adminProfessional, admin.dataset.state), `Perfil ${admin.dataset.state.toLowerCase()}.`);
+    return;
+  }
+  const migrarProfesiones = event.target.closest("[data-admin-migrate-specialties]");
+  if (migrarProfesiones) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(null, () => api.migrarProfesionesLegadas(migrarProfesiones.dataset.adminMigrateSpecialties), "Profesiones antiguas registradas como pendientes.");
     return;
   }
   const especialidad = event.target.closest("[data-admin-specialty]");

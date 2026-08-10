@@ -926,6 +926,42 @@ async function crearEspecialidad(datos = {}) {
   await auditar("Profesión registrada", `${profesion}: pendiente de revisión`, [user.uid]);
 }
 
+async function migrarProfesionesLegadas(uid) {
+  const user = exigirUsuario();
+  await exigirPermisoAdmin("moderacion");
+  const perfilRef = doc(db, COLECCIONES.profesionales, uid);
+  const perfilSnapshot = await getDoc(perfilRef);
+  if (!perfilSnapshot.exists()) throw new Error("No se encontró el perfil profesional.");
+  const perfil = perfilSnapshot.data();
+  const existentes = await porCampo(COLECCIONES.profesionesProfesional, "profesionalUid", uid);
+  const registradas = new Set(existentes.map((item) => String(item.profesion || "").trim().toLocaleLowerCase("es")));
+  const faltantes = [...new Set(perfil.profesiones || [])]
+    .map((item) => String(item || "").trim().slice(0, 120))
+    .filter((item) => item.length >= 3 && !registradas.has(item.toLocaleLowerCase("es")))
+    .slice(0, Math.max(0, 10 - existentes.length));
+  if (!faltantes.length) throw new Error("Este perfil no tiene profesiones antiguas pendientes de registrar.");
+  const fecha = ahora();
+  await Promise.all(faltantes.map((profesion) => {
+    const idSeguro = limpiarNombre(profesion.toLocaleLowerCase("es")).replace(/^[-.]+|[-.]+$/g, "") || "profesion";
+    const especialidadRef = doc(db, COLECCIONES.profesionesProfesional, `${uid}-${idSeguro}`);
+    return setDoc(especialidadRef, {
+      id: especialidadRef.id,
+      profesionalUid: uid,
+      profesion,
+      principal: profesion === perfil.profesionPrincipal || (!existentes.length && profesion === faltantes[0]),
+      experiencia: Math.max(0, Math.min(80, Number(perfil.experiencia || 0))),
+      descripcion: "",
+      evidencias: [],
+      estado: "Pendiente",
+      calificacion: 0,
+      trabajos: 0,
+      creadoEn: fecha,
+      actualizadoEn: fecha
+    }, { merge: false });
+  }));
+  await auditar("Profesiones antiguas registradas", `${uid}: ${faltantes.join(", ")}`, [uid, user.uid]);
+}
+
 async function actualizarEspecialidad(especialidadId, datos, files = []) {
   const user = exigirUsuario();
   if (await obtenerRol(user.uid) !== "profesional") throw new Error("Solo el profesional puede actualizar su especialidad.");
@@ -1201,6 +1237,7 @@ export const ProfesionalesFirebase = Object.freeze({
   cambiarEstadoProfesional,
   cambiarEstadoEspecialidad,
   crearEspecialidad,
+  migrarProfesionesLegadas,
   actualizarEspecialidad,
   abrirEvidenciaEspecialidad,
   solicitarPlanProfesional,
