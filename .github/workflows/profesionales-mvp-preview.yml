@@ -4,19 +4,6 @@ on:
   push:
     branches:
       - agent/profesionales-vigna-mvp
-    paths:
-      - "mvp-profesionales.html"
-      - "mvp-profesionales.css"
-      - "mvp-profesionales.js"
-      - "mvp-profesionales-*.js"
-      - "preparar-hosting-profesionales.js"
-      - "firebase.js"
-      - "firebase.json"
-      - "package.json"
-      - "package-lock.json"
-      - "verificar-garantias-reclamos.cjs"
-      - "images/logo/**"
-      - ".github/workflows/profesionales-mvp-preview.yml"
   workflow_dispatch:
 
 permissions:
