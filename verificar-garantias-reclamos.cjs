@@ -57,7 +57,10 @@ exigir(js.includes("function garantiaVigente(contrato)"), "falta validar la vige
 exigir(js.includes("function tieneReclamoActivo(contratoId)"), "falta bloquear expedientes activos duplicados");
 exigir(js.includes("La garantía de este contrato ya venció"), "falta informar contratos fuera de garantía");
 exigir(js.includes("form?.elements?.namedItem(nombre)"), "los formularios deben poder leerse después de bloquear sus controles");
-exigir(js.includes("} finally {\n    estado.cargando = false;\n  }\n  renderizar();"), "el listado debe renderizarse después de finalizar la carga");
+exigir(
+  /}\s*finally\s*{\s*estado\.cargando\s*=\s*false;\s*}\s*renderizar\(\);/.test(js),
+  "el listado debe renderizarse después de finalizar la carga"
+);
 exigir(principal.includes('href="garantias-reclamos.html"'), "el MVP no enlaza el módulo independiente");
 exigir(principal.includes('aria-label="Asistencia"'), "el acceso principal no se llama Asistencia");
 exigir(principal.includes('class="assistance-fab"'), "falta el botón flotante de Asistencia con símbolo de auriculares");
