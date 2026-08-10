@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Publicar main desde la raíz del repositorio
+      - name: Solicitar una nueva compilación del sitio configurado
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -25,22 +25,6 @@ jobs:
           set -euo pipefail
 
           api="https://api.github.com/repos/${GITHUB_REPOSITORY}/pages"
-          payload='{"build_type":"legacy","source":{"branch":"main","path":"/"}}'
-
-          update_status=$(curl --silent --show-error \
-            --output pages-update.json \
-            --write-out "%{http_code}" \
-            --request PUT \
-            --header "Accept: application/vnd.github+json" \
-            --header "Authorization: Bearer ${GH_TOKEN}" \
-            --header "X-GitHub-Api-Version: 2022-11-28" \
-            "${api}" \
-            --data "${payload}")
-
-          if [[ "${update_status}" != "200" && "${update_status}" != "204" ]]; then
-            cat pages-update.json
-            exit 1
-          fi
 
           build_status=$(curl --silent --show-error \
             --output pages-build.json \
@@ -56,4 +40,4 @@ jobs:
             exit 1
           fi
 
-          echo "GitHub Pages quedó configurado para main y la compilación fue solicitada."
+          echo "La compilación de GitHub Pages fue solicitada."
