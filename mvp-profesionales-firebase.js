@@ -34,6 +34,9 @@ const COLECCIONES = Object.freeze({
   solicitudes: "pv_solicitudes",
   cotizaciones: "pv_cotizaciones",
   contratos: "pv_contratos",
+  hitos: "pv_hitos",
+  pagosDeclarados: "pv_pagos_declarados",
+  ordenesCambio: "pv_ordenes_cambio",
   resenas: "pv_resenas",
   auditoria: "pv_auditoria",
   preferenciasNotificaciones: "pv_preferencias_notificaciones"
@@ -439,6 +442,14 @@ async function finalizarServicio(contratoId, files, nota) {
   const { user, contratoRef, contrato } = await contratoAutorizado(contratoId);
   if (user.uid !== contrato.profesionalUid) throw new Error("Solo el profesional contratado puede finalizar el servicio.");
   if (contrato.estado !== "En ejecución") throw new Error("El servicio debe estar en ejecución.");
+  const [hitosContrato, pagosContrato, cambiosContrato] = await Promise.all([
+    porCampo(COLECCIONES.hitos, "contratoId", contratoId),
+    porCampo(COLECCIONES.pagosDeclarados, "contratoId", contratoId),
+    porCampo(COLECCIONES.ordenesCambio, "contratoId", contratoId)
+  ]);
+  if (hitosContrato.some((item) => item.estado !== "Aprobado")) throw new Error("Todos los hitos registrados deben estar aprobados antes de finalizar.");
+  if (pagosContrato.some((item) => item.estado === "Declarado")) throw new Error("Confirma o rechaza los pagos declarados antes de finalizar.");
+  if (cambiosContrato.some((item) => item.estado === "Propuesta")) throw new Error("Resuelve las órdenes de cambio pendientes antes de finalizar.");
   const evidencias = [...(files || [])].filter((file) => file instanceof File && file.size);
   if (!evidencias.length || evidencias.length > 6) throw new Error("Adjunta entre 1 y 6 evidencias.");
   const informe = String(nota || "").trim();
@@ -518,6 +529,141 @@ async function abrirEvidenciaServicio(contratoId, ruta) {
   return { nombre: evidencia.nombre, url: await getDownloadURL(ref(storage, evidencia.ruta)) };
 }
 
+async function crearHito(contratoId, titulo, detalle, fechaObjetivo = "") {
+  const { user, contrato } = await contratoAutorizado(contratoId);
+  if (user.uid !== contrato.profesionalUid) throw new Error("Solo el profesional contratado puede crear hitos.");
+  if (contrato.estado !== "En ejecución") throw new Error("El servicio debe estar en ejecución para crear hitos.");
+  const nombre = String(titulo || "").trim();
+  const descripcion = String(detalle || "").trim();
+  if (nombre.length < 4 || descripcion.length < 10) throw new Error("Describe el hito y su resultado esperado.");
+  const hitoRef = doc(collection(db, COLECCIONES.hitos));
+  const creadoEn = ahora();
+  await setDoc(hitoRef, {
+    id: hitoRef.id, contratoId, clienteUid: contrato.clienteUid, profesionalUid: contrato.profesionalUid,
+    titulo: nombre.slice(0, 120), detalle: descripcion.slice(0, 1000), fechaObjetivo: String(fechaObjetivo || "").slice(0, 10),
+    estado: "Pendiente", evidencias: [], notaProfesional: "", comentarioCliente: "", creadoPorUid: user.uid,
+    creadoEn, actualizadoEn: creadoEn
+  });
+  await auditar("Hito de ejecución creado", `${contratoId}: ${nombre}`, [contrato.clienteUid, contrato.profesionalUid]);
+  return hitoRef.id;
+}
+
+async function registrarAvanceHito(contratoId, hitoId, files, nota) {
+  const { user, contrato } = await contratoAutorizado(contratoId);
+  if (user.uid !== contrato.profesionalUid) throw new Error("Solo el profesional contratado puede registrar avances.");
+  if (contrato.estado !== "En ejecución") throw new Error("El servicio debe estar en ejecución.");
+  const hitoRef = doc(db, COLECCIONES.hitos, hitoId);
+  const snapshot = await getDoc(hitoRef);
+  if (!snapshot.exists() || snapshot.data().contratoId !== contratoId) throw new Error("El hito no pertenece a este contrato.");
+  if (!["Pendiente", "Observado"].includes(snapshot.data().estado)) throw new Error("Este hito ya fue enviado para revisión.");
+  const informe = String(nota || "").trim();
+  const evidencias = [...(files || [])].filter((file) => file instanceof File && file.size);
+  if (informe.length < 10 || !evidencias.length || evidencias.length > 6) throw new Error("Agrega una nota y entre 1 y 6 evidencias.");
+  const subidas = [];
+  for (const file of evidencias) {
+    const ruta = await subirPrivado(`profesionales-vigna/ejecucion/${contratoId}/hitos/${hitoId}/${user.uid}`, file, { maxMb: 25, tipos: ["image/", "video/", "application/pdf"] });
+    subidas.push({ nombre: file.name, ruta, tipo: file.type || "application/octet-stream" });
+  }
+  await updateDoc(hitoRef, {
+    estado: "En revisión", evidencias: subidas, notaProfesional: informe.slice(0, 1000), comentarioCliente: "",
+    enviadoPorUid: user.uid, enviadoEn: ahora(), actualizadoEn: ahora()
+  });
+  await auditar("Hito enviado a revisión", `${contratoId}: ${snapshot.data().titulo}`, [contrato.clienteUid, contrato.profesionalUid]);
+}
+
+async function resolverHito(contratoId, hitoId, decision, comentario = "") {
+  const { user, contrato } = await contratoAutorizado(contratoId);
+  if (user.uid !== contrato.clienteUid) throw new Error("Solo el cliente puede revisar el hito.");
+  if (!["Aprobado", "Observado"].includes(decision)) throw new Error("Decisión de hito no permitida.");
+  const hitoRef = doc(db, COLECCIONES.hitos, hitoId);
+  const snapshot = await getDoc(hitoRef);
+  if (!snapshot.exists() || snapshot.data().contratoId !== contratoId || snapshot.data().estado !== "En revisión") throw new Error("El hito no está disponible para revisión.");
+  const respuesta = String(comentario || "").trim();
+  if (decision === "Observado" && respuesta.length < 5) throw new Error("Indica qué debe corregirse.");
+  await updateDoc(hitoRef, { estado: decision, comentarioCliente: respuesta.slice(0, 1000), revisadoPorUid: user.uid, revisadoEn: ahora(), actualizadoEn: ahora() });
+  await auditar(`Hito ${decision.toLowerCase()}`, `${contratoId}: ${snapshot.data().titulo}`, [contrato.clienteUid, contrato.profesionalUid]);
+}
+
+async function declararPago(contratoId, datos, file = null) {
+  const { user, contrato } = await contratoAutorizado(contratoId);
+  if (user.uid !== contrato.clienteUid) throw new Error("Solo el cliente puede declarar pagos.");
+  if (!["En ejecución", "Finalizado"].includes(contrato.estado)) throw new Error("El contrato no admite nuevos pagos declarados.");
+  const monto = Number(datos?.monto);
+  const metodo = String(datos?.metodo || "").trim();
+  if (!Number.isFinite(monto) || monto <= 0 || !metodo) throw new Error("Indica un monto y método de pago válidos.");
+  const pagoRef = doc(collection(db, COLECCIONES.pagosDeclarados));
+  const creadoEn = ahora();
+  await setDoc(pagoRef, {
+    id: pagoRef.id, contratoId, clienteUid: contrato.clienteUid, profesionalUid: contrato.profesionalUid,
+    monto, metodo: metodo.slice(0, 80), referencia: String(datos?.referencia || "").trim().slice(0, 120),
+    fechaPago: String(datos?.fechaPago || "").slice(0, 10), nota: String(datos?.nota || "").trim().slice(0, 500),
+    comprobante: null, estado: "Declarado", creadoPorUid: user.uid, creadoEn, actualizadoEn: creadoEn
+  });
+  if (file instanceof File && file.size) {
+    const ruta = await subirPrivado(`profesionales-vigna/ejecucion/${contratoId}/pagos/${pagoRef.id}/${user.uid}`, file, { maxMb: 15, tipos: ["image/", "application/pdf"] });
+    await updateDoc(pagoRef, { comprobante: { nombre: file.name, ruta, tipo: file.type || "application/octet-stream" }, actualizadoEn: ahora() });
+  }
+  await auditar("Pago declarado por el cliente", `${contratoId}: S/ ${monto.toFixed(2)}`, [contrato.clienteUid, contrato.profesionalUid]);
+  return pagoRef.id;
+}
+
+async function resolverPago(contratoId, pagoId, decision, comentario = "") {
+  const { user, contrato } = await contratoAutorizado(contratoId);
+  if (user.uid !== contrato.profesionalUid) throw new Error("Solo el profesional puede confirmar o rechazar el pago declarado.");
+  if (!["Confirmado", "Rechazado"].includes(decision)) throw new Error("Decisión de pago no permitida.");
+  const pagoRef = doc(db, COLECCIONES.pagosDeclarados, pagoId);
+  const snapshot = await getDoc(pagoRef);
+  if (!snapshot.exists() || snapshot.data().contratoId !== contratoId || snapshot.data().estado !== "Declarado") throw new Error("El pago ya no está pendiente.");
+  await updateDoc(pagoRef, { estado: decision, comentarioProfesional: String(comentario || "").trim().slice(0, 500), revisadoPorUid: user.uid, revisadoEn: ahora(), actualizadoEn: ahora() });
+  await auditar(`Pago ${decision.toLowerCase()}`, `${contratoId}: ${pagoId}`, [contrato.clienteUid, contrato.profesionalUid]);
+}
+
+async function proponerOrdenCambio(contratoId, datos) {
+  const { user, contrato } = await contratoAutorizado(contratoId);
+  if (![contrato.clienteUid, contrato.profesionalUid].includes(user.uid)) throw new Error("No participas en este contrato.");
+  if (contrato.estado !== "En ejecución") throw new Error("Las órdenes de cambio solo se crean durante la ejecución.");
+  const descripcion = String(datos?.descripcion || "").trim();
+  const motivo = String(datos?.motivo || "").trim();
+  const impactoMonto = Number(datos?.impactoMonto || 0);
+  const impactoDias = Number(datos?.impactoDias || 0);
+  if (descripcion.length < 10 || motivo.length < 5 || !Number.isFinite(impactoMonto) || !Number.isInteger(impactoDias)) throw new Error("Describe el cambio, su motivo y sus impactos.");
+  const ordenRef = doc(collection(db, COLECCIONES.ordenesCambio));
+  const creadoEn = ahora();
+  await setDoc(ordenRef, {
+    id: ordenRef.id, contratoId, clienteUid: contrato.clienteUid, profesionalUid: contrato.profesionalUid,
+    descripcion: descripcion.slice(0, 1000), motivo: motivo.slice(0, 500), impactoMonto, impactoDias,
+    proponenteUid: user.uid, proponenteRol: user.uid === contrato.clienteUid ? "cliente" : "profesional",
+    estado: "Propuesta", respuesta: "", creadoEn, actualizadoEn: creadoEn
+  });
+  await auditar("Orden de cambio propuesta", `${contratoId}: ${descripcion.slice(0, 80)}`, [contrato.clienteUid, contrato.profesionalUid]);
+  return ordenRef.id;
+}
+
+async function resolverOrdenCambio(contratoId, ordenId, decision, respuesta = "") {
+  const { user, contrato } = await contratoAutorizado(contratoId);
+  if (!["Aceptada", "Rechazada"].includes(decision)) throw new Error("Decisión de orden no permitida.");
+  const ordenRef = doc(db, COLECCIONES.ordenesCambio, ordenId);
+  const snapshot = await getDoc(ordenRef);
+  if (!snapshot.exists()) throw new Error("La orden ya no existe.");
+  const orden = snapshot.data();
+  if (orden.contratoId !== contratoId || orden.estado !== "Propuesta") throw new Error("La orden ya no está pendiente.");
+  if (orden.proponenteUid === user.uid || ![contrato.clienteUid, contrato.profesionalUid].includes(user.uid)) throw new Error("La otra parte debe resolver esta orden.");
+  await updateDoc(ordenRef, { estado: decision, respuesta: String(respuesta || "").trim().slice(0, 500), resueltoPorUid: user.uid, resueltoEn: ahora(), actualizadoEn: ahora() });
+  await auditar(`Orden de cambio ${decision.toLowerCase()}`, `${contratoId}: ${ordenId}`, [contrato.clienteUid, contrato.profesionalUid]);
+}
+
+async function abrirEvidenciaEjecucion(contratoId, tipo, registroId, ruta) {
+  await contratoAutorizado(contratoId);
+  const coleccion = tipo === "hito" ? COLECCIONES.hitos : COLECCIONES.pagosDeclarados;
+  const snapshot = await getDoc(doc(db, coleccion, registroId));
+  if (!snapshot.exists() || snapshot.data().contratoId !== contratoId) throw new Error("El archivo no pertenece a este contrato.");
+  const datos = snapshot.data();
+  const archivos = tipo === "hito" ? (datos.evidencias || []) : (datos.comprobante ? [datos.comprobante] : []);
+  const evidencia = archivos.find((item) => item.ruta === ruta);
+  if (!evidencia) throw new Error("El archivo solicitado no está registrado.");
+  return { nombre: evidencia.nombre, url: await getDownloadURL(ref(storage, evidencia.ruta)) };
+}
+
 async function cambiarEstadoProfesional(uid, estado) {
   const user = exigirUsuario();
   if (!(await esAdmin(user.uid))) throw new Error("Se requiere autorización administrativa.");
@@ -541,17 +687,21 @@ async function cargarDatos() {
   let contratos = [];
   let auditoria = [];
   let resenas = [];
+  let hitos = [];
+  let pagosDeclarados = [];
+  let ordenesCambio = [];
   try {
     resenas = await todos(COLECCIONES.resenas);
   } catch (error) {
     console.warn("Las reseñas se activarán cuando se publiquen las reglas actualizadas.", error);
   }
-  if (!user) return { version: 1, profesionales, clientes, solicitudes, cotizaciones, contratos, resenas, auditoria, nube: true, rol };
+  if (!user) return { version: 1, profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, resenas, auditoria, nube: true, rol };
 
   if (rol === "admin") {
-    [profesionales, clientes, solicitudes, cotizaciones, contratos, auditoria] = await Promise.all([
+    [profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, auditoria] = await Promise.all([
       todos(COLECCIONES.profesionales), todos(COLECCIONES.clientes), todos(COLECCIONES.solicitudes),
-      todos(COLECCIONES.cotizaciones), todos(COLECCIONES.contratos), todos(COLECCIONES.auditoria)
+      todos(COLECCIONES.cotizaciones), todos(COLECCIONES.contratos), todos(COLECCIONES.hitos),
+      todos(COLECCIONES.pagosDeclarados), todos(COLECCIONES.ordenesCambio), todos(COLECCIONES.auditoria)
     ]);
     const privados = await todos(COLECCIONES.profesionalesPrivados);
     const privadosPorUid = new Map(privados.map((item) => [item.uid || item.id, item]));
@@ -560,15 +710,20 @@ async function cargarDatos() {
       privado: privadosPorUid.get(item.uid || item.id) || null
     }));
   } else if (rol === "cliente") {
-    const [clienteSnapshot, solicitudesCliente, cotizacionesCliente, contratosCliente, auditoriaCliente] = await Promise.all([
+    const [clienteSnapshot, solicitudesCliente, cotizacionesCliente, contratosCliente, hitosCliente, pagosCliente, ordenesCliente, auditoriaCliente] = await Promise.all([
       getDoc(doc(db, COLECCIONES.clientes, user.uid)), porCampo(COLECCIONES.solicitudes, "clienteUid", user.uid),
       porCampo(COLECCIONES.cotizaciones, "clienteUid", user.uid), porCampo(COLECCIONES.contratos, "clienteUid", user.uid),
+      porCampo(COLECCIONES.hitos, "clienteUid", user.uid), porCampo(COLECCIONES.pagosDeclarados, "clienteUid", user.uid),
+      porCampo(COLECCIONES.ordenesCambio, "clienteUid", user.uid),
       porArray(COLECCIONES.auditoria, "participantes", user.uid)
     ]);
     clientes = clienteSnapshot.exists() ? [{ id: clienteSnapshot.id, ...clienteSnapshot.data() }] : [];
     solicitudes = solicitudesCliente;
     cotizaciones = cotizacionesCliente;
     contratos = contratosCliente;
+    hitos = hitosCliente;
+    pagosDeclarados = pagosCliente;
+    ordenesCambio = ordenesCliente;
     auditoria = auditoriaCliente;
   } else if (rol === "profesional") {
     const perfil = await getDoc(doc(db, COLECCIONES.profesionales, user.uid));
@@ -579,14 +734,16 @@ async function cargarDatos() {
     for (const profesion of (perfilDatos.profesiones || []).slice(0, 10)) {
       compatibles.push(...await porCampo(COLECCIONES.solicitudes, "profesion", profesion));
     }
-    [cotizaciones, contratos, auditoria] = await Promise.all([
+    [cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, auditoria] = await Promise.all([
       porCampo(COLECCIONES.cotizaciones, "profesionalUid", user.uid), porCampo(COLECCIONES.contratos, "profesionalUid", user.uid),
+      porCampo(COLECCIONES.hitos, "profesionalUid", user.uid), porCampo(COLECCIONES.pagosDeclarados, "profesionalUid", user.uid),
+      porCampo(COLECCIONES.ordenesCambio, "profesionalUid", user.uid),
       porArray(COLECCIONES.auditoria, "participantes", user.uid)
     ]);
     solicitudes = [...new Map([...asignadas, ...compatibles].map((item) => [item.id, item])).values()];
   }
   const adaptar = (items) => items.map((item) => ({ ...item, clienteId: item.clienteUid || item.clienteId, profesionalId: item.profesionalUid || item.profesionalId, actor: item.actorEmail || item.actorUid || "Sistema" }));
-  return { version: 1, profesionales: adaptar(profesionales), clientes: adaptar(clientes), solicitudes: adaptar(solicitudes), cotizaciones: adaptar(cotizaciones), contratos: adaptar(contratos), resenas: adaptar(resenas), auditoria: adaptar(auditoria), nube: true, rol };
+  return { version: 1, profesionales: adaptar(profesionales), clientes: adaptar(clientes), solicitudes: adaptar(solicitudes), cotizaciones: adaptar(cotizaciones), contratos: adaptar(contratos), hitos: adaptar(hitos), pagosDeclarados: adaptar(pagosDeclarados), ordenesCambio: adaptar(ordenesCambio), resenas: adaptar(resenas), auditoria: adaptar(auditoria), nube: true, rol };
 }
 
 const observarSesion = (callback) => onAuthStateChanged(auth, callback);
@@ -626,6 +783,14 @@ export const ProfesionalesFirebase = Object.freeze({
   finalizarServicio,
   cerrarServicio,
   abrirEvidenciaServicio,
+  crearHito,
+  registrarAvanceHito,
+  resolverHito,
+  declararPago,
+  resolverPago,
+  proponerOrdenCambio,
+  resolverOrdenCambio,
+  abrirEvidenciaEjecucion,
   cambiarEstadoProfesional,
   cargarDatos,
   observarActividad,

@@ -342,6 +342,37 @@ document.addEventListener("submit", async (event) => {
     return;
   }
   const datos = new FormData(form);
+  if (form.id === "milestoneForm") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const boton = form.querySelector("[data-create-milestone]");
+    await ejecutar(form, () => api.crearHito(boton.dataset.createMilestone, datos.get("titulo"), datos.get("detalle"), datos.get("fechaObjetivo")), "Hito creado y vinculado al contrato.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  if (form.id === "paymentDeclarationForm") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const boton = form.querySelector("[data-declare-payment]");
+    const comprobante = datos.get("comprobante");
+    await ejecutar(form, () => api.declararPago(boton.dataset.declarePayment, {
+      monto: datos.get("monto"), metodo: datos.get("metodo"), referencia: datos.get("referencia"),
+      fechaPago: datos.get("fechaPago"), nota: datos.get("nota")
+    }, comprobante instanceof File && comprobante.size ? comprobante : null), "Pago declarado y notificado al profesional.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  if (form.id === "changeOrderForm") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const boton = form.querySelector("[data-propose-change]");
+    await ejecutar(form, () => api.proponerOrdenCambio(boton.dataset.proposeChange, {
+      descripcion: datos.get("descripcion"), motivo: datos.get("motivo"),
+      impactoMonto: datos.get("impactoMonto"), impactoDias: Number(datos.get("impactoDias") || 0)
+    }), "Orden de cambio enviada a la otra parte.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
   const acciones = {
     formProfesional: [() => api.registrarProfesional(datos), "Perfil profesional enviado a revisión."],
     formCliente: [() => api.registrarCliente(datos), "Cuenta de cliente enviada a revisión."],
@@ -509,6 +540,58 @@ document.addEventListener("click", async (event) => {
       enlace.click();
       enlace.remove();
     }, "Evidencia abierta de forma segura.");
+    return;
+  }
+  const enviarHito = event.target.closest("[data-submit-milestone]");
+  if (enviarHito) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const tarjeta = enviarHito.closest("[data-execution-record]");
+    await ejecutar(null, () => api.registrarAvanceHito(enviarHito.dataset.contractId, enviarHito.dataset.submitMilestone, tarjeta?.querySelector("[data-hito-files]")?.files, tarjeta?.querySelector("[data-hito-note]")?.value), "Avance enviado al cliente para revisión.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  const revisarHito = event.target.closest("[data-review-milestone]");
+  if (revisarHito) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const comentario = revisarHito.closest("[data-execution-record]")?.querySelector("[data-hito-response]")?.value;
+    await ejecutar(null, () => api.resolverHito(revisarHito.dataset.contractId, revisarHito.dataset.reviewMilestone, revisarHito.dataset.decision, comentario), `Hito ${revisarHito.dataset.decision.toLowerCase()}.`);
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  const revisarPago = event.target.closest("[data-review-payment]");
+  if (revisarPago) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const comentario = revisarPago.closest("[data-execution-record]")?.querySelector("[data-payment-response]")?.value;
+    await ejecutar(null, () => api.resolverPago(revisarPago.dataset.contractId, revisarPago.dataset.reviewPayment, revisarPago.dataset.decision, comentario), `Pago ${revisarPago.dataset.decision.toLowerCase()}.`);
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  const revisarCambio = event.target.closest("[data-review-change]");
+  if (revisarCambio) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const respuesta = revisarCambio.closest("[data-execution-record]")?.querySelector("[data-change-response]")?.value;
+    await ejecutar(null, () => api.resolverOrdenCambio(revisarCambio.dataset.contractId, revisarCambio.dataset.reviewChange, revisarCambio.dataset.decision, respuesta), `Orden de cambio ${revisarCambio.dataset.decision.toLowerCase()}.`);
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  const abrirEjecucion = event.target.closest("[data-open-execution-file]");
+  if (abrirEjecucion) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(null, async () => {
+      const evidencia = await api.abrirEvidenciaEjecucion(abrirEjecucion.dataset.openExecutionFile, abrirEjecucion.dataset.executionType, abrirEjecucion.dataset.recordId, abrirEjecucion.dataset.filePath);
+      const enlace = document.createElement("a");
+      enlace.href = evidencia.url;
+      enlace.target = "_blank";
+      enlace.rel = "noopener";
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+    }, "Archivo privado abierto de forma segura.");
     return;
   }
   const admin = event.target.closest("[data-admin-professional]");

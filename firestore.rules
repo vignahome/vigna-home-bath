@@ -332,6 +332,128 @@ service cloud.firestore {
       allow delete: if esAdmin();
     }
 
+    match /pv_hitos/{hitoId} {
+      function contratoHito() {
+        return get(/databases/$(database)/documents/pv_contratos/$(request.resource.data.contratoId)).data;
+      }
+
+      allow create: if pvRol("profesional") &&
+        request.resource.data.id == hitoId &&
+        request.resource.data.profesionalUid == request.auth.uid &&
+        request.resource.data.estado == "Pendiente" &&
+        request.resource.data.evidencias is list &&
+        request.resource.data.evidencias.size() == 0 &&
+        contratoHito().estado == "En ejecución" &&
+        contratoHito().profesionalUid == request.auth.uid &&
+        request.resource.data.clienteUid == contratoHito().clienteUid;
+      allow read: if esAdmin() || (autenticado() && (
+        resource.data.clienteUid == request.auth.uid ||
+        resource.data.profesionalUid == request.auth.uid
+      ));
+      allow update: if esAdmin() || (
+        autenticado() &&
+        request.resource.data.contratoId == resource.data.contratoId &&
+        request.resource.data.clienteUid == resource.data.clienteUid &&
+        request.resource.data.profesionalUid == resource.data.profesionalUid && (
+          (
+            pvRol("profesional") && resource.data.profesionalUid == request.auth.uid &&
+            resource.data.estado in ["Pendiente", "Observado"] &&
+            request.resource.data.estado == "En revisión" &&
+            request.resource.data.evidencias is list &&
+            request.resource.data.evidencias.size() > 0 &&
+            request.resource.data.evidencias.size() <= 6 &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "estado", "evidencias", "notaProfesional", "comentarioCliente",
+              "enviadoPorUid", "enviadoEn", "actualizadoEn"
+            ])
+          ) || (
+            pvRol("cliente") && resource.data.clienteUid == request.auth.uid &&
+            resource.data.estado == "En revisión" &&
+            request.resource.data.estado in ["Aprobado", "Observado"] &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "estado", "comentarioCliente", "revisadoPorUid", "revisadoEn", "actualizadoEn"
+            ])
+          )
+        )
+      );
+      allow delete: if esAdmin();
+    }
+
+    match /pv_pagos_declarados/{pagoId} {
+      function contratoPago() {
+        return get(/databases/$(database)/documents/pv_contratos/$(request.resource.data.contratoId)).data;
+      }
+
+      allow create: if pvRol("cliente") &&
+        request.resource.data.id == pagoId &&
+        request.resource.data.clienteUid == request.auth.uid &&
+        request.resource.data.estado == "Declarado" &&
+        request.resource.data.monto is number &&
+        request.resource.data.monto > 0 &&
+        contratoPago().estado in ["En ejecución", "Finalizado"] &&
+        contratoPago().clienteUid == request.auth.uid &&
+        request.resource.data.profesionalUid == contratoPago().profesionalUid;
+      allow read: if esAdmin() || (autenticado() && (
+        resource.data.clienteUid == request.auth.uid ||
+        resource.data.profesionalUid == request.auth.uid
+      ));
+      allow update: if esAdmin() || (
+        autenticado() &&
+        request.resource.data.contratoId == resource.data.contratoId &&
+        request.resource.data.clienteUid == resource.data.clienteUid &&
+        request.resource.data.profesionalUid == resource.data.profesionalUid &&
+        request.resource.data.monto == resource.data.monto && (
+          (
+            pvRol("cliente") && resource.data.clienteUid == request.auth.uid &&
+            resource.data.estado == "Declarado" && request.resource.data.estado == "Declarado" &&
+            resource.data.comprobante == null && request.resource.data.comprobante is map &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(["comprobante", "actualizadoEn"])
+          ) || (
+            pvRol("profesional") && resource.data.profesionalUid == request.auth.uid &&
+            resource.data.estado == "Declarado" && request.resource.data.estado in ["Confirmado", "Rechazado"] &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "estado", "comentarioProfesional", "revisadoPorUid", "revisadoEn", "actualizadoEn"
+            ])
+          )
+        )
+      );
+      allow delete: if esAdmin();
+    }
+
+    match /pv_ordenes_cambio/{ordenId} {
+      function contratoCambio() {
+        return get(/databases/$(database)/documents/pv_contratos/$(request.resource.data.contratoId)).data;
+      }
+
+      allow create: if autenticado() &&
+        request.resource.data.id == ordenId &&
+        request.resource.data.estado == "Propuesta" &&
+        request.resource.data.proponenteUid == request.auth.uid &&
+        contratoCambio().estado == "En ejecución" &&
+        request.resource.data.clienteUid == contratoCambio().clienteUid &&
+        request.resource.data.profesionalUid == contratoCambio().profesionalUid &&
+        request.auth.uid in [contratoCambio().clienteUid, contratoCambio().profesionalUid];
+      allow read: if esAdmin() || (autenticado() && (
+        resource.data.clienteUid == request.auth.uid ||
+        resource.data.profesionalUid == request.auth.uid
+      ));
+      allow update: if esAdmin() || (
+        autenticado() &&
+        request.auth.uid in [resource.data.clienteUid, resource.data.profesionalUid] &&
+        request.auth.uid != resource.data.proponenteUid &&
+        resource.data.estado == "Propuesta" &&
+        request.resource.data.estado in ["Aceptada", "Rechazada"] &&
+        request.resource.data.contratoId == resource.data.contratoId &&
+        request.resource.data.clienteUid == resource.data.clienteUid &&
+        request.resource.data.profesionalUid == resource.data.profesionalUid &&
+        request.resource.data.proponenteUid == resource.data.proponenteUid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "estado", "respuesta", "resueltoPorUid", "resueltoEn", "actualizadoEn"
+        ])
+      );
+      allow delete: if esAdmin();
+    }
+
     match /pv_resenas/{contratoId} {
       allow read: if true;
       allow create: if pvRol("cliente") &&
