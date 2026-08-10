@@ -90,6 +90,10 @@
             <label>Modalidad
               <select name="modalidad" required><option value="Independiente">Independiente</option><option value="Empresa">Empresa</option></select>
             </label>
+            <label>Nombre público<input name="nombrePublico" maxlength="80" placeholder="Ej. Carlos Instalaciones"></label>
+            <label>RUC opcional<input name="ruc" inputmode="numeric" minlength="11" maxlength="11" placeholder="20123456789"></label>
+            <label>Idiomas<input name="idiomas" placeholder="Español, quechua"></label>
+            <label class="span-two">Disponibilidad<input name="disponibilidad" maxlength="180" placeholder="Lunes a sábado, 8:00 a 18:00"></label>
           </div>
         </div>
 
@@ -140,6 +144,13 @@
               <label>Distancia máxima<input name="distancia" placeholder="Ej. 25 km"></label>
               <label>Recargo por desplazamiento<input name="recargo" placeholder="Ej. S/ 25 fuera de zona"></label>
             </div>
+          </div>
+          <div class="form-grid three compact-top structured-coverage">
+            <label>Departamentos incluidos<input name="coberturaDepartamentos" placeholder="Lima, Callao"></label>
+            <label>Provincias incluidas<input name="coberturaProvincias" placeholder="Lima, Cañete"></label>
+            <label>Distritos incluidos<input name="coberturaDistritos" placeholder="Surco, Miraflores"></label>
+            <label class="span-two">Zonas excluidas<input name="coberturaExclusiones" placeholder="Distritos o zonas donde no atiendes"></label>
+            <label>Distancia máxima (km)<input name="distanciaKm" type="number" min="0" max="5000" step="1"></label>
           </div>
         </div>
 
@@ -254,6 +265,16 @@
         </article>
       </div>
       <article class="dashboard-card full"><div class="section-heading small"><div><h2>Cotizaciones y contratos</h2></div></div><div id="listaCotizaciones" class="stack-list"></div></article>
+      <article class="dashboard-card full" id="professionalPlanCard">
+        <div class="section-heading small"><div><h2>Plan profesional</h2><p>El perfil solo se publica cuando está aprobado y tiene un plan vigente.</p></div></div>
+        <div id="professionalPlanStatus" class="plan-status"></div>
+        <div class="plan-options">
+          <button class="plan-option" type="button" data-request-plan="Mensual" data-plan-months="1" data-plan-price="39.90"><strong>Mensual</strong><span>S/ 39.90</span><small>30 días</small></button>
+          <button class="plan-option featured" type="button" data-request-plan="Semestral" data-plan-months="6" data-plan-price="199.90"><strong>Semestral</strong><span>S/ 199.90</span><small>6 meses</small></button>
+          <button class="plan-option" type="button" data-request-plan="Anual" data-plan-months="12" data-plan-price="349.90"><strong>Anual</strong><span>S/ 349.90</span><small>12 meses</small></button>
+        </div>
+        <p class="private-note">La solicitud queda pendiente hasta que administración confirme el pago por el medio autorizado.</p>
+      </article>
     </section>
 
     <section class="view" id="view-admin">

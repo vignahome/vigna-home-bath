@@ -608,6 +608,29 @@ document.addEventListener("click", async (event) => {
     event.preventDefault();
     event.stopImmediatePropagation();
     await ejecutar(null, () => api.cambiarEstadoProfesional(admin.dataset.adminProfessional, admin.dataset.state), `Perfil ${admin.dataset.state.toLowerCase()}.`);
+    return;
+  }
+  const especialidad = event.target.closest("[data-admin-specialty]");
+  if (especialidad) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(null, () => api.cambiarEstadoEspecialidad(especialidad.dataset.adminSpecialty, especialidad.dataset.state), `Especialidad ${especialidad.dataset.state.toLowerCase()}.`);
+    return;
+  }
+  const solicitarPlan = event.target.closest("[data-request-plan]");
+  if (solicitarPlan) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(null, () => api.solicitarPlanProfesional(solicitarPlan.dataset.requestPlan), `Plan ${solicitarPlan.dataset.requestPlan.toLowerCase()} solicitado.`);
+    return;
+  }
+  const activarPlan = event.target.closest("[data-admin-activate-plan]");
+  if (activarPlan) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (!confirm(`¿Confirmas que corresponde activar el plan ${activarPlan.dataset.planType}?`)) return;
+    await ejecutar(null, () => api.activarPlanProfesional(activarPlan.dataset.adminActivatePlan, activarPlan.dataset.planType), "Plan profesional activado y perfil habilitado según su estado.");
+    return;
   }
   const revisarProfesional = event.target.closest("[data-review-professional]");
   if (revisarProfesional) {

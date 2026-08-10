@@ -127,6 +127,36 @@
     };
   }
 
+  function profesionesAprobadas(perfil) {
+    const independientes = Array.isArray(perfil.especialidades) ? perfil.especialidades : [];
+    const aprobadas = independientes.filter((item) => item.estado === "Aprobada").map((item) => item.profesion);
+    return independientes.length ? aprobadas : (perfil.profesiones || []);
+  }
+
+  function planVigente(perfil) {
+    if (["Mensual", "Semestral", "Anual"].includes(perfil.plan) && !perfil.planEstado) return true;
+    if (perfil.planEstado !== "Activo") return false;
+    const vencimiento = Date.parse(perfil.planVenceEn || "");
+    return !Number.isFinite(vencimiento) || vencimiento > Date.now();
+  }
+
+  function puntajeRanking(perfil) {
+    const valoracion = valoracionProfesional(perfil.uid || perfil.id, perfil);
+    const contratos = (data.contratos || []).filter((item) => item.profesionalId === perfil.id || item.profesionalUid === (perfil.uid || perfil.id));
+    const cerrados = contratos.filter((item) => item.estado === "Cerrado").length;
+    const cumplimiento = contratos.length ? cerrados / contratos.length : 0;
+    const especialidades = Array.isArray(perfil.especialidades) ? perfil.especialidades : [];
+    const verificacion = especialidades.length ? especialidades.filter((item) => item.estado === "Aprobada").length / especialidades.length : (perfil.estado === "Aprobado" ? 1 : 0);
+    const cotizaciones = (data.cotizaciones || []).filter((item) => item.profesionalId === perfil.id || item.profesionalUid === (perfil.uid || perfil.id)).length;
+    const respuesta = Math.min(1, cotizaciones / Math.max(1, (data.solicitudes || []).filter((item) => !item.profesionalId || item.profesionalId === perfil.id).length));
+    const experiencia = Math.min(1, Number(perfil.experiencia || 0) / 10);
+    return Math.round((((Number(valoracion.calificacion || 0) / 5) * .30) + (cumplimiento * .25) + (verificacion * .20) + (respuesta * .15) + (experiencia * .10)) * 100);
+  }
+
+  function perfilPublicable(perfil) {
+    return perfil.estado === "Aprobado" && profesionesAprobadas(perfil).length > 0 && planVigente(perfil);
+  }
+
   function initSelectors() {
     const filter = document.getElementById("filtroProfesion");
     const request = document.getElementById("solicitudProfesion");
@@ -154,11 +184,14 @@
     departmentSelect.innerHTML = '<option value="">Todo el Perú</option>' + departments.map((d) => `<option>${escapar(d)}</option>`).join("");
     departmentSelect.value = departments.includes(current) ? current : "";
 
-    data.profesionales.forEach((p) => Object.assign(p, valoracionProfesional(p.uid || p.id, p)));
+    data.profesionales.forEach((p) => Object.assign(p, valoracionProfesional(p.uid || p.id, p), { rankingPuntaje: puntajeRanking(p) }));
     const results = data.profesionales.filter((p) => {
-      const coverage = `${p.departamento} ${p.provincia} ${p.distrito} ${p.coberturaDetalle}`.toLowerCase();
-      return (!profession || p.profesiones.includes(profession)) && (!department || p.departamento === department || p.coberturaTipo === "Nacional") && (!zone || coverage.includes(zone)) && (!state || p.estado === state);
-    }).sort((a, b) => (b.calificacion || 0) - (a.calificacion || 0));
+      const cobertura = p.cobertura || {};
+      const coverage = `${p.departamento} ${p.provincia} ${p.distrito} ${p.coberturaDetalle} ${(cobertura.departamentos || []).join(" ")} ${(cobertura.provincias || []).join(" ")} ${(cobertura.distritos || []).join(" ")}`.toLowerCase();
+      const especialidades = profesionesAprobadas(p);
+      const cubreDepartamento = !department || p.coberturaTipo === "Nacional" || (cobertura.departamentos || []).includes(department) || p.departamento === department;
+      return perfilPublicable(p) && (!profession || especialidades.includes(profession)) && cubreDepartamento && (!zone || coverage.includes(zone)) && (!state || p.estado === state);
+    }).sort((a, b) => (b.rankingPuntaje || 0) - (a.rankingPuntaje || 0));
 
     document.getElementById("heroTotalProfesionales").textContent = data.profesionales.length;
     document.getElementById("contadorResultados").textContent = `${results.length} resultado${results.length === 1 ? "" : "s"}`;
@@ -171,8 +204,8 @@
       <article class="professional-card">
         <div class="card-top"><div class="professional-avatar">${escapar(p.fotoIniciales || nombreCompleto(p).split(" ").map((x) => x[0]).join("").slice(0, 2))}</div><span class="status-chip ${estadoClase(p.estado)}">${escapar(p.estado)}</span></div>
         <h3>${escapar(nombreCompleto(p))}</h3><div class="primary-profession">${escapar(p.profesionPrincipal)}</div>
-        <div class="chip-list">${p.profesiones.map((prof) => `<span class="profession-chip ${prof === p.profesionPrincipal ? "primary" : ""}">${escapar(prof)}</span>`).join("")}</div>
-        <div class="card-meta"><span class="rating">★★★★★ ${Number(p.calificacion || 5).toFixed(1)}</span><span>✓ ${Number(p.trabajos || 0)} servicios registrados</span><span>⌖ ${escapar(p.coberturaDetalle)}</span><span>◷ ${Number(p.experiencia || 0)} años de experiencia</span></div>
+        <div class="chip-list">${profesionesAprobadas(p).map((prof) => `<span class="profession-chip ${prof === p.profesionPrincipal ? "primary" : ""}">${escapar(prof)} · verificada</span>`).join("")}</div>
+        <div class="card-meta"><span class="rating">★★★★★ ${Number(p.calificacion || 0).toFixed(1)}</span><span>Ranking VIGNA ${Number(p.rankingPuntaje || 0)}/100</span><span>✓ ${Number(p.trabajos || 0)} servicios registrados</span><span>⌖ ${escapar(p.coberturaDetalle)}</span><span>◷ ${Number(p.experiencia || 0)} años de experiencia</span></div>
         <div class="card-actions"><button class="secondary-button" data-profile="${p.id}">Ver perfil</button><button class="gold-button" data-request="${p.id}">Solicitar servicio</button></div>
       </article>`).join("");
   }
@@ -214,6 +247,7 @@
       descripcion.textContent = "Revisa tus solicitudes, cotizaciones recibidas y contratos.";
       selector.hidden = true;
       herramientas.hidden = true;
+      document.getElementById("professionalPlanCard").hidden = true;
       listadoTitulo.textContent = "Cotizaciones y contratos";
       document.getElementById("panelMetricas").innerHTML = [
         ["Solicitudes", data.solicitudes.length],
@@ -229,6 +263,7 @@
     descripcion.textContent = "Administra portafolio, cotizaciones y contratos del MVP.";
     selector.hidden = false;
     herramientas.hidden = false;
+    document.getElementById("professionalPlanCard").hidden = false;
     listadoTitulo.textContent = "Cotizaciones y contratos";
 
     const p = data.profesionales.find((item) => item.id === panelProfesionalId) || data.profesionales[0];
@@ -244,6 +279,8 @@
     ].map(([label, value]) => `<div class="metric"><small>${label}</small><strong>${value}</strong></div>`).join("");
     const portfolio = p.portafolio || [];
     document.getElementById("listaPortafolio").innerHTML = portfolio.length ? portfolio.map((item) => `<article class="portfolio-card"><div class="before-after"><figure><img src="${item.antes}" alt="Antes"><figcaption>ANTES</figcaption></figure><figure><img src="${item.despues}" alt="Después"><figcaption>DESPUÉS</figcaption></figure></div><div class="portfolio-copy"><h3>${escapar(item.titulo)}</h3><p>${escapar(item.descripcion)}</p><small>${item.videoNombre ? `Video: ${escapar(item.videoNombre)}` : "Sin video"}</small></div></article>`).join("") : '<div class="empty-state"><p>Agrega tu primer proyecto.</p></div>';
+    const plan = p.planRegistro || {};
+    document.getElementById("professionalPlanStatus").innerHTML = `<div class="plan-current"><span class="status-chip ${planVigente(p) ? "approved" : "pending"}">${escapar(p.planEstado || plan.estado || "Sin plan")}</span><strong>${escapar(p.plan || plan.tipo || "Sin plan")}</strong><small>${p.planVenceEn ? `Vence ${escapar(new Date(p.planVenceEn).toLocaleDateString("es-PE"))}` : "Solicita un plan para activar la publicación."}</small></div>`;
     renderQuotes();
   }
 
@@ -270,7 +307,7 @@
 
     document.getElementById("admin-profesionales").innerHTML = tableHtml(["ID", "Profesional", "Profesión principal", "Cobertura", "Documentos", "Estado", "Acciones"], data.profesionales.map((p) => [
       p.id, nombreCompleto(p), p.profesionPrincipal, p.coberturaDetalle, `${p.documentosDeclarados || 0} declarados`, htmlSeguro(`<span class="status-chip ${estadoClase(p.estado)}">${escapar(p.estado)}</span>`),
-      htmlSeguro(`<div class="table-actions"><button class="tiny-button approve" data-admin-professional="${p.id}" data-state="Aprobado">Aprobar</button><button class="tiny-button" data-review-professional="${p.id}">Revisar documentos</button><button class="tiny-button reject" data-admin-professional="${p.id}" data-state="Rechazado">Rechazar</button></div>`)
+      htmlSeguro(`<div class="specialty-review">${(p.especialidades || []).map((item) => `<span>${escapar(item.profesion)}: ${escapar(item.estado)} <button class="tiny-button approve" data-admin-specialty="${escapar(item.id)}" data-state="Aprobada">✓</button><button class="tiny-button reject" data-admin-specialty="${escapar(item.id)}" data-state="Rechazada">×</button></span>`).join("")}</div><div class="table-actions"><button class="tiny-button approve" data-admin-professional="${p.id}" data-state="Aprobado">Aprobar perfil</button><button class="tiny-button" data-review-professional="${p.id}">Revisar documentos</button><button class="tiny-button" data-admin-activate-plan="${p.id}" data-plan-type="${escapar(p.planRegistro?.tipo || "Mensual")}">Activar plan</button><button class="tiny-button reject" data-admin-professional="${p.id}" data-state="Rechazado">Rechazar</button></div>`)
     ]));
     document.getElementById("admin-clientes").innerHTML = tableHtml(["ID", "Cliente", "Documento", "Ubicación", "Archivos", "Estado", "Acciones"], data.clientes.map((c) => [c.id, nombreCompleto(c), `${c.tipoDocumento} ${c.documento}`, `${c.departamento} - ${c.provincia} - ${c.distrito} · ${c.zona || "Sin zona"}`, `${c.documentosDeclarados || 0} declarados`, c.estado, htmlSeguro(`<button class="tiny-button" data-review-client="${c.id}">Revisar documentos</button>`)]));
     document.getElementById("admin-solicitudes").innerHTML = tableHtml(["ID", "Profesión", "Lugar", "Presupuesto", "Estado"], data.solicitudes.map((s) => [s.id, s.profesion, `${s.departamento} - ${s.distrito}`, s.presupuesto, s.estado]));
@@ -332,7 +369,7 @@
         }).join("")}</div></section>`
       : "";
     const content = document.getElementById("profileDialogContent");
-    content.innerHTML = `<div class="profile-hero"><div class="professional-avatar">${escapar(p.fotoIniciales)}</div><div><p class="eyebrow">${escapar(p.estado)}</p><h1>${escapar(nombreCompleto(p))}</h1><p class="primary-profession">${escapar(p.profesionPrincipal)}</p><p class="rating">★★★★★ ${Number(p.calificacion || 5).toFixed(1)} · ${p.trabajos || 0} servicios</p></div></div><div class="chip-list">${p.profesiones.map((x) => `<span class="profession-chip ${x === p.profesionPrincipal ? "primary" : ""}">${escapar(x)}</span>`).join("")}</div><p>${escapar(p.descripcion)}</p><div class="profile-detail-grid"><div class="detail-box"><h3>Cobertura</h3><p>${escapar(p.coberturaDetalle)}</p><p>${escapar(p.distancia || "")}</p></div><div class="detail-box"><h3>Experiencia</h3><p>${p.experiencia} años</p><p>Plan: ${escapar(p.plan || "Sin plan")}</p></div></div>${opinionesHtml}<div class="form-actions no-print"><button class="gold-button" data-request="${p.id}">Solicitar servicio</button></div>`;
+    content.innerHTML = `<div class="profile-hero"><div class="professional-avatar">${escapar(p.fotoIniciales)}</div><div><p class="eyebrow">${escapar(p.estado)} · Ranking ${Number(p.rankingPuntaje || puntajeRanking(p))}/100</p><h1>${escapar(p.nombrePublico || nombreCompleto(p))}</h1><p class="primary-profession">${escapar(p.profesionPrincipal)}</p><p class="rating">★★★★★ ${Number(p.calificacion || 0).toFixed(1)} · ${p.trabajos || 0} servicios</p></div></div><div class="chip-list">${profesionesAprobadas(p).map((x) => `<span class="profession-chip ${x === p.profesionPrincipal ? "primary" : ""}">${escapar(x)} · verificada</span>`).join("")}</div><p>${escapar(p.descripcion)}</p><div class="profile-detail-grid"><div class="detail-box"><h3>Cobertura</h3><p>${escapar(p.coberturaDetalle)}</p><p>${escapar(p.distancia || "")}</p></div><div class="detail-box"><h3>Disponibilidad</h3><p>${escapar(p.disponibilidad || "Previa coordinación")}</p><p>Idiomas: ${escapar((p.idiomas || []).join?.(", ") || p.idiomas || "Español")}</p></div><div class="detail-box"><h3>Experiencia</h3><p>${p.experiencia} años</p><p>Plan vigente: ${escapar(p.plan || "Sin plan")}</p></div></div>${opinionesHtml}<div class="form-actions no-print"><button class="gold-button" data-request="${p.id}">Solicitar servicio</button></div>`;
     document.getElementById("profileDialog").showModal();
   }
 

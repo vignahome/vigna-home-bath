@@ -30,6 +30,9 @@ const COLECCIONES = Object.freeze({
   usuarios: "pv_usuarios",
   profesionales: "pv_profesionales",
   profesionalesPrivados: "pv_profesionales_privados",
+  profesionesProfesional: "pv_profesiones_profesional",
+  coberturas: "pv_coberturas",
+  planesProfesionales: "pv_planes_profesionales",
   clientes: "pv_clientes",
   solicitudes: "pv_solicitudes",
   cotizaciones: "pv_cotizaciones",
@@ -43,6 +46,7 @@ const COLECCIONES = Object.freeze({
 });
 
 const ahora = () => new Date().toISOString();
+const listaTexto = (valor = "") => [...new Set(String(valor).split(",").map((item) => item.trim()).filter(Boolean))].slice(0, 100);
 const nombreCompleto = (valor = {}) => `${valor.nombres || ""} ${valor.apellidos || ""}`.trim();
 const texto = (form, nombre) => String(form.get(nombre) || "").trim();
 const archivo = (form, nombre) => {
@@ -155,13 +159,24 @@ async function registrarProfesional(form) {
 
   const nombres = texto(form, "nombres");
   const apellidos = texto(form, "apellidos");
+  const cobertura = {
+    tipo: texto(form, "coberturaTipo"),
+    departamentos: listaTexto(form.get("coberturaDepartamentos")),
+    provincias: listaTexto(form.get("coberturaProvincias")),
+    distritos: listaTexto(form.get("coberturaDistritos")),
+    exclusiones: listaTexto(form.get("coberturaExclusiones")),
+    distanciaKm: Math.max(0, Number(form.get("distanciaKm") || 0)),
+    recargo: texto(form, "recargo")
+  };
   const publico = {
     uid, nombres, apellidos, correo, whatsapp: texto(form, "whatsapp"), modalidad: texto(form, "modalidad"),
+    nombrePublico: texto(form, "nombrePublico"), ruc: texto(form, "ruc"), idiomas: listaTexto(form.get("idiomas")),
+    disponibilidad: texto(form, "disponibilidad"),
     departamento: texto(form, "departamento"), provincia: texto(form, "provincia"), distrito: texto(form, "distrito"),
     profesiones, profesionPrincipal: texto(form, "profesionPrincipal"), experiencia: Number(form.get("experiencia") || 0),
-    coberturaTipo: texto(form, "coberturaTipo"), coberturaDetalle: texto(form, "coberturaDetalle"),
+    coberturaTipo: texto(form, "coberturaTipo"), coberturaDetalle: texto(form, "coberturaDetalle"), cobertura,
     distancia: texto(form, "distancia"), recargo: texto(form, "recargo"), descripcion: texto(form, "descripcion"),
-    estado: "Pendiente", plan: "Sin plan", calificacion: 0, trabajos: 0,
+    estado: "Pendiente", plan: "Sin plan", planEstado: "Sin plan", planVenceEn: "", calificacion: 0, trabajos: 0,
     fotoIniciales: `${nombres[0] || ""}${apellidos[0] || ""}`.toUpperCase(), documentosDeclarados: [frenteUrl, reversoUrl, selfieUrl].filter(Boolean).length,
     portafolio: [], creadoEn: ahora(), actualizadoEn: ahora()
   };
@@ -170,9 +185,25 @@ async function registrarProfesional(form) {
     documento: texto(form, "documento"), paisEmisor: texto(form, "paisEmisor"), direccionPrivada: texto(form, "direccion"),
     referencia: texto(form, "referencia"), documentos: { frenteUrl, reversoUrl, selfieUrl }, actualizadoEn: ahora()
   };
+  const especialidades = profesiones.map((profesion) => {
+    const especialidadRef = doc(collection(db, COLECCIONES.profesionesProfesional));
+    return {
+      ref: especialidadRef,
+      datos: {
+        id: especialidadRef.id, profesionalUid: uid, profesion,
+        principal: profesion === publico.profesionPrincipal,
+        experiencia: publico.experiencia, descripcion: "", evidencias: [],
+        estado: "Pendiente", calificacion: 0, trabajos: 0,
+        creadoEn: ahora(), actualizadoEn: ahora()
+      }
+    };
+  });
   await Promise.all([
     setDoc(doc(db, COLECCIONES.profesionales, uid), publico),
     setDoc(doc(db, COLECCIONES.profesionalesPrivados, uid), privado),
+    setDoc(doc(db, COLECCIONES.coberturas, uid), { uid, profesionalUid: uid, ...cobertura, creadoEn: ahora(), actualizadoEn: ahora() }),
+    setDoc(doc(db, COLECCIONES.planesProfesionales, uid), { uid, profesionalUid: uid, tipo: "", precio: 0, meses: 0, estado: "Sin plan", solicitadoEn: "", activadoEn: "", venceEn: "", actualizadoEn: ahora() }),
+    ...especialidades.map((item) => setDoc(item.ref, item.datos)),
     setDoc(doc(db, COLECCIONES.usuarios, uid), { uid, rol: "profesional", correo, estadoRegistro: "completo", creadoEn: ahora() }, { merge: true })
   ]);
   await auditar("Profesional registrado", `${uid} pendiente de revisión.`, [uid]);
@@ -680,9 +711,63 @@ async function abrirEvidenciaEjecucion(contratoId, tipo, registroId, ruta) {
 async function cambiarEstadoProfesional(uid, estado) {
   const user = exigirUsuario();
   if (!(await esAdmin(user.uid))) throw new Error("Se requiere autorización administrativa.");
-  if (!['Aprobado', 'Pendiente', 'Rechazado'].includes(estado)) throw new Error("Estado no permitido.");
+  if (!['Aprobado', 'Pendiente', 'Observado', 'Suspendido', 'Rechazado'].includes(estado)) throw new Error("Estado no permitido.");
+  if (estado === "Aprobado") {
+    const especialidades = await porCampo(COLECCIONES.profesionesProfesional, "profesionalUid", uid);
+    if (!especialidades.some((item) => item.estado === "Aprobada")) throw new Error("Aprueba al menos una profesión antes de publicar el perfil.");
+  }
   await updateDoc(doc(db, COLECCIONES.profesionales, uid), { estado, revisadoPorUid: user.uid, actualizadoEn: ahora() });
   await auditar("Estado profesional actualizado", `${uid}: ${estado}`, [uid]);
+}
+
+async function cambiarEstadoEspecialidad(especialidadId, estado, observacion = "") {
+  const user = exigirUsuario();
+  if (!(await esAdmin(user.uid))) throw new Error("Se requiere autorización administrativa.");
+  if (!['Aprobada', 'Pendiente', 'Observada', 'Suspendida', 'Rechazada', 'Vencida'].includes(estado)) throw new Error("Estado de especialidad no permitido.");
+  const especialidadRef = doc(db, COLECCIONES.profesionesProfesional, especialidadId);
+  const snapshot = await getDoc(especialidadRef);
+  if (!snapshot.exists()) throw new Error("La especialidad ya no existe.");
+  await updateDoc(especialidadRef, { estado, observacion: String(observacion || "").slice(0, 500), revisadoPorUid: user.uid, revisadoEn: ahora(), actualizadoEn: ahora() });
+  await auditar("Especialidad profesional actualizada", `${snapshot.data().profesion}: ${estado}`, [snapshot.data().profesionalUid]);
+}
+
+const PLANES = Object.freeze({
+  Mensual: { precio: 39.90, meses: 1 },
+  Semestral: { precio: 199.90, meses: 6 },
+  Anual: { precio: 349.90, meses: 12 }
+});
+
+async function solicitarPlanProfesional(tipo) {
+  const user = exigirUsuario();
+  if (await obtenerRol(user.uid) !== "profesional") throw new Error("Solo un profesional puede solicitar un plan.");
+  const configuracion = PLANES[tipo];
+  if (!configuracion) throw new Error("Plan profesional no permitido.");
+  const plan = {
+    uid: user.uid, profesionalUid: user.uid, tipo, precio: configuracion.precio, meses: configuracion.meses,
+    estado: "Pendiente de pago", solicitadoEn: ahora(), activadoEn: "", venceEn: "", actualizadoEn: ahora()
+  };
+  await setDoc(doc(db, COLECCIONES.planesProfesionales, user.uid), plan, { merge: true });
+  await auditar("Plan profesional solicitado", `${tipo}: S/ ${configuracion.precio.toFixed(2)}`, [user.uid]);
+  return plan;
+}
+
+async function activarPlanProfesional(uid, tipo = "") {
+  const user = exigirUsuario();
+  if (!(await esAdmin(user.uid))) throw new Error("Se requiere autorización administrativa.");
+  const planRef = doc(db, COLECCIONES.planesProfesionales, uid);
+  const snapshot = await getDoc(planRef);
+  const nombrePlan = tipo || snapshot.data()?.tipo;
+  const configuracion = PLANES[nombrePlan];
+  if (!configuracion) throw new Error("El profesional no tiene una solicitud de plan válida.");
+  const activadoEn = ahora();
+  const vence = new Date();
+  vence.setMonth(vence.getMonth() + configuracion.meses);
+  const venceEn = vence.toISOString();
+  await Promise.all([
+    setDoc(planRef, { uid, profesionalUid: uid, tipo: nombrePlan, precio: configuracion.precio, meses: configuracion.meses, estado: "Activo", activadoEn, venceEn, actualizadoEn: activadoEn }, { merge: true }),
+    updateDoc(doc(db, COLECCIONES.profesionales, uid), { plan: nombrePlan, planEstado: "Activo", planInicioEn: activadoEn, planVenceEn: venceEn, actualizadoEn: activadoEn })
+  ]);
+  await auditar("Plan profesional activado", `${uid}: ${nombrePlan} hasta ${venceEn}`, [uid]);
 }
 
 const documentos = async (consulta) => (await getDocs(consulta)).docs.map((item) => ({ id: item.id, ...item.data() }));
@@ -703,18 +788,43 @@ async function cargarDatos() {
   let hitos = [];
   let pagosDeclarados = [];
   let ordenesCambio = [];
+  let especialidades = [];
+  let planesProfesionales = [];
   try {
     resenas = await todos(COLECCIONES.resenas);
   } catch (error) {
     console.warn("Las reseñas se activarán cuando se publiquen las reglas actualizadas.", error);
   }
-  if (!user) return { version: 1, profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, resenas, auditoria, nube: true, rol };
+  try {
+    especialidades = await porCampo(COLECCIONES.profesionesProfesional, "estado", "Aprobada");
+  } catch (error) {
+    console.warn("Las especialidades independientes se activarán cuando se publiquen las reglas actualizadas.", error);
+  }
+  const anexarProfesional = () => {
+    const especialidadesPorUid = new Map();
+    especialidades.forEach((item) => {
+      const lista = especialidadesPorUid.get(item.profesionalUid) || [];
+      lista.push(item);
+      especialidadesPorUid.set(item.profesionalUid, lista);
+    });
+    const planesPorUid = new Map(planesProfesionales.map((item) => [item.profesionalUid || item.uid || item.id, item]));
+    profesionales = profesionales.map((item) => ({
+      ...item,
+      especialidades: especialidadesPorUid.get(item.uid || item.id) || [],
+      planRegistro: planesPorUid.get(item.uid || item.id) || null
+    }));
+  };
+  if (!user) {
+    anexarProfesional();
+    return { version: 1, profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, especialidades, planesProfesionales, resenas, auditoria, nube: true, rol };
+  }
 
   if (rol === "admin") {
-    [profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, auditoria] = await Promise.all([
+    [profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, especialidades, planesProfesionales, auditoria] = await Promise.all([
       todos(COLECCIONES.profesionales), todos(COLECCIONES.clientes), todos(COLECCIONES.solicitudes),
       todos(COLECCIONES.cotizaciones), todos(COLECCIONES.contratos), todos(COLECCIONES.hitos),
-      todos(COLECCIONES.pagosDeclarados), todos(COLECCIONES.ordenesCambio), todos(COLECCIONES.auditoria)
+      todos(COLECCIONES.pagosDeclarados), todos(COLECCIONES.ordenesCambio), todos(COLECCIONES.profesionesProfesional),
+      todos(COLECCIONES.planesProfesionales), todos(COLECCIONES.auditoria)
     ]);
     const privados = await todos(COLECCIONES.profesionalesPrivados);
     const privadosPorUid = new Map(privados.map((item) => [item.uid || item.id, item]));
@@ -742,6 +852,12 @@ async function cargarDatos() {
     const perfil = await getDoc(doc(db, COLECCIONES.profesionales, user.uid));
     if (perfil.exists() && !profesionales.some((item) => item.id === user.uid)) profesionales.unshift({ id: perfil.id, ...perfil.data() });
     const perfilDatos = perfil.data() || {};
+    const [especialidadesPropias, planPropio] = await Promise.all([
+      porCampo(COLECCIONES.profesionesProfesional, "profesionalUid", user.uid),
+      getDoc(doc(db, COLECCIONES.planesProfesionales, user.uid))
+    ]);
+    especialidades = [...new Map([...especialidades, ...especialidadesPropias].map((item) => [item.id, item])).values()];
+    planesProfesionales = planPropio.exists() ? [{ id: planPropio.id, ...planPropio.data() }] : [];
     const asignadas = await porCampo(COLECCIONES.solicitudes, "profesionalUid", user.uid);
     const compatibles = [];
     for (const profesion of (perfilDatos.profesiones || []).slice(0, 10)) {
@@ -755,8 +871,9 @@ async function cargarDatos() {
     ]);
     solicitudes = [...new Map([...asignadas, ...compatibles].map((item) => [item.id, item])).values()];
   }
+  anexarProfesional();
   const adaptar = (items) => items.map((item) => ({ ...item, clienteId: item.clienteUid || item.clienteId, profesionalId: item.profesionalUid || item.profesionalId, actor: item.actorEmail || item.actorUid || "Sistema" }));
-  return { version: 1, profesionales: adaptar(profesionales), clientes: adaptar(clientes), solicitudes: adaptar(solicitudes), cotizaciones: adaptar(cotizaciones), contratos: adaptar(contratos), hitos: adaptar(hitos), pagosDeclarados: adaptar(pagosDeclarados), ordenesCambio: adaptar(ordenesCambio), resenas: adaptar(resenas), auditoria: adaptar(auditoria), nube: true, rol };
+  return { version: 1, profesionales: adaptar(profesionales), clientes: adaptar(clientes), solicitudes: adaptar(solicitudes), cotizaciones: adaptar(cotizaciones), contratos: adaptar(contratos), hitos: adaptar(hitos), pagosDeclarados: adaptar(pagosDeclarados), ordenesCambio: adaptar(ordenesCambio), especialidades: adaptar(especialidades), planesProfesionales: adaptar(planesProfesionales), resenas: adaptar(resenas), auditoria: adaptar(auditoria), nube: true, rol };
 }
 
 const observarSesion = (callback) => onAuthStateChanged(auth, callback);
@@ -805,6 +922,9 @@ export const ProfesionalesFirebase = Object.freeze({
   resolverOrdenCambio,
   abrirEvidenciaEjecucion,
   cambiarEstadoProfesional,
+  cambiarEstadoEspecialidad,
+  solicitarPlanProfesional,
+  activarPlanProfesional,
   cargarDatos,
   observarActividad,
   observarSesion,

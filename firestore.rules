@@ -122,9 +122,10 @@ service cloud.firestore {
         request.resource.data.estado == resource.data.estado &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           "nombres", "apellidos", "correo", "whatsapp", "modalidad",
+          "nombrePublico", "ruc", "idiomas", "disponibilidad",
           "departamento", "provincia", "distrito", "profesiones",
           "profesionPrincipal", "experiencia", "coberturaTipo",
-          "coberturaDetalle", "distancia", "recargo", "descripcion",
+          "coberturaDetalle", "cobertura", "distancia", "recargo", "descripcion",
           "fotoIniciales", "portafolio", "actualizadoEn"
         ])
       );
@@ -133,6 +134,54 @@ service cloud.firestore {
 
     match /pv_profesionales_privados/{uid} {
       allow create, read, update: if esAdmin() || (autenticado() && request.auth.uid == uid);
+      allow delete: if esAdmin();
+    }
+
+    match /pv_profesiones_profesional/{especialidadId} {
+      allow read: if resource.data.estado == "Aprobada" || esAdmin() ||
+        (autenticado() && resource.data.profesionalUid == request.auth.uid);
+      allow create: if pvRol("profesional") &&
+        request.resource.data.id == especialidadId &&
+        request.resource.data.profesionalUid == request.auth.uid &&
+        request.resource.data.estado == "Pendiente" &&
+        request.resource.data.principal is bool;
+      allow update: if esAdmin() || (
+        pvRol("profesional") && resource.data.profesionalUid == request.auth.uid &&
+        request.resource.data.profesionalUid == resource.data.profesionalUid &&
+        request.resource.data.estado == resource.data.estado &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "principal", "experiencia", "descripcion", "evidencias", "actualizadoEn"
+        ])
+      );
+      allow delete: if esAdmin();
+    }
+
+    match /pv_coberturas/{uid} {
+      allow read: if true;
+      allow create, update: if autenticado() && request.auth.uid == uid &&
+        request.resource.data.uid == uid &&
+        request.resource.data.profesionalUid == uid &&
+        request.resource.data.tipo in ["Nacional", "Departamentos", "Provincias", "Distritos", "Local", "Remoto"] &&
+        request.resource.data.departamentos is list &&
+        request.resource.data.provincias is list &&
+        request.resource.data.distritos is list &&
+        request.resource.data.exclusiones is list &&
+        request.resource.data.distanciaKm is number &&
+        request.resource.data.distanciaKm >= 0;
+      allow delete: if esAdmin();
+    }
+
+    match /pv_planes_profesionales/{uid} {
+      allow read: if esAdmin() || (autenticado() && request.auth.uid == uid);
+      allow create, update: if esAdmin() || (
+        pvRol("profesional") && request.auth.uid == uid &&
+        request.resource.data.uid == uid &&
+        request.resource.data.profesionalUid == uid &&
+        ((request.resource.data.tipo == "" && request.resource.data.estado == "Sin plan") ||
+         (request.resource.data.tipo in ["Mensual", "Semestral", "Anual"] && request.resource.data.estado == "Pendiente de pago")) &&
+        request.resource.data.activadoEn == "" &&
+        request.resource.data.venceEn == ""
+      );
       allow delete: if esAdmin();
     }
 
