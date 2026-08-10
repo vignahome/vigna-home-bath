@@ -1,0 +1,59 @@
+name: Activar GitHub Pages permanente
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/activar-pages-vigna.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+
+jobs:
+  activar-pages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Publicar main desde la raíz del repositorio
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          api="https://api.github.com/repos/${GITHUB_REPOSITORY}/pages"
+          payload='{"build_type":"legacy","source":{"branch":"main","path":"/"}}'
+
+          update_status=$(curl --silent --show-error \
+            --output pages-update.json \
+            --write-out "%{http_code}" \
+            --request PUT \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: Bearer ${GH_TOKEN}" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "${api}" \
+            --data "${payload}")
+
+          if [[ "${update_status}" != "200" && "${update_status}" != "204" ]]; then
+            cat pages-update.json
+            exit 1
+          fi
+
+          build_status=$(curl --silent --show-error \
+            --output pages-build.json \
+            --write-out "%{http_code}" \
+            --request POST \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: Bearer ${GH_TOKEN}" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "${api}/builds")
+
+          if [[ "${build_status}" != "201" && "${build_status}" != "202" ]]; then
+            cat pages-build.json
+            exit 1
+          fi
+
+          echo "GitHub Pages quedó configurado para main y la compilación fue solicitada."
