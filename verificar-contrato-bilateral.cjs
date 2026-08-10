@@ -12,6 +12,10 @@ exigir(firebase.includes("confirmacionesFirma"), "faltan confirmaciones por amba
 exigir(firebase.includes("async function confirmarContratoFirmado"), "falta la operación de confirmación bilateral");
 exigir(interfaz.includes("data-confirm-signed-contract"), "falta la acción visible de confirmación");
 exigir(interfaz.includes("Confirmación bilateral"), "falta el estado visible de las firmas");
+exigir(interfaz.includes("Abrir documento confirmado"), "el archivo inmutable se presenta incorrectamente como contrato actualizado");
+exigir(interfaz.includes("El archivo original permanece inmutable"), "falta explicar la diferencia entre el archivo y el expediente vigente");
+exigir(interfaz.includes("Imprimir expediente actualizado"), "falta una salida del estado contractual vigente");
+exigir(!interfaz.includes(">Abrir contrato firmado</button>"), "se conserva una etiqueta engañosa para el archivo original");
 exigir(nube.includes("api.confirmarContratoFirmado"), "la acción no está conectada con Firebase");
 exigir(reglas.includes('resource.data.estado == "Pendiente de confirmación"'), "las reglas no protegen la confirmación bilateral");
 exigir(reglas.includes("confirmacionesFirma.profesional == resource.data.confirmacionesFirma.profesional"), "un cliente podría confirmar por el profesional");
