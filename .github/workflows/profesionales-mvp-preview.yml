@@ -1,4 +1,4 @@
-name: Vista previa de Profesionales Vigna's
+name: Publicación permanente de Profesionales Vigna's
 
 on:
   push:
@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: profesionales-vigna-mvp-preview
+  group: profesionales-vigna-mvp-produccion
   cancel-in-progress: true
 
 jobs:
@@ -48,31 +48,9 @@ jobs:
           test ! -f hosting-profesionales/server.js
           test ! -f hosting-profesionales/.env
 
-      - name: Publicar únicamente la vista previa
-        id: publicar
-        continue-on-error: true
+      - name: Publicar la versión permanente actualizable
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_VIGNA_PLOMEROS }}
           projectId: vigna-plomeros
-          channelId: profesionales-mvp
-          expires: 30d
-
-      - name: Guardar el resultado de la vista previa
-        env:
-          PREVIEW_OUTCOME: ${{ steps.publicar.outcome }}
-          PREVIEW_URLS: ${{ steps.publicar.outputs.urls }}
-          PREVIEW_DETAILS_URL: ${{ steps.publicar.outputs.details_url }}
-        run: |
-          node -e 'const fs=require("fs"); const urls=JSON.parse(process.env.PREVIEW_URLS||"[]"); const lines=["# Vista previa de Profesionales Vigna", "", `Estado: ${process.env.PREVIEW_OUTCOME}`]; if(urls[0]) lines.push("", `[Abrir vista previa](${urls[0]})`); if(process.env.PREVIEW_DETAILS_URL) lines.push("", `[Ver detalles](${process.env.PREVIEW_DETAILS_URL})`); fs.writeFileSync("VISTA_PREVIA_PROFESIONALES.md", `${lines.join("\n")}\n`);'
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add VISTA_PREVIA_PROFESIONALES.md
-          if ! git diff --cached --quiet; then
-            git commit -m "Registrar enlace de vista previa"
-            git push
-          fi
-
-      - name: Confirmar la publicación
-        if: steps.publicar.outcome != 'success'
-        run: exit 1
+          channelId: live
