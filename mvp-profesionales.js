@@ -301,8 +301,18 @@
 
   function renderAdmin() {
     const pending = data.profesionales.filter((p) => p.estado === "Pendiente").length;
+    const cotizadas = new Set(data.cotizaciones.map((item) => item.solicitudId)).size;
+    const cerrados = data.contratos.filter((item) => item.estado === "Cerrado").length;
+    const promedio = data.resenas.length ? data.resenas.reduce((suma, item) => suma + Number(item.calificacion || 0), 0) / data.resenas.length : 0;
+    const planesActivos = (data.planesProfesionales || []).filter((item) => item.estado === "Activo").length;
+    const conversion = data.solicitudes.length ? Math.round((data.contratos.length / data.solicitudes.length) * 100) : 0;
+    const rolAdmin = data.adminRol || "superadmin";
+    const badge = document.getElementById("adminRoleBadge");
+    if (badge) badge.textContent = `Rol: ${rolAdmin}`;
     document.getElementById("adminMetricas").innerHTML = [
-      ["Pendientes", pending], ["Profesionales", data.profesionales.length], ["Solicitudes", data.solicitudes.length], ["Contratos", data.contratos.length]
+      ["Perfiles pendientes", pending], ["Profesionales", data.profesionales.length], ["Solicitudes", data.solicitudes.length],
+      ["Solicitudes cotizadas", cotizadas], ["Contratos", data.contratos.length], ["Conversión", `${conversion}%`],
+      ["Servicios cerrados", cerrados], ["Calificación", promedio ? promedio.toFixed(2) : "—"], ["Planes activos", planesActivos]
     ].map(([label, value]) => `<div class="metric"><small>${label}</small><strong>${value}</strong></div>`).join("");
 
     document.getElementById("admin-profesionales").innerHTML = tableHtml(["ID", "Profesional", "Profesión principal", "Cobertura", "Documentos", "Estado", "Acciones"], data.profesionales.map((p) => [
@@ -328,6 +338,36 @@
   function tableHtml(headers, rows) {
     if (!rows.length) return '<div class="empty-state"><p>No existen registros.</p></div>';
     return `<table class="data-table"><thead><tr>${headers.map((h) => `<th>${escapar(h)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((value) => `<td>${value && typeof value === "object" && value.__htmlSeguro ? value.__htmlSeguro : escapar(value)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  }
+
+  function descargarAdministracion(tipo) {
+    if (data.rol !== "admin") return toast("Solo administración puede exportar estos datos.");
+    const fecha = new Date().toISOString().slice(0, 10);
+    let contenido;
+    let nombre;
+    let mime;
+    if (tipo === "json") {
+      contenido = JSON.stringify({ generadoEn: nowIso(), auditoria: data.auditoria }, null, 2);
+      nombre = `vigna-auditoria-${fecha}.json`;
+      mime = "application/json";
+    } else {
+      const escaparCsv = (valor) => `"${String(valor ?? "").replaceAll('"', '""')}"`;
+      const filas = [["tipo", "id", "estado", "referencia", "monto", "fecha"]];
+      data.profesionales.forEach((item) => filas.push(["profesional", item.id, item.estado, item.profesionPrincipal, item.plan || "", item.creadoEn || ""]));
+      data.solicitudes.forEach((item) => filas.push(["solicitud", item.id, item.estado, `${item.profesion} - ${item.distrito}`, item.presupuesto, item.creadoEn || ""]));
+      data.contratos.forEach((item) => filas.push(["contrato", item.id, item.estado, item.solicitudId, item.total, item.creadoEn || ""]));
+      contenido = `\ufeff${filas.map((fila) => fila.map(escaparCsv).join(",")).join("\n")}`;
+      nombre = `vigna-resumen-operativo-${fecha}.csv`;
+      mime = "text/csv;charset=utf-8";
+    }
+    const url = URL.createObjectURL(new Blob([contenido], { type: mime }));
+    const enlace = document.createElement("a");
+    enlace.href = url;
+    enlace.download = nombre;
+    enlace.click();
+    URL.revokeObjectURL(url);
+    guardar("Exportación administrativa", nombre, data.adminRol || "admin");
+    toast(`${nombre} descargado.`);
   }
 
   function renderAll() {
@@ -454,6 +494,8 @@
   }
 
   document.addEventListener("click", (event) => {
+    if (event.target.closest("#adminExportCsv")) return descargarAdministracion("csv");
+    if (event.target.closest("#adminExportJson")) return descargarAdministracion("json");
     const nav = event.target.closest("[data-view]"); if (nav) return setView(nav.dataset.view);
     if (event.target.closest("[data-close-dialog]")) event.target.closest("dialog").close();
     const profile = event.target.closest("[data-profile]"); if (profile) showProfile(profile.dataset.profile);

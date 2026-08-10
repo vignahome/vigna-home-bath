@@ -117,6 +117,20 @@ async function esAdmin(uid = auth.currentUser?.uid) {
   return (await getDoc(doc(db, "admins", uid))).exists();
 }
 
+async function obtenerAdminRol(uid = auth.currentUser?.uid) {
+  if (!uid) return "";
+  const snapshot = await getDoc(doc(db, "admins", uid));
+  if (!snapshot.exists()) return "";
+  const rol = String(snapshot.data().rol || "superadmin").toLowerCase();
+  return ["superadmin", "moderacion", "soporte", "finanzas"].includes(rol) ? rol : "superadmin";
+}
+
+async function exigirPermisoAdmin(...roles) {
+  const rol = await obtenerAdminRol();
+  if (!rol || (rol !== "superadmin" && !roles.includes(rol))) throw new Error("Tu rol administrativo no permite esta acción.");
+  return rol;
+}
+
 async function obtenerRol(uid = auth.currentUser?.uid) {
   if (!uid) return "publico";
   if (await esAdmin(uid)) return "admin";
@@ -335,7 +349,7 @@ async function agregarPortafolio(form) {
 
 async function moderarPortafolio(proyectoId, estado, observacion = "") {
   const user = exigirUsuario();
-  if (!(await esAdmin(user.uid))) throw new Error("Se requiere autorización administrativa.");
+  await exigirPermisoAdmin("moderacion");
   if (!["Aprobado", "Observado", "Rechazado", "Oculto"].includes(estado)) throw new Error("Estado de portafolio no permitido.");
   const proyectoRef = doc(db, COLECCIONES.portafolios, proyectoId);
   const snapshot = await getDoc(proyectoRef);
@@ -568,7 +582,7 @@ async function solicitarActuacionContrato(contratoId, tipo, motivo) {
 
 async function resolverActuacionContrato(actuacionId, decision, resolucion) {
   const user = exigirUsuario();
-  if (!(await esAdmin(user.uid))) throw new Error("La resolución requiere autorización administrativa.");
+  await exigirPermisoAdmin("soporte");
   if (!["Aceptada", "Rechazada"].includes(decision)) throw new Error("Decisión no permitida.");
   const detalle = String(resolucion || "").trim();
   if (detalle.length < 10 || detalle.length > 1500) throw new Error("Registra una resolución de 10 a 1500 caracteres.");
@@ -839,7 +853,7 @@ async function abrirEvidenciaEjecucion(contratoId, tipo, registroId, ruta) {
 
 async function cambiarEstadoProfesional(uid, estado) {
   const user = exigirUsuario();
-  if (!(await esAdmin(user.uid))) throw new Error("Se requiere autorización administrativa.");
+  await exigirPermisoAdmin("moderacion");
   if (!['Aprobado', 'Pendiente', 'Observado', 'Suspendido', 'Rechazado'].includes(estado)) throw new Error("Estado no permitido.");
   if (estado === "Aprobado") {
     const especialidades = await porCampo(COLECCIONES.profesionesProfesional, "profesionalUid", uid);
@@ -851,7 +865,7 @@ async function cambiarEstadoProfesional(uid, estado) {
 
 async function cambiarEstadoEspecialidad(especialidadId, estado, observacion = "") {
   const user = exigirUsuario();
-  if (!(await esAdmin(user.uid))) throw new Error("Se requiere autorización administrativa.");
+  await exigirPermisoAdmin("moderacion");
   if (!['Aprobada', 'Pendiente', 'Observada', 'Suspendida', 'Rechazada', 'Vencida'].includes(estado)) throw new Error("Estado de especialidad no permitido.");
   const especialidadRef = doc(db, COLECCIONES.profesionesProfesional, especialidadId);
   const snapshot = await getDoc(especialidadRef);
@@ -882,7 +896,7 @@ async function solicitarPlanProfesional(tipo) {
 
 async function activarPlanProfesional(uid, tipo = "") {
   const user = exigirUsuario();
-  if (!(await esAdmin(user.uid))) throw new Error("Se requiere autorización administrativa.");
+  await exigirPermisoAdmin("finanzas");
   const planRef = doc(db, COLECCIONES.planesProfesionales, uid);
   const snapshot = await getDoc(planRef);
   const nombrePlan = tipo || snapshot.data()?.tipo;
@@ -907,6 +921,7 @@ const porArray = (nombre, campo, valor) => documentos(query(collection(db, nombr
 async function cargarDatos() {
   const user = auth.currentUser;
   const rol = await obtenerRol(user?.uid);
+  const adminRol = rol === "admin" ? await obtenerAdminRol(user?.uid) : "";
   let profesionales = await porCampo(COLECCIONES.profesionales, "estado", "Aprobado");
   let clientes = [];
   let solicitudes = [];
@@ -960,7 +975,7 @@ async function cargarDatos() {
   };
   if (!user) {
     anexarProfesional();
-    return { version: 1, profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, mensajesContrato, actuacionesContrato, especialidades, planesProfesionales, portafolios, resenas, auditoria, nube: true, rol };
+    return { version: 1, profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, mensajesContrato, actuacionesContrato, especialidades, planesProfesionales, portafolios, resenas, auditoria, nube: true, rol, adminRol };
   }
 
   if (rol === "admin") {
@@ -1024,7 +1039,7 @@ async function cargarDatos() {
   }
   anexarProfesional();
   const adaptar = (items) => items.map((item) => ({ ...item, clienteId: item.clienteUid || item.clienteId, profesionalId: item.profesionalUid || item.profesionalId, actor: item.actorEmail || item.actorUid || "Sistema" }));
-  return { version: 1, profesionales: adaptar(profesionales), clientes: adaptar(clientes), solicitudes: adaptar(solicitudes), cotizaciones: adaptar(cotizaciones), contratos: adaptar(contratos), hitos: adaptar(hitos), pagosDeclarados: adaptar(pagosDeclarados), ordenesCambio: adaptar(ordenesCambio), mensajesContrato: adaptar(mensajesContrato), actuacionesContrato: adaptar(actuacionesContrato), especialidades: adaptar(especialidades), planesProfesionales: adaptar(planesProfesionales), portafolios: adaptar(portafolios), resenas: adaptar(resenas), auditoria: adaptar(auditoria), nube: true, rol };
+  return { version: 1, profesionales: adaptar(profesionales), clientes: adaptar(clientes), solicitudes: adaptar(solicitudes), cotizaciones: adaptar(cotizaciones), contratos: adaptar(contratos), hitos: adaptar(hitos), pagosDeclarados: adaptar(pagosDeclarados), ordenesCambio: adaptar(ordenesCambio), mensajesContrato: adaptar(mensajesContrato), actuacionesContrato: adaptar(actuacionesContrato), especialidades: adaptar(especialidades), planesProfesionales: adaptar(planesProfesionales), portafolios: adaptar(portafolios), resenas: adaptar(resenas), auditoria: adaptar(auditoria), nube: true, rol, adminRol };
 }
 
 const observarSesion = (callback) => onAuthStateChanged(auth, callback);
@@ -1052,6 +1067,7 @@ export const ProfesionalesFirebase = Object.freeze({
   cerrarSesion,
   obtenerRol,
   esAdmin,
+  obtenerAdminRol,
   crearSolicitud,
   agregarPortafolio,
   moderarPortafolio,

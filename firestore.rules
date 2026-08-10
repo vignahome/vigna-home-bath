@@ -10,6 +10,14 @@ service cloud.firestore {
       return autenticado() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
+    function adminRol() {
+      return esAdmin() ? get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.get("rol", "superadmin") : "";
+    }
+
+    function adminPuede(rol) {
+      return esAdmin() && (adminRol() == "superadmin" || adminRol() == rol);
+    }
+
     match /admins/{uid} {
       allow read: if autenticado() && request.auth.uid == uid;
       allow write: if false;
@@ -116,7 +124,7 @@ service cloud.firestore {
         (autenticado() && request.auth.uid == uid);
       allow create: if autenticado() && request.auth.uid == uid &&
         request.resource.data.uid == uid && request.resource.data.estado == "Pendiente";
-      allow update: if esAdmin() || (
+      allow update: if adminPuede("moderacion") || (
         autenticado() && request.auth.uid == uid &&
         request.resource.data.uid == resource.data.uid &&
         request.resource.data.estado == resource.data.estado &&
@@ -129,7 +137,7 @@ service cloud.firestore {
           "fotoIniciales", "portafolio", "actualizadoEn"
         ])
       );
-      allow delete: if esAdmin();
+      allow delete: if adminPuede("moderacion");
     }
 
     match /pv_profesionales_privados/{uid} {
@@ -145,7 +153,7 @@ service cloud.firestore {
         request.resource.data.profesionalUid == request.auth.uid &&
         request.resource.data.estado == "Pendiente" &&
         request.resource.data.principal is bool;
-      allow update: if esAdmin() || (
+      allow update: if adminPuede("moderacion") || (
         pvRol("profesional") && resource.data.profesionalUid == request.auth.uid &&
         request.resource.data.profesionalUid == resource.data.profesionalUid &&
         request.resource.data.estado == resource.data.estado &&
@@ -153,7 +161,7 @@ service cloud.firestore {
           "principal", "experiencia", "descripcion", "evidencias", "actualizadoEn"
         ])
       );
-      allow delete: if esAdmin();
+      allow delete: if adminPuede("moderacion");
     }
 
     match /pv_coberturas/{uid} {
@@ -173,7 +181,7 @@ service cloud.firestore {
 
     match /pv_planes_profesionales/{uid} {
       allow read: if esAdmin() || (autenticado() && request.auth.uid == uid);
-      allow create, update: if esAdmin() || (
+      allow create, update: if adminPuede("finanzas") || (
         pvRol("profesional") && request.auth.uid == uid &&
         request.resource.data.uid == uid &&
         request.resource.data.profesionalUid == uid &&
@@ -236,8 +244,8 @@ service cloud.firestore {
         request.resource.data.profesionalUid == request.auth.uid &&
         request.resource.data.consentimientoPublicacion == true &&
         request.resource.data.estado == "Pendiente";
-      allow update: if esAdmin();
-      allow delete: if esAdmin();
+      allow update: if adminPuede("moderacion");
+      allow delete: if adminPuede("moderacion");
     }
 
     match /pv_cotizaciones/{cotizacionId} {
@@ -479,7 +487,7 @@ service cloud.firestore {
         request.resource.data.profesionalUid == contratoActuacion().profesionalUid;
       allow read: if esAdmin() || (autenticado() &&
         (resource.data.clienteUid == request.auth.uid || resource.data.profesionalUid == request.auth.uid));
-      allow update: if esAdmin() && resource.data.estado == "Solicitada" &&
+      allow update: if adminPuede("soporte") && resource.data.estado == "Solicitada" &&
         request.resource.data.estado in ["Aceptada", "Rechazada"] &&
         request.resource.data.resolucion is string &&
         request.resource.data.resolucion.size() >= 10 &&
