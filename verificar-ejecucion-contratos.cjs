@@ -63,6 +63,14 @@ exigir(storage.includes('pagoDeclarado().estado == "Declarado"'), "Storage no va
 exigir(firebase.includes('hitosContrato.some((item) => item.estado !== "Aprobado")'), "la finalización no bloquea hitos pendientes");
 exigir(firebase.includes('pagosContrato.some((item) => item.estado === "Declarado")'), "la finalización no bloquea pagos sin resolver");
 exigir(firebase.includes('cambiosContrato.some((item) => item.estado === "Propuesta")'), "la finalización no bloquea cambios sin resolver");
+exigir(firebase.includes("aceptacionExpresa !== true"), "el cierre no exige aceptación expresa");
+exigir(firebase.includes("const actaConformidad ="), "el cierre no genera un acta estructurada");
+exigir(interfaz.includes("ACTA DE ENTREGA Y CONFORMIDAD"), "el contrato cerrado no muestra el acta");
+exigir(interfaz.includes("data-print-handover"), "el acta no se puede imprimir");
+exigir(nube.includes("serviceAcceptance"), "la interfaz conectada no valida la aceptación");
+exigir(firestore.includes('"cerradoPorUid", "cerradoEn", "actaConformidad"'), "las reglas no limitan el acta al cierre");
+exigir(firestore.includes("request.resource.data.actaConformidad.aceptadaPorUid == request.auth.uid"), "las reglas no autentican al firmante del acta");
+exigir(css.includes("body.printing-handover"), "falta la vista de impresión aislada del acta");
 
 const balanceadas = (contenido) => {
   let nivel = 0;

@@ -470,12 +470,13 @@ async function finalizarServicio(contratoId, files, nota) {
   await auditar("Servicio finalizado con evidencias", `${contratoId}: ${subidas.length} archivo(s)`, [contrato.clienteUid, contrato.profesionalUid]);
 }
 
-async function cerrarServicio(contratoId, calificacion, comentario) {
+async function cerrarServicio(contratoId, calificacion, comentario, aceptacionExpresa = false) {
   const user = exigirUsuario();
   const valor = Number(calificacion);
   const opinion = String(comentario || "").trim();
   if (!Number.isInteger(valor) || valor < 1 || valor > 5) throw new Error("Selecciona una calificación válida.");
   if (opinion.length < 10) throw new Error("El comentario debe tener al menos 10 caracteres.");
+  if (aceptacionExpresa !== true) throw new Error("Debes aceptar expresamente el acta de entrega y conformidad.");
   const contratoRef = doc(db, COLECCIONES.contratos, contratoId);
   const resenaRef = doc(db, COLECCIONES.resenas, contratoId);
   let participantes = [];
@@ -493,12 +494,24 @@ async function cerrarServicio(contratoId, calificacion, comentario) {
       ? new Date(Date.now() + garantiaDias * 24 * 60 * 60 * 1000).toISOString()
       : "";
     vigenciaGarantia = garantiaDias > 0 ? { garantiaInicioEn: cerradoEn, garantiaVenceEn } : null;
+    const actaConformidad = {
+      folio: `ACTA-${contratoId}-${Date.parse(cerradoEn)}`,
+      version: 1,
+      declaracion: "El cliente declara recibido el servicio, revisadas las evidencias y aceptada la entrega conforme.",
+      aceptadaPorUid: user.uid,
+      aceptadaEn: cerradoEn,
+      clienteUid: contrato.clienteUid,
+      profesionalUid: contrato.profesionalUid,
+      totalContrato: Number(contrato.total || 0),
+      evidenciasFinales: Array.isArray(contrato.evidenciasFinalizacion) ? contrato.evidenciasFinalizacion.length : 0
+    };
     tx.update(contratoRef, {
       estado: "Cerrado",
       calificacion: valor,
       comentarioCliente: opinion.slice(0, 1000),
       cerradoPorUid: user.uid,
       cerradoEn,
+      actaConformidad,
       actualizadoEn: cerradoEn
     });
     tx.set(resenaRef, {

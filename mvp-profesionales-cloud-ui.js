@@ -521,9 +521,18 @@ document.addEventListener("click", async (event) => {
     event.stopImmediatePropagation();
     const calificacion = document.getElementById("serviceRating")?.value;
     const comentario = document.getElementById("serviceReview")?.value;
+    const aceptacion = document.getElementById("serviceAcceptance")?.checked === true;
+    if (!aceptacion) return alert("Debes aceptar expresamente el acta de entrega y conformidad.");
     if (!confirm("¿Confirmas tu conformidad y deseas cerrar el servicio?")) return;
-    await ejecutar(null, () => api.cerrarServicio(cerrarServicio.dataset.closeService, calificacion, comentario), "Servicio cerrado y calificación registrada.");
+    await ejecutar(null, () => api.cerrarServicio(cerrarServicio.dataset.closeService, calificacion, comentario, aceptacion), "Acta aceptada, servicio cerrado y calificación registrada.");
     document.getElementById("contractDialog")?.close();
+    return;
+  }
+  if (event.target.closest("[data-print-handover]")) {
+    event.preventDefault();
+    document.body.classList.add("printing-handover");
+    window.addEventListener("afterprint", () => document.body.classList.remove("printing-handover"), { once: true });
+    window.print();
     return;
   }
   const abrirEvidencia = event.target.closest("[data-open-service-evidence]");

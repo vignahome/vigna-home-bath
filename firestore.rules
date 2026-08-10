@@ -301,9 +301,15 @@ service cloud.firestore {
             request.resource.data.calificacion is int &&
             request.resource.data.calificacion >= 1 &&
             request.resource.data.calificacion <= 5 &&
+            request.resource.data.actaConformidad is map &&
+            request.resource.data.actaConformidad.version == 1 &&
+            request.resource.data.actaConformidad.aceptadaPorUid == request.auth.uid &&
+            request.resource.data.actaConformidad.clienteUid == resource.data.clienteUid &&
+            request.resource.data.actaConformidad.profesionalUid == resource.data.profesionalUid &&
+            request.resource.data.actaConformidad.totalContrato == resource.data.total &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly([
               "estado", "calificacion", "comentarioCliente",
-              "cerradoPorUid", "cerradoEn", "garantiaInicioEn",
+              "cerradoPorUid", "cerradoEn", "actaConformidad", "garantiaInicioEn",
               "garantiaVenceEn", "actualizadoEn"
             ])
           ) ||
