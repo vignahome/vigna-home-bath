@@ -1,10 +1,11 @@
 const fs = require("node:fs");
 
-const html = fs.readFileSync("mvp-profesionales.html", "utf8");
-const css = fs.readFileSync("mvp-profesionales.css", "utf8");
-const firestore = fs.readFileSync("firestore.rules", "utf8");
-const storage = fs.readFileSync("storage.rules", "utf8");
-const matriz = fs.readFileSync("PROFESIONALES-ACEPTACION.md", "utf8");
+const leer = (archivo) => fs.readFileSync(archivo, "utf8").replace(/\r\n/g, "\n");
+const html = leer("mvp-profesionales.html");
+const css = leer("mvp-profesionales.css");
+const firestore = leer("firestore.rules");
+const storage = leer("storage.rules");
+const matriz = leer("PROFESIONALES-ACEPTACION.md");
 const firebase = JSON.parse(fs.readFileSync("firebase.json", "utf8"));
 const proyecto = JSON.parse(fs.readFileSync(".firebaserc", "utf8"));
 const indices = JSON.parse(fs.readFileSync("firestore.indexes.json", "utf8"));

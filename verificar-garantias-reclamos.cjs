@@ -2,7 +2,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const raiz = __dirname;
-const leer = (archivo) => fs.readFileSync(path.join(raiz, archivo), "utf8");
+const leer = (archivo) => fs.readFileSync(path.join(raiz, archivo), "utf8").replace(/\r\n/g, "\n");
 const exigir = (condicion, mensaje) => {
   if (!condicion) throw new Error(`Verificación fallida: ${mensaje}`);
 };
