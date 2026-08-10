@@ -63,6 +63,15 @@ exigir(storage.includes('pagoDeclarado().estado == "Declarado"'), "Storage no va
 exigir(firebase.includes('hitosContrato.some((item) => item.estado !== "Aprobado")'), "la finalización no bloquea hitos pendientes");
 exigir(firebase.includes('pagosContrato.some((item) => item.estado === "Declarado")'), "la finalización no bloquea pagos sin resolver");
 exigir(firebase.includes('cambiosContrato.some((item) => item.estado === "Propuesta")'), "la finalización no bloquea cambios sin resolver");
+exigir(
+  firebase.includes('porCampo(COLECCIONES.hitos, "profesionalUid", user.uid)') &&
+  firebase.includes('porCampo(COLECCIONES.pagosDeclarados, "profesionalUid", user.uid)') &&
+  firebase.includes('porCampo(COLECCIONES.ordenesCambio, "profesionalUid", user.uid)'),
+  "la finalización consulta registros por participante autorizado"
+);
+exigir(firebase.includes("hitosProfesional.filter(delContrato)"), "la finalización no limita los hitos al contrato actual");
+exigir(firebase.includes("pagosProfesional.filter(delContrato)"), "la finalización no limita los pagos al contrato actual");
+exigir(firebase.includes("cambiosProfesional.filter(delContrato)"), "la finalización no limita los cambios al contrato actual");
 exigir(firebase.includes("aceptacionExpresa !== true"), "el cierre no exige aceptación expresa");
 exigir(firebase.includes("const actaConformidad ="), "el cierre no genera un acta estructurada");
 exigir(interfaz.includes("ACTA DE ENTREGA Y CONFORMIDAD"), "el contrato cerrado no muestra el acta");

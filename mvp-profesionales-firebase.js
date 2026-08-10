@@ -616,11 +616,18 @@ async function finalizarServicio(contratoId, files, nota) {
   const { user, contratoRef, contrato } = await contratoAutorizado(contratoId);
   if (user.uid !== contrato.profesionalUid) throw new Error("Solo el profesional contratado puede finalizar el servicio.");
   if (contrato.estado !== "En ejecución") throw new Error("El servicio debe estar en ejecución.");
-  const [hitosContrato, pagosContrato, cambiosContrato] = await Promise.all([
-    porCampo(COLECCIONES.hitos, "contratoId", contratoId),
-    porCampo(COLECCIONES.pagosDeclarados, "contratoId", contratoId),
-    porCampo(COLECCIONES.ordenesCambio, "contratoId", contratoId)
+  // Las reglas autorizan estas colecciones por participante. Consultar únicamente
+  // por contratoId no permite que Firestore demuestre que todos los resultados
+  // pertenecen al usuario autenticado, aunque el contrato sí sea suyo.
+  const [hitosProfesional, pagosProfesional, cambiosProfesional] = await Promise.all([
+    porCampo(COLECCIONES.hitos, "profesionalUid", user.uid),
+    porCampo(COLECCIONES.pagosDeclarados, "profesionalUid", user.uid),
+    porCampo(COLECCIONES.ordenesCambio, "profesionalUid", user.uid)
   ]);
+  const delContrato = (item) => item.contratoId === contratoId;
+  const hitosContrato = hitosProfesional.filter(delContrato);
+  const pagosContrato = pagosProfesional.filter(delContrato);
+  const cambiosContrato = cambiosProfesional.filter(delContrato);
   if (hitosContrato.some((item) => item.estado !== "Aprobado")) throw new Error("Todos los hitos registrados deben estar aprobados antes de finalizar.");
   if (pagosContrato.some((item) => item.estado === "Declarado")) throw new Error("Confirma o rechaza los pagos declarados antes de finalizar.");
   if (cambiosContrato.some((item) => item.estado === "Propuesta")) throw new Error("Resuelve las órdenes de cambio pendientes antes de finalizar.");
