@@ -58,7 +58,8 @@ jobs:
           cat pages-build.json
 
           final_status="queued"
-          for attempt in {1..12}; do
+          final_commit=""
+          for attempt in {1..36}; do
             sleep 5
             curl --silent --show-error \
               --output pages-latest.json \
@@ -67,15 +68,16 @@ jobs:
               --header "X-GitHub-Api-Version: 2022-11-28" \
               "${api}/builds/latest"
             final_status=$(jq --raw-output '.status' pages-latest.json)
+            final_commit=$(jq --raw-output '.commit // ""' pages-latest.json)
             jq '{status, error, message, commit}' pages-latest.json
-            if [[ "${final_status}" == "built" ]]; then
+            if [[ "${final_status}" == "built" && "${final_commit}" == "${GITHUB_SHA}" ]]; then
               echo "GitHub Pages terminó de publicar main."
               exit 0
             fi
-            if [[ "${final_status}" == "errored" ]]; then
+            if [[ "${final_status}" == "errored" && "${final_commit}" == "${GITHUB_SHA}" ]]; then
               exit 1
             fi
           done
 
-          echo "La compilación continúa en estado ${final_status}."
+          echo "La compilación esperada ${GITHUB_SHA} no terminó. Último resultado: ${final_commit} (${final_status})."
           exit 1
