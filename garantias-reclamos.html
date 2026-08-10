@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asistencia | Profesionales Vigna’s</title>
+  <meta name="description" content="Asistencia privada para garantías, reclamos e incidencias de Profesionales Vigna’s.">
+  <link rel="stylesheet" href="garantias-reclamos.css?v=2">
+</head>
+<body>
+  <header class="gr-header">
+    <a class="gr-brand" href="mvp-profesionales.html" aria-label="Volver a Profesionales Vigna’s">
+      <img src="images/logo/ChatGPT Image 26 may 2026, 11_05_03 p.m..png" alt="VIGNA Home & Bath">
+      <span>Profesionales</span>
+    </a>
+    <nav aria-label="Navegación del módulo">
+      <a href="mvp-profesionales.html">Volver a profesionales</a>
+      <button id="cerrarSesion" type="button" hidden>Cerrar sesión</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="gr-hero">
+      <div>
+        <p class="gr-eyebrow">PROTECCIÓN DEL SERVICIO</p>
+        <h1>Asistencia</h1>
+        <p>Cada expediente permanece conectado con el contrato, sus evidencias privadas y las acciones del cliente, profesional y administrador.</p>
+      </div>
+      <div class="gr-session-card" id="estadoSesion" aria-live="polite">
+        <span class="gr-spinner" aria-hidden="true"></span>
+        <div><strong>Verificando acceso</strong><small>Conectando con Firebase…</small></div>
+      </div>
+    </section>
+
+    <section class="gr-access" id="acceso" hidden>
+      <div>
+        <p class="gr-eyebrow">ACCESO SEGURO</p>
+        <h2>Ingresa con tu cuenta Vigna’s</h2>
+        <p>Usa la misma cuenta de cliente, profesional o administrador de Profesionales Vigna’s.</p>
+      </div>
+      <form id="formAcceso">
+        <label>Correo electrónico<input name="correo" type="email" autocomplete="username" required></label>
+        <label>Contraseña<input name="password" type="password" autocomplete="current-password" required></label>
+        <button class="gr-button gr-primary" type="submit">Ingresar</button>
+      </form>
+    </section>
+
+    <section class="gr-denied" id="accesoDenegado" hidden>
+      <p class="gr-eyebrow">ACCESO NO DISPONIBLE</p>
+      <h2>Esta cuenta todavía no tiene un perfil válido</h2>
+      <p>El módulo solo admite cuentas registradas como cliente, profesional o administrador.</p>
+      <a class="gr-button gr-primary" href="mvp-profesionales.html">Ir a Profesionales Vigna’s</a>
+    </section>
+
+    <section id="modulo" hidden>
+      <div class="gr-rolebar">
+        <div><span id="etiquetaRol">Cuenta</span><strong id="correoUsuario"></strong></div>
+        <p id="explicacionRol"></p>
+      </div>
+
+      <div class="gr-metrics" id="metricas" aria-label="Resumen de expedientes"></div>
+
+      <section class="gr-new" id="zonaNuevoReclamo" hidden>
+        <div class="gr-section-heading">
+          <div><p class="gr-eyebrow">NUEVO EXPEDIENTE</p><h2>Solicitar garantía o registrar reclamo</h2></div>
+          <p>Disponible para contratos cerrados, con garantía vigente y sin otro expediente activo.</p>
+        </div>
+        <form id="formReclamo" class="gr-form-card">
+          <div class="gr-grid-two">
+            <label>Contrato cerrado
+              <select name="contratoId" id="contratoReclamo" required>
+                <option value="">Cargando contratos…</option>
+              </select>
+            </label>
+            <label>Categoría
+              <select name="categoria" required>
+                <option value="Defecto">Defecto en el trabajo</option>
+                <option value="Trabajo incompleto">Trabajo incompleto</option>
+                <option value="Daño">Daño ocasionado</option>
+                <option value="Incumplimiento">Incumplimiento de lo acordado</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </label>
+          </div>
+          <label>Descripción del problema
+            <textarea name="descripcion" required minlength="20" maxlength="2500" placeholder="Explica qué ocurrió, cuándo lo detectaste y qué parte del servicio está afectada."></textarea>
+          </label>
+          <label>Solución solicitada
+            <textarea name="solucionSolicitada" required minlength="10" maxlength="1200" placeholder="Por ejemplo: corrección sin costo, visita técnica o reposición."></textarea>
+          </label>
+          <label>Evidencias privadas
+            <input name="archivos" type="file" multiple accept="image/*,video/*,application/pdf">
+            <small>Hasta 6 imágenes, videos o PDF. Máximo 25 MB por archivo.</small>
+          </label>
+          <div class="gr-form-actions">
+            <button class="gr-button gr-primary" type="submit">Registrar expediente</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="gr-list-section">
+        <div class="gr-section-heading">
+          <div><p class="gr-eyebrow">SEGUIMIENTO PRIVADO</p><h2 id="tituloListado">Mis expedientes</h2></div>
+          <label class="gr-filter">Estado
+            <select id="filtroEstado">
+              <option value="">Todos</option>
+              <option value="Abierto">Abiertos</option>
+              <option value="Respondido">Respondidos</option>
+              <option value="En revisión">En revisión</option>
+              <option value="Resuelto">Resueltos</option>
+              <option value="Cerrado">Cerrados</option>
+            </select>
+          </label>
+        </div>
+        <div class="gr-list" id="listaReclamos"></div>
+      </section>
+    </section>
+  </main>
+
+  <div class="gr-toast" id="mensaje" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="garantias-reclamos.js?v=3"></script>
+</body>
+</html>

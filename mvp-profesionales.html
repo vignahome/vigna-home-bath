@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profesionales Vigna’s - MVP</title>
+  <meta name="description" content="MVP de Profesionales Vigna’s para registro, búsqueda, cotizaciones y contratos.">
+  <link rel="stylesheet" href="mvp-profesionales.css?v=18">
+</head>
+<body>
+  <header class="mvp-header">
+    <a class="mvp-brand" href="index.html" aria-label="Volver a VIGNA Home">
+      <img class="mvp-brand-logo" src="images/logo/ChatGPT Image 26 may 2026, 11_05_03 p.m..png" alt="VIGNA Home & Bath">
+      <span class="mvp-brand-section">Profesionales</span>
+    </a>
+    <button class="menu-button" id="menuButton" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M4 6h16M4 12h16M4 18h16"></path>
+      </svg>
+    </button>
+    <nav class="mvp-nav" id="mainNav" aria-label="Navegación principal">
+      <button type="button" data-view="inicio" class="active">Buscar</button>
+      <button type="button" data-view="solicitud">Solicitar servicio</button>
+      <button type="button" data-view="registro-profesional">Soy profesional</button>
+      <button type="button" data-view="registro-cliente">Soy cliente</button>
+      <button type="button" data-view="panel">Mi panel</button>
+      <button type="button" data-view="admin">Administración</button>
+      <button id="pvNotificationsButton" class="pv-notifications-trigger" type="button" aria-label="Abrir todas las notificaciones" title="Notificaciones" hidden>
+        <span aria-hidden="true">🔔</span><span id="pvNotificationsCount" class="pv-notifications-count">0</span>
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="view active" id="view-inicio">
+      <div class="hero">
+        <div>
+          <p class="eyebrow">RED DE ESPECIALISTAS VERIFICADOS</p>
+          <h1>Profesionales Vigna’s</h1>
+          <p>Encuentra especialistas por profesión, ubicación, reputación y disponibilidad. Los clientes buscan gratuitamente.</p>
+        </div>
+        <div class="hero-status">
+          <span>● MVP DE PRUEBAS</span>
+          <strong id="heroTotalProfesionales">0</strong>
+          <small>profesionales registrados</small>
+        </div>
+      </div>
+
+      <div class="search-panel">
+        <label>Profesión
+          <select id="filtroProfesion"><option value="">Todas las profesiones</option></select>
+        </label>
+        <label>Departamento
+          <select id="filtroDepartamento"><option value="">Todo el Perú</option></select>
+        </label>
+        <label>Provincia o distrito
+          <input id="filtroZona" type="search" placeholder="Ej. Lima, Surco">
+        </label>
+        <label>Estado
+          <select id="filtroEstado">
+            <option value="Aprobado">Verificados</option>
+            <option value="">Todos</option>
+          </select>
+        </label>
+        <button class="gold-button" id="buscarProfesionales" type="button">Buscar profesionales</button>
+      </div>
+
+      <div class="section-heading">
+        <div><p class="eyebrow">RESULTADOS</p><h2>Profesionales disponibles</h2></div>
+        <span id="contadorResultados">0 resultados</span>
+      </div>
+      <div class="professional-grid" id="listaProfesionales"></div>
+    </section>
+
+    <section class="view" id="view-registro-profesional">
+      <div class="page-intro">
+        <p class="eyebrow">REGISTRO ESPECÍFICO</p>
+        <h1>Crea tu perfil profesional</h1>
+        <p>Puedes registrar varias profesiones, seleccionar una como principal y definir exactamente dónde trabajas.</p>
+      </div>
+      <form class="form-card" id="formProfesional">
+        <div class="form-section">
+          <div class="form-section-title"><span>1</span><div><h2>Cuenta y contacto</h2><p>Datos usados para identificarte y contactarte.</p></div></div>
+          <div class="form-grid three">
+            <label>Nombres<input name="nombres" required autocomplete="given-name"></label>
+            <label>Apellidos<input name="apellidos" required autocomplete="family-name"></label>
+            <label>Fecha de nacimiento<input name="fechaNacimiento" type="date" required></label>
+            <label>Correo electrónico<input name="correo" type="email" required autocomplete="email"></label>
+            <label>WhatsApp<input name="whatsapp" type="tel" required autocomplete="tel" placeholder="999 999 999"></label>
+            <label>Modalidad
+              <select name="modalidad" required><option value="Independiente">Independiente</option><option value="Empresa">Empresa</option></select>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title"><span>2</span><div><h2>Identidad</h2><p>Los archivos quedan privados y sujetos a revisión administrativa.</p></div></div>
+          <div class="form-grid three">
+            <label>Tipo de documento
+              <select name="tipoDocumento" required><option>DNI</option><option>Carnet de extranjería</option><option>Pasaporte</option></select>
+            </label>
+            <label>Número de documento<input name="documento" required minlength="6" maxlength="20"></label>
+            <label>País emisor<input name="paisEmisor" value="Perú" required></label>
+            <label>Frente del documento<input name="documentoFrente" type="file" accept="image/*,.pdf" required></label>
+            <label>Reverso del documento<input name="documentoReverso" type="file" accept="image/*,.pdf"></label>
+            <label>Selfie de verificación<input name="selfie" type="file" accept="image/*" capture="user" required></label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title"><span>3</span><div><h2>Domicilio y zona</h2><p>Tu dirección es privada; solo la cobertura será pública.</p></div></div>
+          <div class="form-grid three">
+            <label>Departamento<input name="departamento" required placeholder="Lima"></label>
+            <label>Provincia<input name="provincia" required placeholder="Lima"></label>
+            <label>Distrito<input name="distrito" required placeholder="Surco"></label>
+            <label class="span-two">Dirección privada<input name="direccion" required autocomplete="street-address"></label>
+            <label>Referencia<input name="referencia" placeholder="Opcional"></label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title"><span>4</span><div><h2>Profesiones</h2><p>Selecciona todas las que realizas y destaca solo una.</p></div></div>
+          <div class="profession-picker" id="selectorProfesiones"></div>
+          <div class="form-grid two compact-top">
+            <label>Profesión principal<select name="profesionPrincipal" id="profesionPrincipal" required><option value="">Primero selecciona profesiones</option></select></label>
+            <label>Años de experiencia<input name="experiencia" type="number" min="0" max="70" value="1" required></label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title"><span>5</span><div><h2>Cobertura</h2><p>Define si trabajas en todo el país o en zonas específicas.</p></div></div>
+          <div class="coverage-options">
+            <label><input type="radio" name="coberturaTipo" value="Nacional"> Todo el Perú</label>
+            <label><input type="radio" name="coberturaTipo" value="Departamentos"> Departamentos seleccionados</label>
+            <label><input type="radio" name="coberturaTipo" value="Local" checked> Provincia o distritos específicos</label>
+          </div>
+          <div class="form-grid two compact-top">
+            <label>Zonas donde trabajas<textarea name="coberturaDetalle" required placeholder="Ej. Lima: Surco, Miraflores y San Borja"></textarea></label>
+            <div class="form-grid one no-gap">
+              <label>Distancia máxima<input name="distancia" placeholder="Ej. 25 km"></label>
+              <label>Recargo por desplazamiento<input name="recargo" placeholder="Ej. S/ 25 fuera de zona"></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title"><span>6</span><div><h2>Presentación</h2><p>Explica qué haces y qué diferencia tu trabajo.</p></div></div>
+          <label>Descripción profesional<textarea name="descripcion" required minlength="40" maxlength="700" placeholder="Describe tu experiencia, especialidades y forma de trabajar."></textarea></label>
+          <div class="consent-box">
+            <label><input type="checkbox" name="terminos" required> Acepto los términos del MVP y el tratamiento de datos para verificar y gestionar mi perfil.</label>
+            <label><input type="checkbox" name="publicacion" required> Autorizo la publicación de mis datos profesionales, nunca mis documentos ni domicilio privado.</label>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="secondary-button" type="reset">Limpiar</button>
+          <button class="gold-button" type="submit">Crear perfil para revisión</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="view" id="view-registro-cliente">
+      <div class="page-intro"><p class="eyebrow">CUENTA DE CLIENTE</p><h1>Regístrate para contratar</h1><p>La búsqueda es gratuita. La identidad completa se utiliza para formalizar contratos.</p></div>
+      <form class="form-card" id="formCliente">
+        <div class="form-section">
+          <div class="form-section-title"><span>1</span><div><h2>Datos personales</h2><p>Información de la cuenta y contacto.</p></div></div>
+          <div class="form-grid three">
+            <label>Nombres<input name="nombres" required></label><label>Apellidos<input name="apellidos" required></label>
+            <label>Fecha de nacimiento<input name="fechaNacimiento" type="date" required></label>
+            <label>Correo<input name="correo" type="email" required></label><label>WhatsApp<input name="whatsapp" type="tel" required></label>
+            <label>Tipo de documento<select name="tipoDocumento"><option>DNI</option><option>Carnet de extranjería</option><option>Pasaporte</option></select></label>
+            <label>Número de documento<input name="documento" required></label>
+            <label>Departamento<input name="departamento" required></label><label>Provincia<input name="provincia" required></label>
+            <label>Distrito<input name="distrito" required></label><label>Zona o sector<input name="zona" required placeholder="Ej. Lima Este"></label>
+            <label class="span-two">Dirección del servicio principal<input name="direccion" required autocomplete="street-address"></label><label>Referencia<input name="referencia" placeholder="Opcional"></label>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title"><span>2</span><div><h2>Verificación de identidad</h2><p>Los archivos son privados y solo podrán ser revisados por administración.</p></div></div>
+          <div class="form-grid three">
+            <label>País emisor<input name="paisEmisor" value="Perú" required></label>
+            <label>Frente del documento<input name="documentoFrente" type="file" accept="image/*,.pdf" required></label>
+            <label>Reverso del documento<input name="documentoReverso" type="file" accept="image/*,.pdf"></label>
+            <label>Selfie de verificación<input name="selfie" type="file" accept="image/*" capture="user" required></label>
+          </div>
+        </div>
+        <div class="consent-box"><label><input type="checkbox" name="terminos" required> Acepto los términos, la política de privacidad y el tratamiento de datos para verificar mi identidad.</label></div>
+        <div class="form-actions"><button class="gold-button" type="submit">Crear cuenta cliente</button></div>
+      </form>
+    </section>
+
+    <section class="view" id="view-solicitud">
+      <div class="page-intro"><p class="eyebrow">SOLICITUD DE SERVICIO</p><h1>Cuéntanos qué necesitas</h1><p>La solicitud llegará a profesionales compatibles y quedará registrada.</p></div>
+      <form class="form-card" id="formSolicitud">
+        <div class="form-grid three">
+          <label>Cliente<select name="clienteId" id="solicitudCliente" required></select></label>
+          <label>Profesional preferido<select name="profesionalId" id="solicitudProfesional"><option value="">Cualquiera compatible</option></select></label>
+          <label>Profesión requerida<select name="profesion" id="solicitudProfesion" required></select></label>
+          <label>Departamento<input name="departamento" required value="Lima"></label>
+          <label>Provincia<input name="provincia" required value="Lima"></label>
+          <label>Distrito<input name="distrito" required placeholder="Surco"></label>
+          <label>Presupuesto estimado<select name="presupuesto"><option>Por definir</option><option>Hasta S/ 500</option><option>S/ 500 - 1,500</option><option>S/ 1,500 - 4,000</option><option>Más de S/ 4,000</option></select></label>
+          <label>Fecha preferida<input name="fecha" type="date" required></label>
+          <label>Urgencia<select name="urgencia"><option>Flexible</option><option>Esta semana</option><option>Urgente</option></select></label>
+          <label class="span-three">Descripción<textarea name="descripcion" required minlength="25" placeholder="Describe el trabajo, medidas, materiales existentes y resultado esperado."></textarea></label>
+          <label class="span-three">Fotos, video o documento<input name="archivos" type="file" accept="image/*,video/*,.pdf" multiple></label>
+        </div>
+        <div class="consent-box">
+          <label><input type="checkbox" name="autorizacion" required> Confirmo que la información es correcta y autorizo compartir esta solicitud únicamente con profesionales compatibles.</label>
+        </div>
+        <div class="form-actions"><button class="gold-button" type="submit">Enviar solicitud</button></div>
+      </form>
+      <div class="section-heading"><div><p class="eyebrow">SEGUIMIENTO</p><h2>Solicitudes registradas</h2></div></div>
+      <div id="listaSolicitudes" class="stack-list"></div>
+    </section>
+
+    <section class="view" id="view-panel">
+      <div class="page-intro"><p class="eyebrow">ESPACIO DE TRABAJO</p><h1>Panel del profesional</h1><p>Administra portafolio, cotizaciones y contratos del MVP.</p></div>
+      <div class="dashboard-selector"><label>Perfil activo<select id="panelProfesional"></select></label><span id="panelEstado"></span></div>
+      <div class="metrics" id="panelMetricas"></div>
+      <div class="dashboard-grid">
+        <article class="dashboard-card">
+          <div class="section-heading small"><div><h2>Álbum antes y después</h2><p>Hasta un video por proyecto.</p></div></div>
+          <form id="formPortafolio" class="mini-form">
+            <label>Título del trabajo<input name="titulo" required></label>
+            <label>Descripción<textarea name="descripcion" required></textarea></label>
+            <div class="form-grid two"><label>Foto antes<input name="antes" type="file" accept="image/*" required></label><label>Foto después<input name="despues" type="file" accept="image/*" required></label></div>
+            <label>Video opcional<input name="video" type="file" accept="video/*"></label>
+            <button class="gold-button" type="submit">Agregar proyecto</button>
+          </form>
+          <div id="listaPortafolio" class="portfolio-grid"></div>
+        </article>
+        <article class="dashboard-card">
+          <div class="section-heading small"><div><h2>Crear cotización</h2><p>Tres alternativas comparables.</p></div></div>
+          <form id="formCotizacion" class="mini-form">
+            <label>Solicitud<select name="solicitudId" id="cotizacionSolicitud" required></select></label>
+            <div class="quote-editor">
+              <fieldset><legend>Económica</legend><input name="economicaPrecio" type="number" min="0" placeholder="Precio" required><textarea name="economicaDetalle" placeholder="Incluye..."></textarea></fieldset>
+              <fieldset><legend>Recomendada</legend><input name="recomendadaPrecio" type="number" min="0" placeholder="Precio" required><textarea name="recomendadaDetalle" placeholder="Incluye..."></textarea></fieldset>
+              <fieldset><legend>Premium</legend><input name="premiumPrecio" type="number" min="0" placeholder="Precio" required><textarea name="premiumDetalle" placeholder="Incluye..."></textarea></fieldset>
+            </div>
+            <label>Vigencia de la garantía
+              <select name="garantiaDias" required>
+                <option value="">Selecciona un plazo</option>
+                <option value="30">30 días</option>
+                <option value="60">60 días</option>
+                <option value="90">90 días</option>
+                <option value="180">180 días</option>
+                <option value="365">1 año</option>
+              </select>
+            </label>
+            <label>Duración y condiciones<textarea name="condiciones" required placeholder="Plazo, forma de pago, garantía y exclusiones."></textarea></label>
+            <button class="gold-button" type="submit">Enviar cotización</button>
+          </form>
+        </article>
+      </div>
+      <article class="dashboard-card full"><div class="section-heading small"><div><h2>Cotizaciones y contratos</h2></div></div><div id="listaCotizaciones" class="stack-list"></div></article>
+    </section>
+
+    <section class="view" id="view-admin">
+      <div class="page-intro"><p class="eyebrow">CONTROL Y AUDITORÍA</p><h1>Panel de administración</h1><p>Aprueba perfiles, revisa documentos declarados y consulta contratos.</p></div>
+      <div class="metrics" id="adminMetricas"></div>
+      <div class="admin-tabs"><button class="active" data-admin-tab="profesionales">Profesionales</button><button data-admin-tab="clientes">Clientes</button><button data-admin-tab="solicitudes">Solicitudes</button><button data-admin-tab="contratos">Contratos</button><button data-admin-tab="auditoria">Auditoría</button></div>
+      <div class="admin-panel active" id="admin-profesionales"></div>
+      <div class="admin-panel" id="admin-clientes"></div>
+      <div class="admin-panel" id="admin-solicitudes"></div>
+      <div class="admin-panel" id="admin-contratos"></div>
+      <div class="admin-panel" id="admin-auditoria"></div>
+    </section>
+  </main>
+
+  <a id="pvAssistanceFab" class="assistance-fab" href="garantias-reclamos.html" aria-label="Asistencia" title="Asistencia">
+    <svg viewBox="0 0 64 64" role="img" aria-hidden="true">
+      <path d="M13 34v-5a19 19 0 0 1 38 0v5M13 34H9a4 4 0 0 0-4 4v10a4 4 0 0 0 4 4h4V34Zm38 0h4a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4h-4V34ZM51 49c0 6-5 10-11 10h-3m0 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+    </svg>
+    <span class="visually-hidden">Asistencia</span>
+  </a>
+
+  <dialog id="profileDialog" class="mvp-dialog"><button class="dialog-close" data-close-dialog type="button">×</button><div id="profileDialogContent"></div></dialog>
+  <dialog id="contractDialog" class="mvp-dialog contract-dialog"><button class="dialog-close" data-close-dialog type="button">×</button><div id="contractDialogContent"></div></dialog>
+  <dialog id="pvNotificationsDialog" class="mvp-dialog pv-notifications-dialog">
+    <button class="dialog-close" data-pv-notifications-close type="button" aria-label="Cerrar notificaciones">×</button>
+    <div class="pv-notifications-heading">
+      <p class="eyebrow">ACTIVIDAD COMPLETA</p>
+      <h2>Todas las notificaciones</h2>
+      <p>Servicios, cotizaciones, contratos, asistencia y actuaciones administrativas, sin excluir ningún evento registrado para tu cuenta.</p>
+      <div class="pv-notifications-controls">
+        <label>Mostrar
+          <select id="pvNotificationsFilter">
+            <option value="todas">Todas las notificaciones</option>
+            <option value="no-leidas">Solo no leídas</option>
+          </select>
+        </label>
+        <button id="pvNotificationsSeen" class="secondary-button" type="button">Marcar todas como vistas</button>
+      </div>
+    </div>
+    <div id="pvNotificationsList" class="pv-notifications-list" aria-live="polite"></div>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="mvp-profesionales-bootstrap.js?v=15"></script>
+</body>
+</html>
