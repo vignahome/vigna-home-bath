@@ -17,7 +17,8 @@ npm run build:profesionales
 Con una cuenta que tenga permisos sobre el proyecto Firebase:
 
 ```bash
-npx --yes firebase-tools@15.26.0 login
+npm install
+npm run firebase:login
 npm run deploy:firebase
 ```
 
@@ -28,4 +29,4 @@ npm run deploy:firebase:rules
 npm run deploy:firebase:hosting
 ```
 
-Los scripts fijan Firebase CLI 15.26.0, el proyecto `vigna-plomeros` y los destinos exactos para evitar desplegar otro proyecto por accidente.
+Los scripts fijan Firebase CLI 15.26.0, lo ejecutan mediante Node para evitar el selector de archivos `.js` de Windows y limitan el despliegue al proyecto `vigna-plomeros`.

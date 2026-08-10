@@ -3,9 +3,10 @@
     "start": "node server.js",
     "check": "node --check server.js && node --check firebase.js && node --check js/script.js && node --check js/productos.js && node --check js/producto.js && node --check js/checkout.js && node --check js/admin.js && node --check js/cuenta.js && node --check plomeros.js && node --check mvp-profesionales.js && node --check mvp-profesionales-firebase.js && node --check mvp-profesionales-cloud-ui.js && node --check mvp-profesionales-bootstrap.js && node --check garantias-reclamos.js && node --check panel-vigna.js && node --check vigna-config.js && node --check preparar-hosting-profesionales.js && node verificar-garantias-reclamos.cjs && node verificar-ejecucion-contratos.cjs && node verificar-guia-profesionales.cjs && node verificar-portafolio-solicitudes-cotizaciones.cjs && node verificar-contrato-bilateral.cjs && node verificar-comunicacion-contractual.cjs && node verificar-administracion-profesionales.cjs && node verificar-especialidades-evidencias.cjs && node verificar-aceptacion-profesionales.cjs",
     "build:profesionales": "node preparar-hosting-profesionales.js",
-    "deploy:firebase:rules": "npx --yes firebase-tools@15.26.0 deploy --only firestore:rules,firestore:indexes,storage --project vigna-plomeros",
-    "deploy:firebase:hosting": "npm run build:profesionales && npx --yes firebase-tools@15.26.0 deploy --only hosting --project vigna-plomeros",
-    "deploy:firebase": "npm run check && npm run build:profesionales && npx --yes firebase-tools@15.26.0 deploy --only firestore:rules,firestore:indexes,storage,hosting --project vigna-plomeros"
+    "firebase:login": "node ./node_modules/firebase-tools/lib/bin/firebase.js login",
+    "deploy:firebase:rules": "node ./node_modules/firebase-tools/lib/bin/firebase.js deploy --only firestore:rules,firestore:indexes,storage --project vigna-plomeros",
+    "deploy:firebase:hosting": "npm run build:profesionales && node ./node_modules/firebase-tools/lib/bin/firebase.js deploy --only hosting --project vigna-plomeros",
+    "deploy:firebase": "npm run check && npm run build:profesionales && node ./node_modules/firebase-tools/lib/bin/firebase.js deploy --only firestore:rules,firestore:indexes,storage,hosting --project vigna-plomeros"
   },
   "dependencies": {
     "cors": "^2.8.6",
@@ -13,5 +14,8 @@
     "express": "^5.2.1",
     "firebase-admin": "^13.10.0",
     "mercadopago": "^3.1.0"
+  },
+  "devDependencies": {
+    "firebase-tools": "^15.26.0"
   }
 }
