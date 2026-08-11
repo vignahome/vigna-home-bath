@@ -20,8 +20,8 @@ exigir(manifest.icons.some((icono) => icono.sizes === "192x192"), "falta el icon
 exigir(manifest.icons.some((icono) => icono.sizes === "512x512" && icono.purpose.includes("maskable")), "falta el icono adaptable de 512 px");
 exigir(html.includes('rel="manifest" href="manifest.webmanifest?v=3"'), "la página no enlaza el manifiesto vigente");
 exigir(html.includes('name="apple-mobile-web-app-capable"'), "falta compatibilidad de instalación en iOS");
-exigir(html.includes('rel="apple-touch-icon" sizes="180x180" href="images/app-icons/vigna-ios-icon-180-v4.png"'), "falta el icono opaco vigente para iOS");
-exigir(html.includes('rel="apple-touch-icon-precomposed" sizes="180x180" href="images/app-icons/vigna-ios-icon-180-v4.png"'), "falta la variante precompuesta del icono para iOS");
+exigir(html.includes('rel="apple-touch-icon" sizes="1024x1024" href="ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"'), "falta el icono opaco vigente para iOS");
+exigir(html.includes('rel="apple-touch-icon-precomposed" sizes="1024x1024" href="ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"'), "falta la variante precompuesta del icono para iOS");
 exigir(bootstrap.includes('navigator.serviceWorker.register("/service-worker.js"'), "el modo instalable no registra el service worker");
 exigir(worker.includes('url.origin !== self.location.origin'), "el service worker podría interceptar servicios externos");
 exigir(worker.includes('url.pathname.startsWith("/api/")'), "el service worker no excluye respuestas de API");
