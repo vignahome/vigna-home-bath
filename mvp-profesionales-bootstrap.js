@@ -1,4 +1,4 @@
-import "./mvp-profesionales-cloud-ui.js?v=21";
+import "./mvp-profesionales-cloud-ui.js?v=22";
 await import("./mvp-profesionales.js?v=14");
 
 if ("serviceWorker" in navigator && location.protocol === "https:") {

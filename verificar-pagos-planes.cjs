@@ -65,5 +65,9 @@ assert.match(firebase, /registroIncompleto: true/, "la carga debe identificar re
 assert.match(interfaz, /datos\?\.registroIncompleto && rolActual === "profesional"/, "la cuenta incompleta debe poder reabrir el registro profesional");
 assert.match(firebase, /\{ \.\.\.item\.data\(\), id: item\.id \}/, "el identificador real de Firestore debe prevalecer sobre datos legados");
 assert.match(firebase, /id: perfil\.id, uid: user\.uid/, "el perfil propio debe normalizarse con la cuenta autenticada");
+assert.match(firebase, /const perfilExistente = await getDoc\(doc\(db, COLECCIONES\.profesionales, uid\)\)/, "una actualización no debe invalidar un perfil profesional ya existente");
+assert.match(firebase, /if \(!perfil\.exists\(\)\)[\s\S]*registroIncompleto: true/, "solo la ausencia real del perfil debe abrir el registro incompleto");
+assert.match(firebase, /if \(registroIncompleto\)[\s\S]*estadoRegistro: "completo"/, "un perfil existente debe reparar el marcador legado de registro");
+assert.doesNotMatch(firebase, /if \(registroIncompleto\) \{[\s\S]{0,500}registroIncompleto: true/, "el marcador legado no debe ocultar un perfil profesional existente");
 
 console.log("Pagos de planes: autenticación, verificación, idempotencia y separación móvil verificadas.");

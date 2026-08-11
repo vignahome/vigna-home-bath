@@ -1,4 +1,4 @@
-import { ProfesionalesFirebase as api } from "./mvp-profesionales-firebase.js?v=6";
+import { ProfesionalesFirebase as api } from "./mvp-profesionales-firebase.js?v=7";
 
 // Evita mostrar los datos locales de demostración mientras Firebase confirma
 // el catálogo público que realmente puede ver el visitante.

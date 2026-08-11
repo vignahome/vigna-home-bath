@@ -164,9 +164,12 @@ async function registrarProfesional(form) {
   const uid = mismoCorreo
     ? sesionExistente.uid
     : (await createUserWithEmailAndPassword(auth, correo, password)).user.uid;
-  await setDoc(doc(db, COLECCIONES.usuarios, uid), {
-    uid, rol: "profesional", correo, estadoRegistro: "incompleto", creadoEn: ahora()
-  });
+  const perfilExistente = await getDoc(doc(db, COLECCIONES.profesionales, uid));
+  if (!perfilExistente.exists()) {
+    await setDoc(doc(db, COLECCIONES.usuarios, uid), {
+      uid, rol: "profesional", correo, estadoRegistro: "incompleto", creadoEn: ahora()
+    }, { merge: true });
+  }
 
   const frente = archivo(form, "documentoFrente");
   const reverso = archivo(form, "documentoReverso");
@@ -1273,7 +1276,8 @@ async function cargarDatos() {
     actuacionesContrato = actuacionesCliente;
     auditoria = auditoriaCliente;
   } else if (rol === "profesional") {
-    if (registroIncompleto) {
+    const perfil = await getDoc(doc(db, COLECCIONES.profesionales, user.uid));
+    if (!perfil.exists()) {
       anexarProfesional();
       const adaptarIncompleto = (items) => items.map((item) => ({ ...item, clienteId: item.clienteUid || item.clienteId, profesionalId: item.profesionalUid || item.profesionalId, actor: item.actorEmail || item.actorUid || "Sistema" }));
       return {
@@ -1282,15 +1286,13 @@ async function cargarDatos() {
         portafolios: adaptarIncompleto(portafolios), resenas: adaptarIncompleto(resenas), auditoria: [], solicitudesEliminacion: [], nube: true, rol, adminRol
       };
     }
-    const perfil = await getDoc(doc(db, COLECCIONES.profesionales, user.uid));
-    if (!perfil.exists()) {
-      anexarProfesional();
-      const adaptarIncompleto = (items) => items.map((item) => ({ ...item, clienteId: item.clienteUid || item.clienteId, profesionalId: item.profesionalUid || item.profesionalId, actor: item.actorEmail || item.actorUid || "Sistema" }));
-      return {
-        version: 1, usuarioUid: user.uid, profesionales: adaptarIncompleto(profesionales), clientes: [], solicitudes: [], cotizaciones: [], contratos: [], hitos: [],
-        pagosDeclarados: [], ordenesCambio: [], mensajesContrato: [], actuacionesContrato: [], especialidades: [], planesProfesionales: [],
-        portafolios: adaptarIncompleto(portafolios), resenas: adaptarIncompleto(resenas), auditoria: [], solicitudesEliminacion: [], nube: true, rol, adminRol
-      };
+    if (registroIncompleto) {
+      await setDoc(doc(db, COLECCIONES.usuarios, user.uid), {
+        uid: user.uid,
+        rol: "profesional",
+        correo: user.email || registroUsuario?.data()?.correo || "",
+        estadoRegistro: "completo"
+      }, { merge: true });
     }
     const perfilDatos = { ...(perfil.data() || {}), id: perfil.id, uid: user.uid };
     profesionales = [
@@ -1303,7 +1305,7 @@ async function cargarDatos() {
       porCampo(COLECCIONES.portafolios, "profesionalUid", user.uid)
     ]);
     especialidades = [...new Map([...especialidades, ...especialidadesPropias].map((item) => [item.id, item])).values()];
-    planesProfesionales = planPropio.exists() ? [{ id: planPropio.id, ...planPropio.data() }] : [];
+    planesProfesionales = planPropio.exists() ? [{ ...planPropio.data(), id: planPropio.id }] : [];
     portafolios = [...new Map([...portafolios, ...portafolioPropio].map((item) => [item.id, item])).values()];
     const asignadas = await porCampo(COLECCIONES.solicitudes, "profesionalUid", user.uid);
     const compatibles = [];
