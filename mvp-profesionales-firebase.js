@@ -1071,9 +1071,9 @@ async function abrirEvidenciaEspecialidad(especialidadId, ruta) {
 }
 
 const PLANES = Object.freeze({
-  Mensual: { precio: 39.90, meses: 1 },
-  Semestral: { precio: 199.90, meses: 6 },
-  Anual: { precio: 349.90, meses: 12 }
+  Mensual: { precio: 19.90, meses: 1 },
+  Semestral: { precio: 89.90, meses: 7 },
+  Anual: { precio: 149.90, meses: 14 }
 });
 
 const PLANES_API = Object.freeze({ Mensual: "mensual", Semestral: "semestral", Anual: "anual" });

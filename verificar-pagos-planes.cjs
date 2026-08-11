@@ -11,7 +11,7 @@ const reglas = fs.readFileSync("firestore.rules", "utf8");
 const pagoValido = validarDatosPagoPlan({
   status: "approved",
   currency_id: "PEN",
-  transaction_amount: 39.9,
+  transaction_amount: 19.9,
   external_reference: "profesional_123",
   metadata: { tipo_pago: "plan_profesional", plan_id: "mensual", profesional_uid: "profesional_123" }
 });
@@ -21,7 +21,7 @@ assert.equal(pagoValido.planId, "mensual");
 assert.equal(validarDatosPagoPlan({
   status: "rejected",
   currency_id: "PEN",
-  transaction_amount: 39.9,
+  transaction_amount: 19.9,
   external_reference: "profesional_123",
   metadata: { tipo_pago: "plan_profesional", plan_id: "mensual", profesional_uid: "profesional_123" }
 }).valido, false);
@@ -32,6 +32,10 @@ assert.equal(validarDatosPagoPlan({
   metadata: { plan_id: "mensual", profesional_uid: "profesional_123" }
 }).valido, false);
 assert.equal(sumarMeses("2026-01-15T00:00:00.000Z", 1).toISOString(), "2026-02-15T00:00:00.000Z");
+assert.equal(sumarMeses("2026-01-15T00:00:00.000Z", 7).toISOString(), "2026-08-15T00:00:00.000Z");
+assert.equal(sumarMeses("2026-01-15T00:00:00.000Z", 14).toISOString(), "2027-03-15T00:00:00.000Z");
+assert.deepEqual(require("./server.js").PLANES.semestral, { id: "semestral", nombre: "VIGNA Profesional Semestral + 1 mes gratis", precio: 89.9, meses: 7 });
+assert.deepEqual(require("./server.js").PLANES.anual, { id: "anual", nombre: "VIGNA Profesional Anual + 2 meses gratis", precio: 149.9, meses: 14 });
 
 assert.match(servidor, /verifyIdToken\(token, true\)/, "el servidor debe verificar una sesión Firebase vigente");
 assert.match(servidor, /procesarPagoPlanProfesional/, "falta el procesador idempotente de planes");
