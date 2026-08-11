@@ -1,5 +1,9 @@
 import { ProfesionalesFirebase as api } from "./mvp-profesionales-firebase.js?v=5";
 
+// Evita mostrar los datos locales de demostración mientras Firebase confirma
+// el catálogo público que realmente puede ver el visitante.
+document.documentElement.classList.add("pv-cloud-loading");
+
 let rolActual = "publico";
 let operacionEnCurso = false;
 let notificacionesGlobales = [];
@@ -297,13 +301,14 @@ async function refrescarNube() {
     const datos = await api.cargarDatos();
     rolActual = datos.rol;
     mvp.setData(datos);
+    document.documentElement.classList.remove("pv-cloud-loading");
     const user = api.usuarioActual();
     actualizarNavegacion(user);
     actualizarNotificacionesGlobales(datos, user);
     mensaje(user ? `Firebase activo · ${rolActual} · ${user.email || "cuenta autenticada"}` : "Firebase activo · catálogo público");
   } catch (error) {
     console.error("No se pudieron cargar los datos de Profesionales Vigna’s.", error);
-    mensaje("Modo demostración: las reglas Firebase todavía no están desplegadas.", true);
+    mensaje("No se pudo cargar el catálogo. Intenta actualizar la página.", true);
   }
 }
 

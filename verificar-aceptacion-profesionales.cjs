@@ -4,6 +4,7 @@ const leer = (archivo) => fs.readFileSync(archivo, "utf8").replace(/\r\n/g, "\n"
 const html = leer("mvp-profesionales.html");
 const css = leer("mvp-profesionales.css");
 const ui = leer("mvp-profesionales.js");
+const nube = leer("mvp-profesionales-cloud-ui.js");
 const firestore = leer("firestore.rules");
 const storage = leer("storage.rules");
 const matriz = leer("PROFESIONALES-ACEPTACION.md");
@@ -21,6 +22,9 @@ exigir(html.includes('aria-live="polite"'), "faltan avisos accesibles");
 exigir(html.includes('aria-label="Asistencia"'), "el acceso a asistencia no es accesible");
 exigir(html.includes("RED DE PROFESIONALES VERIFICADOS"), "falta la identificación pública de la red profesional");
 exigir(!html.includes("MVP DE PRUEBAS") && !html.includes("términos del MVP"), "la interfaz pública todavía se presenta como prueba");
+exigir(nube.includes('document.documentElement.classList.add("pv-cloud-loading")'), "la carga inicial no oculta los datos locales de demostración");
+exigir(nube.includes('document.documentElement.classList.remove("pv-cloud-loading")'), "el catálogo real no se revela después de cargar Firebase");
+exigir(css.includes(".pv-cloud-loading #listaProfesionales"), "faltan estilos para impedir el destello del catálogo de demostración");
 exigir(ui.includes('if (profileDialog?.open) profileDialog.close()'), "el perfil permanece abierto al solicitar un servicio");
 exigir(!firestore.includes("match /pv_profesionales_privados/{uid} {\n      allow read: if true"), "la identidad profesional quedó pública");
 exigir(!firestore.includes("match /pv_contratos/{contratoId} {\n      allow read: if true"), "los contratos quedaron públicos");
