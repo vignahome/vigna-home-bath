@@ -262,7 +262,7 @@
     }
 
     titulo.textContent = "Panel del profesional";
-    descripcion.textContent = "Administra portafolio, cotizaciones y contratos del MVP.";
+    descripcion.textContent = "Administra tu portafolio, solicitudes, cotizaciones y contratos.";
     selector.hidden = false;
     herramientas.hidden = false;
     document.getElementById("professionalPlanCard").hidden = false;

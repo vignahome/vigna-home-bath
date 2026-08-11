@@ -19,6 +19,8 @@ exigir(html.includes('name="viewport"'), "falta configuración móvil");
 exigir((css.match(/@media\(max-width:/g) || []).length >= 5, "faltan adaptaciones responsive");
 exigir(html.includes('aria-live="polite"'), "faltan avisos accesibles");
 exigir(html.includes('aria-label="Asistencia"'), "el acceso a asistencia no es accesible");
+exigir(html.includes("RED DE PROFESIONALES VERIFICADOS"), "falta la identificación pública de la red profesional");
+exigir(!html.includes("MVP DE PRUEBAS") && !html.includes("términos del MVP"), "la interfaz pública todavía se presenta como prueba");
 exigir(ui.includes('if (profileDialog?.open) profileDialog.close()'), "el perfil permanece abierto al solicitar un servicio");
 exigir(!firestore.includes("match /pv_profesionales_privados/{uid} {\n      allow read: if true"), "la identidad profesional quedó pública");
 exigir(!firestore.includes("match /pv_contratos/{contratoId} {\n      allow read: if true"), "los contratos quedaron públicos");
