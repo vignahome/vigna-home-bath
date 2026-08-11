@@ -19,6 +19,11 @@ const MP_WEBHOOK_SECRET = String(process.env.MP_WEBHOOK_SECRET || "").trim();
 const MP_WEBHOOK_SECRET_TEST = String(process.env.MP_WEBHOOK_SECRET_TEST || "").trim();
 const CONTROL_INVENTARIO = String(process.env.CONTROL_INVENTARIO || "false").toLowerCase() === "true";
 const INVENTARIO_MOVIMIENTOS_COLLECTION = "movimientosInventario";
+const PAGOS_PLANES_COLLECTION = "pv_pagos_planes";
+const PLANES_PROFESIONALES_COLLECTION = "pv_planes_profesionales";
+const PROFESIONALES_COLLECTION = "pv_profesionales";
+const USUARIOS_COLLECTION = "pv_usuarios";
+const AUDITORIA_PROFESIONALES_COLLECTION = "pv_auditoria";
 const ALLOWED_ORIGINS = new Set(
   (process.env.ALLOWED_ORIGINS || `${PUBLIC_BASE_URL},http://localhost:5500,http://127.0.0.1:5500`)
     .split(",").map((origin) => origin.trim().replace(/\/$/, "")).filter(Boolean)
@@ -119,6 +124,45 @@ function credencialDisponible(res) {
 
 function plomeroIdValido(plomeroId) {
   return typeof plomeroId === "string" && /^[a-zA-Z0-9_-]{1,128}$/.test(plomeroId);
+}
+
+function obtenerBearer(req) {
+  const autorizacion = String(req.headers.authorization || "").trim();
+  const coincidencia = autorizacion.match(/^Bearer\s+(.+)$/i);
+  return coincidencia?.[1]?.trim() || "";
+}
+
+async function exigirProfesionalAutenticado(req, res) {
+  if (!adminDb) {
+    res.status(503).json({ error: "El servidor de pagos no tiene Firebase configurado." });
+    return null;
+  }
+
+  const token = obtenerBearer(req);
+  if (!token) {
+    res.status(401).json({ error: "Inicia sesión nuevamente para continuar con el pago." });
+    return null;
+  }
+
+  try {
+    const usuario = await getAdminAuth().verifyIdToken(token, true);
+    const [rolSnap, profesionalSnap] = await Promise.all([
+      adminDb.collection(USUARIOS_COLLECTION).doc(usuario.uid).get(),
+      adminDb.collection(PROFESIONALES_COLLECTION).doc(usuario.uid).get()
+    ]);
+    const rol = rolSnap.data()?.rol;
+    if (rol !== "profesional" || !profesionalSnap.exists) {
+      res.status(403).json({ error: "Solo una cuenta profesional puede adquirir este plan." });
+      return null;
+    }
+    return { uid: usuario.uid, email: usuario.email || "" };
+  } catch (error) {
+    if (String(error.code || "").startsWith("auth/")) {
+      res.status(401).json({ error: "La sesión ya no es válida. Ingresa nuevamente." });
+      return null;
+    }
+    throw error;
+  }
 }
 
 function textoSeguro(valor, maximo) {
@@ -578,6 +622,143 @@ async function consultarYProcesarPagoPedido(paymentId) {
   return await procesarPagoInventario(pago);
 }
 
+function validarDatosPagoPlan(pago) {
+  const tipoPago = String(pago.metadata?.tipo_pago || "").toLowerCase();
+  const planId = String(pago.metadata?.plan_id || pago.additional_info?.items?.[0]?.id || "").toLowerCase();
+  const plan = PLANES[planId];
+  const profesionalUid = String(pago.metadata?.profesional_uid || pago.external_reference || "").trim();
+  const totalPagado = Number(pago.transaction_amount || 0);
+  const estado = String(pago.status || "").toLowerCase();
+  const aprobado = tipoPago === "plan_profesional" && estado === "approved" && pago.currency_id === "PEN" &&
+    plan && plomeroIdValido(profesionalUid) && Math.abs(totalPagado - plan.precio) < 0.001;
+
+  return {
+    valido: Boolean(aprobado),
+    estado,
+    planId,
+    plan,
+    profesionalUid,
+    total: totalPagado,
+    error: aprobado ? "" : "El pago no está aprobado o no coincide con el plan solicitado."
+  };
+}
+
+function sumarMeses(fechaBase, meses) {
+  const fecha = new Date(fechaBase);
+  fecha.setMonth(fecha.getMonth() + meses);
+  return fecha;
+}
+
+async function procesarPagoPlanProfesional(pago) {
+  if (!adminDb) return { valido: false, error: "El servidor no está disponible." };
+
+  const paymentId = String(pago.id || "").trim();
+  const validacion = validarDatosPagoPlan(pago);
+  if (!/^\d{1,30}$/.test(paymentId) || !validacion.plan || !plomeroIdValido(validacion.profesionalUid)) {
+    return { ...validacion, valido: false, error: "El pago no contiene un plan profesional verificable." };
+  }
+
+  const pagoRef = adminDb.collection(PAGOS_PLANES_COLLECTION).doc(paymentId);
+  const planRef = adminDb.collection(PLANES_PROFESIONALES_COLLECTION).doc(validacion.profesionalUid);
+  const profesionalRef = adminDb.collection(PROFESIONALES_COLLECTION).doc(validacion.profesionalUid);
+  const auditoriaRef = adminDb.collection(AUDITORIA_PROFESIONALES_COLLECTION).doc(`pago-plan-${paymentId}`);
+  let resultado = { ...validacion, paymentId };
+
+  await adminDb.runTransaction(async (transaccion) => {
+    const [pagoSnap, planSnap, profesionalSnap] = await Promise.all([
+      transaccion.get(pagoRef),
+      transaccion.get(planRef),
+      transaccion.get(profesionalRef)
+    ]);
+
+    if (!profesionalSnap.exists) throw new Error("El perfil profesional asociado ya no existe.");
+
+    const ahoraFecha = new Date();
+    const ahoraIso = ahoraFecha.toISOString();
+    const pagoAnterior = pagoSnap.data() || {};
+    const planActual = planSnap.data() || {};
+    const basePago = {
+      id: paymentId,
+      paymentId,
+      profesionalUid: validacion.profesionalUid,
+      planId: validacion.planId,
+      tipo: validacion.plan.nombre,
+      monto: validacion.total,
+      moneda: String(pago.currency_id || ""),
+      estado: validacion.estado || "desconocido",
+      origen: "Mercado Pago",
+      actualizadoEn: ahoraIso
+    };
+
+    if (validacion.valido && pagoAnterior.estado !== "approved") {
+      const vencimientoAnterior = Date.parse(planActual.venceEn || "");
+      const inicio = planActual.estado === "Activo" && Number.isFinite(vencimientoAnterior) && vencimientoAnterior > ahoraFecha.getTime()
+        ? new Date(vencimientoAnterior)
+        : ahoraFecha;
+      const venceEn = sumarMeses(inicio, validacion.plan.meses).toISOString();
+      const tipo = validacion.planId.charAt(0).toUpperCase() + validacion.planId.slice(1);
+
+      transaccion.set(pagoRef, { ...basePago, creadoEn: pagoAnterior.creadoEn || ahoraIso, aprobadoEn: ahoraIso, venceEn }, { merge: true });
+      transaccion.set(planRef, {
+        uid: validacion.profesionalUid,
+        profesionalUid: validacion.profesionalUid,
+        tipo,
+        precio: validacion.plan.precio,
+        meses: validacion.plan.meses,
+        estado: "Activo",
+        activadoEn: ahoraIso,
+        venceEn,
+        paymentId,
+        proveedorPago: "Mercado Pago",
+        actualizadoEn: ahoraIso
+      }, { merge: true });
+      transaccion.set(profesionalRef, {
+        plan: tipo,
+        planEstado: "Activo",
+        planInicioEn: ahoraIso,
+        planVenceEn: venceEn,
+        planPaymentId: paymentId,
+        actualizadoEn: ahoraIso
+      }, { merge: true });
+      transaccion.set(auditoriaRef, {
+        accion: "Plan profesional pagado y activado",
+        detalle: `${validacion.profesionalUid}: ${tipo} hasta ${venceEn}`,
+        actorUid: "mercado-pago",
+        actorEmail: "",
+        participantes: [validacion.profesionalUid],
+        fecha: ahoraIso
+      });
+      resultado = { ...resultado, valido: true, tipo, venceEn };
+      return;
+    }
+
+    if (["cancelled", "refunded", "charged_back"].includes(validacion.estado) && pagoAnterior.estado === "approved") {
+      transaccion.set(pagoRef, basePago, { merge: true });
+      if (String(planActual.paymentId || "") === paymentId) {
+        transaccion.set(planRef, { estado: "Suspendido", actualizadoEn: ahoraIso }, { merge: true });
+        transaccion.set(profesionalRef, { planEstado: "Suspendido", actualizadoEn: ahoraIso }, { merge: true });
+      }
+      transaccion.set(auditoriaRef, {
+        accion: "Pago de plan revertido",
+        detalle: `${validacion.profesionalUid}: ${paymentId} · ${validacion.estado}`,
+        actorUid: "mercado-pago",
+        actorEmail: "",
+        participantes: [validacion.profesionalUid],
+        fecha: ahoraIso
+      }, { merge: true });
+      resultado = { ...resultado, valido: false, error: "El pago del plan fue revertido." };
+      return;
+    }
+
+    transaccion.set(pagoRef, { ...basePago, creadoEn: pagoAnterior.creadoEn || ahoraIso }, { merge: true });
+    if (pagoAnterior.estado === "approved") {
+      resultado = { ...resultado, valido: true, tipo: planActual.tipo || validacion.plan.nombre, venceEn: planActual.venceEn || pagoAnterior.venceEn || "" };
+    }
+  });
+
+  return resultado;
+}
+
 async function comprobarInventario(productos) {
   if (!CONTROL_INVENTARIO) return { disponible: true };
   if (!adminDb) return { disponible: false, error: "El control de inventario no está configurado." };
@@ -685,36 +866,67 @@ app.get("/movimientos-inventario", async (req, res) => {
   }
 });
 
-app.post("/crear-pago", async (req, res) => {
+async function crearPagoPlan(req, res) {
   if (!credencialDisponible(res)) return;
-  const { planId, plomeroId } = req.body || {};
+  const sesion = await exigirProfesionalAutenticado(req, res);
+  if (!sesion) return;
+
+  const planId = String(req.body?.planId || "").toLowerCase();
   const plan = PLANES[planId];
   if (!plan) return res.status(400).json({ error: "El plan seleccionado no es válido." });
-  if (!plomeroIdValido(plomeroId)) return res.status(400).json({ error: "El perfil profesional no es válido." });
 
   try {
+    const planActualSnap = await adminDb.collection(PLANES_PROFESIONALES_COLLECTION).doc(sesion.uid).get();
+    const planActual = planActualSnap.data() || {};
+    const venceActual = Date.parse(planActual.venceEn || "");
+    if (planActual.estado === "Activo" && (!Number.isFinite(venceActual) || venceActual > Date.now())) {
+      return res.status(409).json({ error: "Ya tienes un plan vigente. Podrás renovarlo cuando se acerque su vencimiento." });
+    }
+
+    const preferencia = {
+      items: [{ id: plan.id, title: plan.nombre, quantity: 1, unit_price: plan.precio, currency_id: "PEN" }],
+      payer: sesion.email ? { email: sesion.email } : undefined,
+      back_urls: {
+        success: `${PUBLIC_BASE_URL}/mvp-profesionales.html?pagoPlan=retorno`,
+        failure: `${PUBLIC_BASE_URL}/mvp-profesionales.html?pagoPlan=fallido`,
+        pending: `${PUBLIC_BASE_URL}/mvp-profesionales.html?pagoPlan=pendiente`
+      },
+      auto_return: "approved",
+      external_reference: sesion.uid,
+      metadata: { tipo_pago: "plan_profesional", plan_id: plan.id, profesional_uid: sesion.uid }
+    };
+    if (MP_NOTIFICATION_URL.startsWith("https://")) preferencia.notification_url = MP_NOTIFICATION_URL;
+
     const data = await consultarMercadoPago("/checkout/preferences", {
       method: "POST",
-      body: JSON.stringify({
-        items: [{ id: plan.id, title: plan.nombre, quantity: 1, unit_price: plan.precio, currency_id: "PEN" }],
-        back_urls: {
-          success: `${PUBLIC_BASE_URL}/plomeros.html?pago=retorno`,
-          failure: `${PUBLIC_BASE_URL}/plomeros.html?pago=fallido`,
-          pending: `${PUBLIC_BASE_URL}/plomeros.html?pago=pendiente`
-        },
-        auto_return: "approved",
-        external_reference: plomeroId,
-        metadata: { plan_id: plan.id, plomero_id: plomeroId }
-      })
+      body: JSON.stringify(preferencia)
     });
     const initPoint = data.init_point || data.sandbox_init_point;
     if (!initPoint) throw new Error("Mercado Pago no devolvió un enlace de pago.");
-    return res.json({ init_point: initPoint });
+    const solicitadoEn = new Date().toISOString();
+    await adminDb.collection(PLANES_PROFESIONALES_COLLECTION).doc(sesion.uid).set({
+      uid: sesion.uid,
+      profesionalUid: sesion.uid,
+      tipo: planId.charAt(0).toUpperCase() + planId.slice(1),
+      precio: plan.precio,
+      meses: plan.meses,
+      estado: "Pendiente de pago",
+      solicitadoEn,
+      activadoEn: "",
+      venceEn: "",
+      preferenciaId: data.id || "",
+      actualizadoEn: solicitadoEn
+    }, { merge: true });
+    return res.json({ init_point: initPoint, preferenciaId: data.id || "" });
   } catch (error) {
     console.error("No se pudo crear la preferencia de pago.", { status: error.status || 500, message: error.message });
     return res.status(502).json({ error: "No se pudo iniciar el pago. Inténtalo nuevamente." });
   }
-});
+}
+
+app.post("/crear-pago-plan", crearPagoPlan);
+// Compatibilidad temporal con las páginas web anteriores. También exige sesión Firebase.
+app.post("/crear-pago", crearPagoPlan);
 
 app.post("/crear-pago-productos", async (req, res) => {
   if (!credencialDisponible(res)) return;
@@ -871,7 +1083,11 @@ app.post("/webhook-mercadopago", async (req, res) => {
 
     // Procesa el pago después de responder a Mercado Pago.
     setImmediate(() => {
-      consultarYProcesarPagoPedido(paymentId).catch((error) => {
+      consultarMercadoPago(`/v1/payments/${paymentId}`).then((pago) => {
+        return pago.metadata?.tipo_pago === "plan_profesional"
+          ? procesarPagoPlanProfesional(pago)
+          : procesarPagoInventario(pago);
+      }).catch((error) => {
         console.error("No se pudo procesar el pago del webhook.", {
           paymentId,
           message: error.message
@@ -894,25 +1110,33 @@ app.post("/webhook-mercadopago", async (req, res) => {
   }
 });
 
-app.get("/verificar-pago/:paymentId", async (req, res) => {
+app.get("/verificar-pago-plan/:paymentId", async (req, res) => {
   if (!credencialDisponible(res)) return;
+  const sesion = await exigirProfesionalAutenticado(req, res);
+  if (!sesion) return;
   const paymentId = String(req.params.paymentId || "");
   if (!/^\d{1,30}$/.test(paymentId)) return res.status(400).json({ error: "El identificador del pago no es válido." });
 
   try {
     const pago = await consultarMercadoPago(`/v1/payments/${paymentId}`);
-    const planId = pago.metadata?.plan_id || pago.additional_info?.items?.[0]?.id;
-    const plan = PLANES[planId];
-    const plomeroId = String(pago.external_reference || pago.metadata?.plomero_id || "");
-    const montoCorrecto = plan && Math.abs(Number(pago.transaction_amount) - plan.precio) < 0.001;
-    if (pago.status !== "approved" || pago.currency_id !== "PEN" || !montoCorrecto || !plomeroIdValido(plomeroId)) {
-      return res.status(409).json({ aprobado: false, estado: pago.status || "desconocido" });
+    const propietario = String(pago.metadata?.profesional_uid || pago.external_reference || "").trim();
+    if (propietario !== sesion.uid) {
+      return res.status(403).json({ error: "El pago no corresponde a esta cuenta profesional." });
     }
-    return res.json({ aprobado: true, plomeroId, plan: plan.nombre, meses: plan.meses, verificacion: "Plan Activo" });
+    const resultado = await procesarPagoPlanProfesional(pago);
+    if (!resultado.valido) {
+      return res.status(409).json({ aprobado: false, estado: resultado.estado || "desconocido", error: resultado.error });
+    }
+    return res.json({ aprobado: true, profesionalUid: sesion.uid, plan: resultado.tipo, venceEn: resultado.venceEn, paymentId });
   } catch (error) {
     console.error("No se pudo verificar el pago.", { status: error.status || 500, message: error.message });
     return res.status(502).json({ error: "No se pudo verificar el pago." });
   }
+});
+
+app.get("/verificar-pago/:paymentId", async (req, res) => {
+  req.url = `/verificar-pago-plan/${encodeURIComponent(req.params.paymentId || "")}`;
+  return res.redirect(307, req.url);
 });
 
 app.use((error, _req, res, _next) => {
@@ -925,4 +1149,13 @@ if (require.main === module) {
   app.listen(PORT, () => console.log(`Servidor de pagos VIGNA activo en el puerto ${PORT}.`));
 }
 
-module.exports = { app, PLANES, CATALOGO, resolverCarrito, validarComprador, validarDatosPagoPedido };
+module.exports = {
+  app,
+  PLANES,
+  CATALOGO,
+  resolverCarrito,
+  validarComprador,
+  validarDatosPagoPedido,
+  validarDatosPagoPlan,
+  sumarMeses
+};

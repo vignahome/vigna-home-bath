@@ -1,4 +1,4 @@
-import { ProfesionalesFirebase as api } from "./mvp-profesionales-firebase.js?v=5";
+import { ProfesionalesFirebase as api } from "./mvp-profesionales-firebase.js?v=6";
 
 // Evita mostrar los datos locales de demostración mientras Firebase confirma
 // el catálogo público que realmente puede ver el visitante.
@@ -14,6 +14,7 @@ let temporizadorSincronizacion = null;
 let actividadInicializada = false;
 let filtroNotificaciones = "todas";
 let revisionNotificacionesRemota = 0;
+let retornoPagoPlanProcesado = false;
 
 const esperarMVP = () => window.VignaProfesionalesMVP
   ? Promise.resolve(window.VignaProfesionalesMVP)
@@ -336,6 +337,55 @@ async function ejecutar(form, tarea, exito) {
   } finally {
     bloquear(form, false);
     operacionEnCurso = false;
+  }
+}
+
+function limpiarRetornoPagoPlan() {
+  const url = new URL(window.location.href);
+  ["pagoPlan", "payment_id", "collection_id", "collection_status", "payment_type", "merchant_order_id", "preference_id", "site_id", "processing_mode", "merchant_account_id"].forEach((clave) => url.searchParams.delete(clave));
+  window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
+}
+
+async function procesarRetornoPagoPlan(user) {
+  if (retornoPagoPlanProcesado) return;
+  const params = new URLSearchParams(window.location.search);
+  const retorno = params.get("pagoPlan");
+  if (!retorno) return;
+  if (!user) {
+    mensaje("Ingresa con la cuenta profesional que realizó el pago para verificarlo.", true);
+    return;
+  }
+
+  retornoPagoPlanProcesado = true;
+  if (retorno === "fallido" || retorno === "pendiente") {
+    const texto = retorno === "fallido"
+      ? "El pago no se completó. Puedes volver a intentarlo desde tu panel."
+      : "El pago está pendiente. El plan se activará automáticamente cuando Mercado Pago lo apruebe.";
+    limpiarRetornoPagoPlan();
+    mensaje(texto, retorno === "fallido");
+    alert(texto);
+    return;
+  }
+
+  const paymentId = params.get("payment_id") || params.get("collection_id");
+  if (retorno !== "retorno" || !paymentId) {
+    limpiarRetornoPagoPlan();
+    mensaje("Mercado Pago no devolvió un identificador verificable.", true);
+    return;
+  }
+
+  try {
+    mensaje("Verificando el pago del plan con Mercado Pago…");
+    const resultado = await api.verificarPagoPlanProfesional(paymentId);
+    limpiarRetornoPagoPlan();
+    await refrescarNube();
+    const texto = `Pago aprobado. Plan ${resultado.plan || "profesional"} activo${resultado.venceEn ? ` hasta ${new Date(resultado.venceEn).toLocaleDateString("es-PE")}` : ""}.`;
+    mensaje(texto);
+    alert(texto);
+  } catch (error) {
+    retornoPagoPlanProcesado = false;
+    mensaje(error.message || "No se pudo verificar el pago del plan.", true);
+    alert(error.message || "No se pudo verificar el pago del plan.");
   }
 }
 
@@ -766,7 +816,20 @@ document.addEventListener("click", async (event) => {
   if (solicitarPlan) {
     event.preventDefault();
     event.stopImmediatePropagation();
-    await ejecutar(null, () => api.solicitarPlanProfesional(solicitarPlan.dataset.requestPlan), `Plan ${solicitarPlan.dataset.requestPlan.toLowerCase()} solicitado.`);
+    if (operacionEnCurso) return;
+    operacionEnCurso = true;
+    solicitarPlan.disabled = true;
+    mensaje(api.esPlataformaNativa() ? "Consultando la tienda del dispositivo…" : "Preparando el pago seguro…");
+    try {
+      const pago = await api.iniciarPagoPlanProfesional(solicitarPlan.dataset.requestPlan);
+      window.location.assign(pago.init_point);
+    } catch (error) {
+      console.error(error);
+      mensaje(error.message || "No se pudo iniciar el pago del plan.", true);
+      alert(error.message || "No se pudo iniciar el pago del plan.");
+      solicitarPlan.disabled = false;
+      operacionEnCurso = false;
+    }
     return;
   }
   const activarPlan = event.target.closest("[data-admin-activate-plan]");
@@ -842,6 +905,7 @@ api.observarSesion(async (user) => {
   }
   if (new URLSearchParams(location.search).get("eliminar-cuenta") === "1") document.getElementById("pvAccountDeletionDialog")?.showModal();
   await refrescarNube();
+  await procesarRetornoPagoPlan(user);
   if (user && api.usuarioActual()?.uid === user.uid) {
     detenerActividad = await api.observarActividad(
       (actividad) => recibirActividadEnTiempoReal(actividad, user),

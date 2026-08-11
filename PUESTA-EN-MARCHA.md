@@ -45,6 +45,7 @@ Variables necesarias:
 - `ALLOWED_ORIGINS=https://vignahome.com`
 - `MP_NOTIFICATION_URL=https://URL-DEL-SERVIDOR/webhook-mercadopago`
 - `MP_WEBHOOK_SECRET`
+- `MP_WEBHOOK_SECRET_TEST` (solo durante pruebas sandbox)
 - `FIREBASE_SERVICE_ACCOUNT_BASE64`
 - `CONTROL_INVENTARIO=true`
 - `PORT`
@@ -66,6 +67,14 @@ window.VIGNA_CONFIG = Object.freeze({
 3. Probar estados aprobado, pendiente y rechazado.
 4. Confirmar que un pago aprobado aparece en `admin.html` y descuenta inventario una sola vez.
 5. Cambiar a producción únicamente después de completar todas las pruebas.
+
+### Planes de Profesionales Vigna's
+
+- En la web y la PWA, el plan profesional se cobra mediante Mercado Pago Checkout Pro.
+- El servidor identifica al profesional mediante su sesión Firebase; nunca acepta el UID enviado por el navegador.
+- El webhook activa el plan una sola vez y registra el pago en `pv_pagos_planes` para impedir duplicados.
+- En las aplicaciones nativas, la compra del plan queda bloqueada hasta integrar StoreKit en iOS y Google Play Billing en Android. Los servicios físicos contratados entre cliente y profesional no forman parte de esta suscripción digital.
+- Antes de probar, configurar `window.VIGNA_CONFIG.apiPagosUrl` con la URL HTTPS del servidor y publicar las reglas de Firestore correspondientes.
 
 ## 8. Revisión comercial pendiente
 

@@ -34,6 +34,6 @@ exigir(firebase.includes("async function solicitarPlanProfesional"), "el profesi
 exigir(firebase.includes("async function activarPlanProfesional"), "administración no puede activar un plan verificado");
 exigir(firebase.includes('throw new Error("El profesional ya tiene un plan activo.")'), "una activación repetida puede extender el plan sin control");
 exigir(ui.includes('Plan ${escapar(plan.tipo || p.plan || "profesional")} activo'), "administración no distingue los planes que ya están activos");
-exigir(nube.includes("api.cambiarEstadoEspecialidad") && nube.includes("api.solicitarPlanProfesional") && nube.includes("api.activarPlanProfesional"), "la interfaz no conecta verificación y planes con Firebase");
+exigir(nube.includes("api.cambiarEstadoEspecialidad") && nube.includes("api.iniciarPagoPlanProfesional") && nube.includes("api.activarPlanProfesional"), "la interfaz no conecta verificación y planes con Firebase");
 
 console.log("Guía Profesionales Vigna’s: base de especialidades, cobertura, ranking y planes verificada.");

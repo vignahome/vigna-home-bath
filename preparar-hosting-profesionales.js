@@ -14,6 +14,7 @@ const ICONOS_APP = [
 ];
 const ARCHIVOS = [
   "firebase.js",
+  "vigna-config.js",
   "mvp-profesionales.css",
   "mvp-profesionales.js",
   "mvp-profesionales-firebase.js",

@@ -1073,6 +1073,19 @@ const PLANES = Object.freeze({
   Anual: { precio: 349.90, meses: 12 }
 });
 
+const PLANES_API = Object.freeze({ Mensual: "mensual", Semestral: "semestral", Anual: "anual" });
+
+function esPlataformaNativa() {
+  return Boolean(window.Capacitor?.isNativePlatform?.());
+}
+
+function obtenerApiPagosUrl() {
+  const configurada = String(window.VIGNA_CONFIG?.apiPagosUrl || "").trim();
+  if (configurada) return configurada.replace(/\/$/, "");
+  if (["localhost", "127.0.0.1"].includes(window.location.hostname)) return "http://localhost:3000";
+  return "";
+}
+
 async function solicitarPlanProfesional(tipo) {
   const user = exigirUsuario();
   if (await obtenerRol(user.uid) !== "profesional") throw new Error("Solo un profesional puede solicitar un plan.");
@@ -1085,6 +1098,44 @@ async function solicitarPlanProfesional(tipo) {
   await setDoc(doc(db, COLECCIONES.planesProfesionales, user.uid), plan, { merge: true });
   await auditar("Plan profesional solicitado", `${tipo}: S/ ${configuracion.precio.toFixed(2)}`, [user.uid]);
   return plan;
+}
+
+async function iniciarPagoPlanProfesional(tipo) {
+  const user = exigirUsuario();
+  if (await obtenerRol(user.uid) !== "profesional") throw new Error("Solo un profesional puede adquirir un plan.");
+  if (!PLANES_API[tipo]) throw new Error("Plan profesional no permitido.");
+  if (esPlataformaNativa()) {
+    throw new Error("La compra del plan se habilitará mediante la tienda de tu dispositivo. Tu cuenta y tus planes web seguirán sincronizados.");
+  }
+  const apiPagosUrl = obtenerApiPagosUrl();
+  if (!apiPagosUrl) throw new Error("El servidor de pagos todavía no está configurado.");
+
+  const idToken = await user.getIdToken(true);
+  const respuesta = await fetch(`${apiPagosUrl}/crear-pago-plan`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ planId: PLANES_API[tipo] })
+  });
+  const datos = await respuesta.json().catch(() => ({}));
+  if (!respuesta.ok || !datos.init_point) throw new Error(datos.error || "No se pudo iniciar el pago del plan.");
+  return datos;
+}
+
+async function verificarPagoPlanProfesional(paymentId) {
+  const user = exigirUsuario();
+  const apiPagosUrl = obtenerApiPagosUrl();
+  if (!apiPagosUrl) throw new Error("El servidor de pagos todavía no está configurado.");
+  if (!/^\d{1,30}$/.test(String(paymentId || ""))) throw new Error("El identificador del pago no es válido.");
+  const idToken = await user.getIdToken(true);
+  const respuesta = await fetch(`${apiPagosUrl}/verificar-pago-plan/${encodeURIComponent(paymentId)}`, {
+    headers: { Authorization: `Bearer ${idToken}` }
+  });
+  const datos = await respuesta.json().catch(() => ({}));
+  if (!respuesta.ok || !datos.aprobado) throw new Error(datos.error || "El pago todavía no figura como aprobado.");
+  return datos;
 }
 
 async function activarPlanProfesional(uid, tipo = "") {
@@ -1304,6 +1355,9 @@ export const ProfesionalesFirebase = Object.freeze({
   actualizarEspecialidad,
   abrirEvidenciaEspecialidad,
   solicitarPlanProfesional,
+  iniciarPagoPlanProfesional,
+  verificarPagoPlanProfesional,
+  esPlataformaNativa,
   activarPlanProfesional,
   cargarDatos,
   observarActividad,

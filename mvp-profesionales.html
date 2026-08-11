@@ -298,12 +298,12 @@
       <article class="dashboard-card full" id="professionalPlanCard">
         <div class="section-heading small"><div><h2>Plan profesional</h2><p>El perfil solo se publica cuando está aprobado y tiene un plan vigente.</p></div></div>
         <div id="professionalPlanStatus" class="plan-status"></div>
-        <div class="plan-options">
+        <div id="professionalPlanOptions" class="plan-options">
           <button class="plan-option" type="button" data-request-plan="Mensual" data-plan-months="1" data-plan-price="39.90"><strong>Mensual</strong><span>S/ 39.90</span><small>30 días</small></button>
           <button class="plan-option featured" type="button" data-request-plan="Semestral" data-plan-months="6" data-plan-price="199.90"><strong>Semestral</strong><span>S/ 199.90</span><small>6 meses</small></button>
           <button class="plan-option" type="button" data-request-plan="Anual" data-plan-months="12" data-plan-price="349.90"><strong>Anual</strong><span>S/ 349.90</span><small>12 meses</small></button>
         </div>
-        <p class="private-note">La solicitud queda pendiente hasta que administración confirme el pago por el medio autorizado.</p>
+        <p id="professionalPlanNote" class="private-note">En la web pagarás de forma segura con Mercado Pago. En las aplicaciones se utilizará la tienda del dispositivo.</p>
       </article>
       <article class="dashboard-card full" id="professionalSpecialtiesCard">
         <div class="section-heading small"><div><h2>Profesiones y certificaciones</h2><p>Actualiza cada profesión por separado. Los certificados son privados y solo administración puede revisarlos.</p></div></div>
@@ -374,6 +374,7 @@
   </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="mvp-profesionales-bootstrap.js?v=19"></script>
+  <script src="vigna-config.js?v=2"></script>
+  <script type="module" src="mvp-profesionales-bootstrap.js?v=21"></script>
 </body>
 </html>

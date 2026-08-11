@@ -216,6 +216,14 @@ service cloud.firestore {
       allow delete: if esAdmin();
     }
 
+    // Los pagos de planes solo pueden ser escritos por el servidor verificado.
+    match /pv_pagos_planes/{pagoId} {
+      allow read: if esAdmin() || (
+        autenticado() && resource.data.profesionalUid == request.auth.uid
+      );
+      allow create, update, delete: if false;
+    }
+
     match /pv_clientes/{uid} {
       allow create: if autenticado() && request.auth.uid == uid &&
         request.resource.data.uid == uid && request.resource.data.estado == "Pendiente";
