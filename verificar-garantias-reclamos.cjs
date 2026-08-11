@@ -82,7 +82,7 @@ exigir(principalJs.includes("abrirContrato: (id) => openContract(id)"), "la noti
 exigir(principalJs.includes("abrirCotizacion: (id) => openQuote(id)"), "la notificación no puede abrir una cotización exacta");
 exigir(principalJs.includes("enfocarSolicitud: (id) => enfocarSolicitud(id)"), "la notificación no puede enfocar una solicitud exacta");
 exigir(interfazNube.includes("mvp.enfocarSolicitud(id)"), "la acción de solicitud no usa su identificador");
-exigir(principal.includes('mvp-profesionales-bootstrap.js?v=18'), "la página principal no carga la integración contractual actualizada");
+exigir(principal.includes('mvp-profesionales-bootstrap.js?v=19'), "la página principal no carga la integración contractual actualizada");
 exigir(interfazNube.includes('"garantias-reclamos.html"'), "los avisos de reclamo no abren Asistencia");
 exigir(interfazNube.includes("data-pv-notification-target"), "faltan acciones en los avisos globales");
 exigir(firebaseProfesionales.includes("onSnapshot"), "falta la escucha Firestore en tiempo real");

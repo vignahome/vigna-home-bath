@@ -1,0 +1,13 @@
+{
+  "name": "Profesionales Vigna’s",
+  "short_name": "Vigna’s",
+  "description": "Red de profesionales verificados para solicitudes, cotizaciones y contratos.",
+  "lang": "es-PE",
+  "start_url": "/mvp-profesionales",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "categories": ["business", "productivity", "utilities"]
+}
