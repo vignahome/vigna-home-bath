@@ -36,6 +36,11 @@ const ALLOWED_ORIGINS = new Set(
     .map((origin) => origin.trim().replace(/\/$/, "")).filter(Boolean)
 );
 
+function obtenerOrigenRetorno(origin) {
+  const origenNormalizado = String(origin || "").trim().replace(/\/$/, "");
+  return ALLOWED_ORIGINS.has(origenNormalizado) ? origenNormalizado : PUBLIC_BASE_URL;
+}
+
 const PLANES = Object.freeze({
   mensual: Object.freeze({ id: "mensual", nombre: "VIGNA Profesional Mensual", precio: 19.9, meses: 1 }),
   semestral: Object.freeze({ id: "semestral", nombre: "VIGNA Profesional Semestral + 1 mes gratis", precio: 99.9, meses: 7 }),
@@ -890,13 +895,14 @@ async function crearPagoPlan(req, res) {
       return res.status(409).json({ error: "Ya tienes un plan vigente. Podrás renovarlo cuando se acerque su vencimiento." });
     }
 
+    const origenRetorno = obtenerOrigenRetorno(req.headers.origin);
     const preferencia = {
       items: [{ id: plan.id, title: plan.nombre, quantity: 1, unit_price: plan.precio, currency_id: "PEN" }],
       payer: sesion.email ? { email: sesion.email } : undefined,
       back_urls: {
-        success: `${PUBLIC_BASE_URL}/mvp-profesionales.html?pagoPlan=retorno`,
-        failure: `${PUBLIC_BASE_URL}/mvp-profesionales.html?pagoPlan=fallido`,
-        pending: `${PUBLIC_BASE_URL}/mvp-profesionales.html?pagoPlan=pendiente`
+        success: `${origenRetorno}/mvp-profesionales.html?pagoPlan=retorno`,
+        failure: `${origenRetorno}/mvp-profesionales.html?pagoPlan=fallido`,
+        pending: `${origenRetorno}/mvp-profesionales.html?pagoPlan=pendiente`
       },
       auto_return: "approved",
       external_reference: sesion.uid,
@@ -1164,5 +1170,6 @@ module.exports = {
   validarComprador,
   validarDatosPagoPedido,
   validarDatosPagoPlan,
-  sumarMeses
+  sumarMeses,
+  obtenerOrigenRetorno
 };

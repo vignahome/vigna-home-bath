@@ -1,6 +1,6 @@
 const fs = require("node:fs");
 const assert = require("node:assert/strict");
-const { validarDatosPagoPlan, sumarMeses } = require("./server.js");
+const { validarDatosPagoPlan, sumarMeses, obtenerOrigenRetorno } = require("./server.js");
 
 const servidor = fs.readFileSync("server.js", "utf8");
 const firebase = fs.readFileSync("mvp-profesionales-firebase.js", "utf8");
@@ -36,10 +36,15 @@ assert.equal(sumarMeses("2026-01-15T00:00:00.000Z", 7).toISOString(), "2026-08-1
 assert.equal(sumarMeses("2026-01-15T00:00:00.000Z", 14).toISOString(), "2027-03-15T00:00:00.000Z");
 assert.deepEqual(require("./server.js").PLANES.semestral, { id: "semestral", nombre: "VIGNA Profesional Semestral + 1 mes gratis", precio: 99.9, meses: 7 });
 assert.deepEqual(require("./server.js").PLANES.anual, { id: "anual", nombre: "VIGNA Profesional Anual + 2 meses gratis", precio: 199.9, meses: 14 });
+assert.equal(obtenerOrigenRetorno("https://vigna-plomeros.web.app"), "https://vigna-plomeros.web.app");
+assert.equal(obtenerOrigenRetorno("https://vigna-plomeros.firebaseapp.com/"), "https://vigna-plomeros.firebaseapp.com");
+assert.notEqual(obtenerOrigenRetorno("https://sitio-malicioso.example"), "https://sitio-malicioso.example");
 
 assert.match(servidor, /verifyIdToken\(token, true\)/, "el servidor debe verificar una sesión Firebase vigente");
 assert.match(servidor, /https:\/\/vigna-plomeros\.web\.app/, "el Hosting oficial debe estar autorizado por CORS");
 assert.match(servidor, /https:\/\/vigna-plomeros\.firebaseapp\.com/, "el dominio alternativo de Firebase debe estar autorizado por CORS");
+assert.match(servidor, /obtenerOrigenRetorno\(req\.headers\.origin\)/, "el pago debe regresar al mismo origen autorizado para conservar la sesión");
+assert.match(servidor, /success: `\$\{origenRetorno\}\/mvp-profesionales\.html\?pagoPlan=retorno`/, "el retorno aprobado no debe cambiar de dominio");
 assert.match(servidor, /procesarPagoPlanProfesional/, "falta el procesador idempotente de planes");
 assert.match(servidor, /pagoAnterior\.estado !== "approved"/, "falta protección contra activaciones duplicadas");
 assert.match(servidor, /tipo_pago === "plan_profesional"/, "el webhook no separa los pagos de planes");
