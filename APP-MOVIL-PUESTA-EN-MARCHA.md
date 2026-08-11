@@ -1,11 +1,11 @@
-# Aplicación móvil Profesionales Vigna’s
+# Aplicación móvil VIGNA
 
 La aplicación comparte el código web probado y usa Capacitor para producir proyectos nativos Android e iOS.
 
 ## Identidad y estructura
 
 - Identificador de aplicación: `pe.vigna.profesionales`
-- Nombre: `Profesionales Vigna’s`
+- Nombre visible: `VIGNA`
 - Contenido web empaquetado: `hosting-profesionales`
 - Android: `android/`
 - iOS: `ios/`

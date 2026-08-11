@@ -13,7 +13,7 @@ const firebase = JSON.parse(leer("firebase.json"));
 const manifest = JSON.parse(leer("manifest.webmanifest"));
 const capacitor = JSON.parse(leer("capacitor.config.json"));
 
-exigir(manifest.name === "Profesionales Vigna’s", "el manifiesto no identifica la aplicación");
+exigir(manifest.name === "VIGNA" && manifest.short_name === "VIGNA", "el nombre visible de la aplicación no es VIGNA");
 exigir(manifest.display === "standalone", "la aplicación no abre en modo independiente");
 exigir(manifest.start_url === "/mvp-profesionales", "la ruta de inicio no abre Profesionales Vigna’s");
 exigir(manifest.icons.some((icono) => icono.sizes === "192x192"), "falta el icono PWA de 192 px");
@@ -29,6 +29,7 @@ exigir(build.includes('"manifest.webmanifest"') && build.includes('"service-work
 exigir(build.includes('"app-icons"'), "el build no incluye los iconos de la aplicación");
 exigir(firebase.hosting.headers.some((item) => item.source === "/service-worker.js"), "Hosting no controla la caché del service worker");
 exigir(capacitor.appId === "pe.vigna.profesionales", "el identificador nativo no es el aprobado");
+exigir(capacitor.appName === "VIGNA", "el nombre nativo visible no es VIGNA");
 exigir(capacitor.webDir === "hosting-profesionales", "Capacitor no utiliza el build aislado");
 exigir(fs.existsSync("images/app-icons/vigna-app-icon-512.png"), "falta el icono fuente de la aplicación");
 exigir(fs.existsSync("android/app/src/main/AndroidManifest.xml"), "falta el proyecto nativo Android");
