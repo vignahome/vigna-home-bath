@@ -1171,7 +1171,7 @@ async function activarPlanProfesional(uid, tipo = "") {
   await auditar("Plan profesional activado", `${uid}: ${nombrePlan} hasta ${venceEn}`, [uid]);
 }
 
-const documentos = async (consulta) => (await getDocs(consulta)).docs.map((item) => ({ id: item.id, ...item.data() }));
+const documentos = async (consulta) => (await getDocs(consulta)).docs.map((item) => ({ ...item.data(), id: item.id }));
 const todos = (nombre) => documentos(collection(db, nombre));
 const porCampo = (nombre, campo, valor) => documentos(query(collection(db, nombre), where(campo, "==", valor)));
 const porArray = (nombre, campo, valor) => documentos(query(collection(db, nombre), where(campo, "array-contains", valor)));
@@ -1292,8 +1292,11 @@ async function cargarDatos() {
         portafolios: adaptarIncompleto(portafolios), resenas: adaptarIncompleto(resenas), auditoria: [], solicitudesEliminacion: [], nube: true, rol, adminRol
       };
     }
-    if (!profesionales.some((item) => item.id === user.uid)) profesionales.unshift({ id: perfil.id, ...perfil.data() });
-    const perfilDatos = perfil.data() || {};
+    const perfilDatos = { ...(perfil.data() || {}), id: perfil.id, uid: user.uid };
+    profesionales = [
+      perfilDatos,
+      ...profesionales.filter((item) => item.id !== perfil.id && item.uid !== user.uid)
+    ];
     const [especialidadesPropias, planPropio, portafolioPropio] = await Promise.all([
       porCampo(COLECCIONES.profesionesProfesional, "profesionalUid", user.uid),
       getDoc(doc(db, COLECCIONES.planesProfesionales, user.uid)),

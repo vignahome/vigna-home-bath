@@ -63,5 +63,7 @@ assert.match(aplicacion, /No se mostrará información de otra cuenta/, "un perf
 assert.match(aplicacion, /estado === "Activo" && Number\.isFinite\(vencimiento\) && vencimiento > Date\.now\(\)/, "un plan solo debe figurar activo con estado y vencimiento vigentes");
 assert.match(firebase, /registroIncompleto: true/, "la carga debe identificar registros profesionales incompletos");
 assert.match(interfaz, /datos\?\.registroIncompleto && rolActual === "profesional"/, "la cuenta incompleta debe poder reabrir el registro profesional");
+assert.match(firebase, /\{ \.\.\.item\.data\(\), id: item\.id \}/, "el identificador real de Firestore debe prevalecer sobre datos legados");
+assert.match(firebase, /id: perfil\.id, uid: user\.uid/, "el perfil propio debe normalizarse con la cuenta autenticada");
 
 console.log("Pagos de planes: autenticación, verificación, idempotencia y separación móvil verificadas.");
