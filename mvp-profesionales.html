@@ -3,9 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profesionales Vigna’s - MVP</title>
-  <meta name="description" content="MVP de Profesionales Vigna’s para registro, búsqueda, cotizaciones y contratos.">
-  <link rel="stylesheet" href="mvp-profesionales.css?v=18">
+  <title>Profesionales Vigna’s</title>
+  <meta name="description" content="Red de Profesionales Vigna’s para búsqueda, solicitudes, cotizaciones y contratos verificables.">
+  <meta name="theme-color" content="#050505">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="VIGNA">
+  <link rel="manifest" href="manifest.webmanifest?v=3">
+  <link rel="apple-touch-icon" sizes="1024x1024" href="ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png">
+  <link rel="apple-touch-icon-precomposed" sizes="1024x1024" href="ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="images/app-icons/favicon-32.png?v=3">
+  <link rel="stylesheet" href="mvp-profesionales.css?v=19">
 </head>
 <body>
   <header class="mvp-header">
@@ -40,7 +48,7 @@
           <p>Encuentra especialistas por profesión, ubicación, reputación y disponibilidad. Los clientes buscan gratuitamente.</p>
         </div>
         <div class="hero-status">
-          <span>● MVP DE PRUEBAS</span>
+          <span>● RED DE PROFESIONALES VERIFICADOS</span>
           <strong id="heroTotalProfesionales">0</strong>
           <small>profesionales registrados</small>
         </div>
@@ -90,6 +98,10 @@
             <label>Modalidad
               <select name="modalidad" required><option value="Independiente">Independiente</option><option value="Empresa">Empresa</option></select>
             </label>
+            <label>Nombre público<input name="nombrePublico" maxlength="80" placeholder="Ej. Carlos Instalaciones"></label>
+            <label>RUC opcional<input name="ruc" inputmode="numeric" minlength="11" maxlength="11" placeholder="20123456789"></label>
+            <label>Idiomas<input name="idiomas" placeholder="Español, quechua"></label>
+            <label class="span-two">Disponibilidad<input name="disponibilidad" maxlength="180" placeholder="Lunes a sábado, 8:00 a 18:00"></label>
           </div>
         </div>
 
@@ -141,13 +153,20 @@
               <label>Recargo por desplazamiento<input name="recargo" placeholder="Ej. S/ 25 fuera de zona"></label>
             </div>
           </div>
+          <div class="form-grid three compact-top structured-coverage">
+            <label>Departamentos incluidos<input name="coberturaDepartamentos" placeholder="Lima, Callao"></label>
+            <label>Provincias incluidas<input name="coberturaProvincias" placeholder="Lima, Cañete"></label>
+            <label>Distritos incluidos<input name="coberturaDistritos" placeholder="Surco, Miraflores"></label>
+            <label class="span-two">Zonas excluidas<input name="coberturaExclusiones" placeholder="Distritos o zonas donde no atiendes"></label>
+            <label>Distancia máxima (km)<input name="distanciaKm" type="number" min="0" max="5000" step="1"></label>
+          </div>
         </div>
 
         <div class="form-section">
           <div class="form-section-title"><span>6</span><div><h2>Presentación</h2><p>Explica qué haces y qué diferencia tu trabajo.</p></div></div>
           <label>Descripción profesional<textarea name="descripcion" required minlength="40" maxlength="700" placeholder="Describe tu experiencia, especialidades y forma de trabajar."></textarea></label>
           <div class="consent-box">
-            <label><input type="checkbox" name="terminos" required> Acepto los términos del MVP y el tratamiento de datos para verificar y gestionar mi perfil.</label>
+            <label><input type="checkbox" name="terminos" required> Acepto los <a href="terminos-vigna.html" target="_blank" rel="noopener">términos del servicio</a> y la <a href="privacidad-vigna.html" target="_blank" rel="noopener">política de privacidad</a> para verificar y gestionar mi perfil.</label>
             <label><input type="checkbox" name="publicacion" required> Autorizo la publicación de mis datos profesionales, nunca mis documentos ni domicilio privado.</label>
           </div>
         </div>
@@ -183,7 +202,7 @@
             <label>Selfie de verificación<input name="selfie" type="file" accept="image/*" capture="user" required></label>
           </div>
         </div>
-        <div class="consent-box"><label><input type="checkbox" name="terminos" required> Acepto los términos, la política de privacidad y el tratamiento de datos para verificar mi identidad.</label></div>
+        <div class="consent-box"><label><input type="checkbox" name="terminos" required> Acepto los <a href="terminos-vigna.html" target="_blank" rel="noopener">términos del servicio</a> y la <a href="privacidad-vigna.html" target="_blank" rel="noopener">política de privacidad</a> para verificar mi identidad.</label></div>
         <div class="form-actions"><button class="gold-button" type="submit">Crear cuenta cliente</button></div>
       </form>
     </section>
@@ -195,13 +214,22 @@
           <label>Cliente<select name="clienteId" id="solicitudCliente" required></select></label>
           <label>Profesional preferido<select name="profesionalId" id="solicitudProfesional"><option value="">Cualquiera compatible</option></select></label>
           <label>Profesión requerida<select name="profesion" id="solicitudProfesion" required></select></label>
+          <label>Origen de la solicitud<select name="origen"><option>Buscador</option><option>Perfil profesional</option><option>Asistencia</option><option>Recomendación</option></select></label>
+          <label>Tipo de necesidad<select name="tipoNecesidad" required><option value="">Selecciona</option><option>Instalación nueva</option><option>Reparación</option><option>Mantenimiento</option><option>Diagnóstico</option><option>Remodelación</option><option>Otro</option></select></label>
+          <label>Subcategoría<input name="subcategoria" required placeholder="Ej. cambio de grifería"></label>
           <label>Departamento<input name="departamento" required value="Lima"></label>
           <label>Provincia<input name="provincia" required value="Lima"></label>
           <label>Distrito<input name="distrito" required placeholder="Surco"></label>
           <label>Presupuesto estimado<select name="presupuesto"><option>Por definir</option><option>Hasta S/ 500</option><option>S/ 500 - 1,500</option><option>S/ 1,500 - 4,000</option><option>Más de S/ 4,000</option></select></label>
           <label>Fecha preferida<input name="fecha" type="date" required></label>
           <label>Urgencia<select name="urgencia"><option>Flexible</option><option>Esta semana</option><option>Urgente</option></select></label>
-          <label class="span-three">Descripción<textarea name="descripcion" required minlength="25" placeholder="Describe el trabajo, medidas, materiales existentes y resultado esperado."></textarea></label>
+          <label>Modalidad de fecha<select name="modalidadFecha"><option>Fecha exacta</option><option>Rango de fechas</option><option>Por coordinar</option></select></label>
+          <label>Fecha final opcional<input name="fechaFin" type="date"></label>
+          <label>Quién compra materiales<select name="responsableMateriales"><option>Por definir</option><option>Cliente</option><option>Profesional</option><option>Mixto</option></select></label>
+          <label class="span-three">Situación actual<textarea name="situacionActual" required minlength="15" placeholder="Qué existe hoy, medidas y condición actual."></textarea></label>
+          <label class="span-three">Resultado esperado<textarea name="resultadoEsperado" required minlength="15" placeholder="Describe cómo debe quedar terminado."></textarea></label>
+          <label class="span-three">Restricciones y acceso<textarea name="restricciones" placeholder="Horarios, estacionamiento, ascensor, permisos, mascotas u otras restricciones."></textarea></label>
+          <label class="span-three">Descripción adicional<textarea name="descripcion" required minlength="25" placeholder="Agrega todos los detalles técnicos que ayuden a cotizar sin supuestos."></textarea></label>
           <label class="span-three">Fotos, video o documento<input name="archivos" type="file" accept="image/*,video/*,.pdf" multiple></label>
         </div>
         <div class="consent-box">
@@ -214,18 +242,38 @@
     </section>
 
     <section class="view" id="view-panel">
-      <div class="page-intro"><p class="eyebrow">ESPACIO DE TRABAJO</p><h1>Panel del profesional</h1><p>Administra portafolio, cotizaciones y contratos del MVP.</p></div>
+      <div class="page-intro"><p class="eyebrow">ESPACIO DE TRABAJO</p><h1>Panel del profesional</h1><p>Administra tu portafolio, solicitudes, cotizaciones y contratos.</p></div>
       <div class="dashboard-selector"><label>Perfil activo<select id="panelProfesional"></select></label><span id="panelEstado"></span></div>
+      <article class="dashboard-card full" id="professionalPlanCard">
+        <div class="section-heading small"><div><h2>Plan profesional</h2><p>El perfil solo se publica cuando está aprobado y tiene un plan vigente.</p></div></div>
+        <div id="professionalPlanStatus" class="plan-status"></div>
+        <div id="professionalPlanOptions" class="plan-options">
+          <button class="plan-option" type="button" data-request-plan="Mensual" data-plan-months="1" data-plan-price="19.90"><strong>Mensual</strong><span>S/ 19.90</span><small>1 mes</small></button>
+          <button class="plan-option featured" type="button" data-request-plan="Semestral" data-plan-months="7" data-plan-price="99.90"><strong>Semestral</strong><span>S/ 99.90</span><small>6 meses + 1 mes gratis</small></button>
+          <button class="plan-option" type="button" data-request-plan="Anual" data-plan-months="14" data-plan-price="199.90"><strong>Anual</strong><span>S/ 199.90</span><small>12 meses + 2 meses gratis</small></button>
+        </div>
+        <p id="professionalPlanNote" class="private-note">En la web pagarás de forma segura con Mercado Pago. En las aplicaciones se utilizará la tienda del dispositivo.</p>
+      </article>
       <div class="metrics" id="panelMetricas"></div>
+      <article class="dashboard-card full" id="professionalRequestsCard">
+        <div class="section-heading small"><div><h2>Solicitudes compatibles</h2><p>Revisa el alcance antes de preparar una cotización.</p></div></div>
+        <div id="professionalRequests" class="stack-list"></div>
+      </article>
       <div class="dashboard-grid">
         <article class="dashboard-card">
-          <div class="section-heading small"><div><h2>Álbum antes y después</h2><p>Hasta un video por proyecto.</p></div></div>
+          <div class="section-heading small"><div><h2>Portafolio verificable</h2><p>Cada proyecto se publica después de revisión administrativa.</p></div></div>
           <form id="formPortafolio" class="mini-form">
             <label>Título del trabajo<input name="titulo" required></label>
-            <label>Descripción<textarea name="descripcion" required></textarea></label>
+            <div class="form-grid two"><label>Categoría<input name="categoria" required></label><label>Ubicación general<input name="ubicacion" placeholder="Lima, Surco"></label></div>
+            <div class="form-grid two"><label>Duración<input name="duracion" placeholder="3 días"></label><label>Etiquetas<input name="etiquetas" placeholder="baño, grifería, remodelación"></label></div>
+            <label>Problema o reto<textarea name="reto" required></textarea></label>
+            <label>Solución aplicada<textarea name="solucion" required></textarea></label>
+            <label>Productos o materiales utilizados<textarea name="productos" placeholder="Marca, modelo y cantidad cuando corresponda."></textarea></label>
             <div class="form-grid two"><label>Foto antes<input name="antes" type="file" accept="image/*" required></label><label>Foto después<input name="despues" type="file" accept="image/*" required></label></div>
+            <label>Fotos del proceso (hasta 8)<input name="proceso" type="file" accept="image/*" multiple></label>
             <label>Video opcional<input name="video" type="file" accept="video/*"></label>
-            <button class="gold-button" type="submit">Agregar proyecto</button>
+            <label><input name="consentimientoPublicacion" type="checkbox" required> Confirmo que tengo autorización para publicar estas imágenes y que no exponen datos personales.</label>
+            <button class="gold-button" type="submit">Enviar a revisión</button>
           </form>
           <div id="listaPortafolio" class="portfolio-grid"></div>
         </article>
@@ -234,10 +282,13 @@
           <form id="formCotizacion" class="mini-form">
             <label>Solicitud<select name="solicitudId" id="cotizacionSolicitud" required></select></label>
             <div class="quote-editor">
-              <fieldset><legend>Económica</legend><input name="economicaPrecio" type="number" min="0" placeholder="Precio" required><textarea name="economicaDetalle" placeholder="Incluye..."></textarea></fieldset>
-              <fieldset><legend>Recomendada</legend><input name="recomendadaPrecio" type="number" min="0" placeholder="Precio" required><textarea name="recomendadaDetalle" placeholder="Incluye..."></textarea></fieldset>
-              <fieldset><legend>Premium</legend><input name="premiumPrecio" type="number" min="0" placeholder="Precio" required><textarea name="premiumDetalle" placeholder="Incluye..."></textarea></fieldset>
+              <fieldset><legend>Económica</legend><input name="economicaPrecio" type="number" min="0" placeholder="Precio total" required><input name="economicaMateriales" type="number" min="0" placeholder="Materiales"><input name="economicaManoObra" type="number" min="0" placeholder="Mano de obra"><input name="economicaDuracion" placeholder="Duración"><textarea name="economicaDetalle" placeholder="Alcance e inclusiones"></textarea></fieldset>
+              <fieldset><legend>Recomendada</legend><input name="recomendadaPrecio" type="number" min="0" placeholder="Precio total" required><input name="recomendadaMateriales" type="number" min="0" placeholder="Materiales"><input name="recomendadaManoObra" type="number" min="0" placeholder="Mano de obra"><input name="recomendadaDuracion" placeholder="Duración"><textarea name="recomendadaDetalle" placeholder="Alcance e inclusiones"></textarea></fieldset>
+              <fieldset><legend>Premium</legend><input name="premiumPrecio" type="number" min="0" placeholder="Precio total" required><input name="premiumMateriales" type="number" min="0" placeholder="Materiales"><input name="premiumManoObra" type="number" min="0" placeholder="Mano de obra"><input name="premiumDuracion" placeholder="Duración"><textarea name="premiumDetalle" placeholder="Alcance e inclusiones"></textarea></fieldset>
             </div>
+            <div class="form-grid two"><label>Válida hasta<input name="validaHasta" type="date" required></label><label>Disponibilidad estimada<input name="disponibilidadEstimada" required placeholder="Ej. desde el lunes"></label></div>
+            <label>Responsable de materiales<select name="responsableMateriales"><option>Profesional</option><option>Cliente</option><option>Mixto</option></select></label>
+            <label>Exclusiones<textarea name="exclusiones" required placeholder="Trabajos, permisos o suministros que no están incluidos."></textarea></label>
             <label>Vigencia de la garantía
               <select name="garantiaDias" required>
                 <option value="">Selecciona un plazo</option>
@@ -254,19 +305,32 @@
         </article>
       </div>
       <article class="dashboard-card full"><div class="section-heading small"><div><h2>Cotizaciones y contratos</h2></div></div><div id="listaCotizaciones" class="stack-list"></div></article>
+      <article class="dashboard-card full" id="professionalSpecialtiesCard">
+        <div class="section-heading small"><div><h2>Profesiones y certificaciones</h2><p>Actualiza cada profesión por separado. Los certificados son privados y solo administración puede revisarlos.</p></div></div>
+        <div id="professionalSpecialties" class="specialties-editor"></div>
+      </article>
     </section>
 
     <section class="view" id="view-admin">
-      <div class="page-intro"><p class="eyebrow">CONTROL Y AUDITORÍA</p><h1>Panel de administración</h1><p>Aprueba perfiles, revisa documentos declarados y consulta contratos.</p></div>
+      <div class="page-intro"><p class="eyebrow">CONTROL Y AUDITORÍA</p><h1>Panel de administración</h1><p>Aprueba perfiles, revisa documentos declarados y consulta contratos.</p><div class="table-actions"><span id="adminRoleBadge" class="status-chip"></span><button id="adminExportCsv" class="secondary-button" type="button">Exportar resumen CSV</button><button id="adminExportJson" class="secondary-button" type="button">Exportar auditoría JSON</button></div></div>
       <div class="metrics" id="adminMetricas"></div>
-      <div class="admin-tabs"><button class="active" data-admin-tab="profesionales">Profesionales</button><button data-admin-tab="clientes">Clientes</button><button data-admin-tab="solicitudes">Solicitudes</button><button data-admin-tab="contratos">Contratos</button><button data-admin-tab="auditoria">Auditoría</button></div>
+      <div class="admin-tabs"><button class="active" data-admin-tab="profesionales">Profesionales</button><button data-admin-tab="clientes">Clientes</button><button data-admin-tab="solicitudes">Solicitudes</button><button data-admin-tab="contratos">Contratos</button><button data-admin-tab="eliminaciones">Eliminaciones</button><button data-admin-tab="auditoria">Auditoría</button></div>
       <div class="admin-panel active" id="admin-profesionales"></div>
       <div class="admin-panel" id="admin-clientes"></div>
       <div class="admin-panel" id="admin-solicitudes"></div>
       <div class="admin-panel" id="admin-contratos"></div>
+      <div class="admin-panel" id="admin-eliminaciones"><p class="private-note">Confirma una eliminación únicamente después de borrar o anonimizar los datos aplicables en Authentication, Firestore y Storage, documentando cualquier conservación legal.</p></div>
       <div class="admin-panel" id="admin-auditoria"></div>
     </section>
   </main>
+
+  <footer class="mvp-footer">
+    <span>© VIGNA</span>
+    <a href="privacidad-vigna.html">Privacidad</a>
+    <a href="terminos-vigna.html">Términos</a>
+    <a href="soporte-vigna.html">Soporte</a>
+    <button type="button" data-account-deletion-open>Eliminar mi cuenta</button>
+  </footer>
 
   <a id="pvAssistanceFab" class="assistance-fab" href="garantias-reclamos.html" aria-label="Asistencia" title="Asistencia">
     <svg viewBox="0 0 64 64" role="img" aria-hidden="true">
@@ -295,8 +359,22 @@
     </div>
     <div id="pvNotificationsList" class="pv-notifications-list" aria-live="polite"></div>
   </dialog>
+  <dialog id="pvAccountDeletionDialog" class="mvp-dialog pv-account-deletion-dialog">
+    <button class="dialog-close" data-account-deletion-close type="button" aria-label="Cerrar">×</button>
+    <div class="page-intro compact"><p class="eyebrow">CONTROL DE TUS DATOS</p><h2>Eliminar mi cuenta VIGNA</h2><p>La solicitud elimina la cuenta y los datos personales asociados que VIGNA no deba conservar por obligaciones contractuales, legales, de seguridad o prevención de fraude.</p></div>
+    <div id="pvAccountDeletionGuest"><p>Debes ingresar con la cuenta que deseas eliminar para verificar tu identidad.</p><button class="gold-button" type="button" data-pv-access>Ingresar para continuar</button></div>
+    <form id="pvAccountDeletionForm" class="mini-form" hidden>
+      <p>Cuenta: <strong id="pvAccountDeletionEmail"></strong></p>
+      <label>Motivo opcional<textarea name="motivo" maxlength="500" placeholder="Puedes indicarnos por qué deseas eliminarla."></textarea></label>
+      <label class="acceptance-check"><input name="confirmacion" type="checkbox" required> Entiendo que perderé acceso a mi cuenta y que esta solicitud no puede deshacerse después de ser procesada.</label>
+      <button class="gold-button" type="submit">Solicitar eliminación definitiva</button>
+      <p id="pvAccountDeletionStatus" class="private-note" aria-live="polite"></p>
+    </form>
+    <p><a href="eliminar-cuenta.html">Información completa sobre eliminación y conservación</a></p>
+  </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="mvp-profesionales-bootstrap.js?v=15"></script>
+  <script src="vigna-config.js?v=2"></script>
+  <script type="module" src="mvp-profesionales-bootstrap.js?v=24"></script>
 </body>
 </html>

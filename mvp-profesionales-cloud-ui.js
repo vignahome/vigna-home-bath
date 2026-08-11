@@ -1,4 +1,8 @@
-import { ProfesionalesFirebase as api } from "./mvp-profesionales-firebase.js?v=3";
+import { ProfesionalesFirebase as api } from "./mvp-profesionales-firebase.js?v=7";
+
+// Evita mostrar los datos locales de demostración mientras Firebase confirma
+// el catálogo público que realmente puede ver el visitante.
+document.documentElement.classList.add("pv-cloud-loading");
 
 let rolActual = "publico";
 let operacionEnCurso = false;
@@ -10,6 +14,7 @@ let temporizadorSincronizacion = null;
 let actividadInicializada = false;
 let filtroNotificaciones = "todas";
 let revisionNotificacionesRemota = 0;
+let retornoPagoPlanProcesado = false;
 
 const esperarMVP = () => window.VignaProfesionalesMVP
   ? Promise.resolve(window.VignaProfesionalesMVP)
@@ -55,8 +60,12 @@ function insertarAcceso() {
       <label>Correo electrónico<input name="correo" type="email" autocomplete="email" required></label>
       <label>Contraseña<input name="password" type="password" autocomplete="current-password" required></label>
       <button class="gold-button" type="submit">Ingresar</button>
+      <button class="secondary-button" type="button" data-password-reset>Olvidé mi contraseña</button>
     </form>
-    <button id="pvLogoutButton" class="secondary-button" type="button" hidden>Cerrar sesión</button>`;
+    <div id="pvAccountActions" class="table-actions" hidden>
+      <button class="secondary-button" type="button" data-account-deletion-open>Eliminar mi cuenta</button>
+      <button id="pvLogoutButton" class="secondary-button" type="button">Cerrar sesión</button>
+    </div>`;
   document.body.appendChild(dialogo);
 }
 
@@ -273,12 +282,12 @@ function insertarPasswords() {
   agregar("formCliente");
 }
 
-function actualizarNavegacion(user) {
+function actualizarNavegacion(user, datos = null) {
   const reglas = {
     solicitud: rolActual === "cliente" || rolActual === "admin",
-    panel: rolActual === "cliente" || rolActual === "profesional" || rolActual === "admin",
+    panel: rolActual === "cliente" || rolActual === "profesional",
     admin: rolActual === "admin",
-    "registro-profesional": !user,
+    "registro-profesional": !user || Boolean(datos?.registroIncompleto && rolActual === "profesional"),
     "registro-cliente": !user
   };
   Object.entries(reglas).forEach(([vista, visible]) => {
@@ -286,9 +295,11 @@ function actualizarNavegacion(user) {
     if (boton) boton.hidden = !visible;
   });
   const acceso = document.getElementById("pvAccessButton");
-  if (acceso) acceso.textContent = user ? `${user.email || "Mi cuenta"} · Salir` : "Ingresar";
-  const salir = document.getElementById("pvLogoutButton");
-  if (salir) salir.hidden = !user;
+  if (acceso) acceso.textContent = user ? `${user.email || "Mi cuenta"} · Cuenta` : "Ingresar";
+  const login = document.getElementById("pvLoginForm");
+  const acciones = document.getElementById("pvAccountActions");
+  if (login) login.hidden = Boolean(user);
+  if (acciones) acciones.hidden = !user;
 }
 
 async function refrescarNube() {
@@ -297,13 +308,30 @@ async function refrescarNube() {
     const datos = await api.cargarDatos();
     rolActual = datos.rol;
     mvp.setData(datos);
+    document.documentElement.classList.remove("pv-cloud-loading");
     const user = api.usuarioActual();
-    actualizarNavegacion(user);
+    actualizarNavegacion(user, datos);
+    if (rolActual === "admin" && document.getElementById("view-panel")?.classList.contains("active")) {
+      mvp.mostrarVista("admin");
+    }
     actualizarNotificacionesGlobales(datos, user);
-    mensaje(user ? `Firebase activo · ${rolActual} · ${user.email || "cuenta autenticada"}` : "Firebase activo · catálogo público");
+    mensaje(datos.registroIncompleto
+      ? "Tu registro profesional quedó incompleto. Abre “Soy profesional” y envíalo nuevamente con el mismo correo."
+      : (user ? `Firebase activo · ${rolActual} · ${user.email || "cuenta autenticada"}` : "Firebase activo · catálogo público"), Boolean(datos.registroIncompleto));
   } catch (error) {
     console.error("No se pudieron cargar los datos de Profesionales Vigna’s.", error);
-    mensaje("Modo demostración: las reglas Firebase todavía no están desplegadas.", true);
+    const user = api.usuarioActual();
+    const datosSeguros = {
+      version: 1, nube: true, rol: user ? rolActual : "publico", usuarioUid: user?.uid || "",
+      profesionales: [], clientes: [], solicitudes: [], cotizaciones: [], contratos: [], hitos: [],
+      pagosDeclarados: [], ordenesCambio: [], mensajesContrato: [], actuacionesContrato: [],
+      especialidades: [], planesProfesionales: [], portafolios: [], resenas: [], auditoria: [],
+      solicitudesEliminacion: [], cargaFallida: true
+    };
+    mvp.setData(datosSeguros);
+    document.documentElement.classList.remove("pv-cloud-loading");
+    actualizarNavegacion(user, datosSeguros);
+    mensaje("No se pudo sincronizar la cuenta. No se mostrarán datos guardados ni perfiles de otra sesión.", true);
   }
 }
 
@@ -328,6 +356,55 @@ async function ejecutar(form, tarea, exito) {
   }
 }
 
+function limpiarRetornoPagoPlan() {
+  const url = new URL(window.location.href);
+  ["pagoPlan", "payment_id", "collection_id", "collection_status", "payment_type", "merchant_order_id", "preference_id", "site_id", "processing_mode", "merchant_account_id"].forEach((clave) => url.searchParams.delete(clave));
+  window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
+}
+
+async function procesarRetornoPagoPlan(user) {
+  if (retornoPagoPlanProcesado) return;
+  const params = new URLSearchParams(window.location.search);
+  const retorno = params.get("pagoPlan");
+  if (!retorno) return;
+  if (!user) {
+    mensaje("Ingresa con la cuenta profesional que realizó el pago para verificarlo.", true);
+    return;
+  }
+
+  retornoPagoPlanProcesado = true;
+  if (retorno === "fallido" || retorno === "pendiente") {
+    const texto = retorno === "fallido"
+      ? "El pago no se completó. Puedes volver a intentarlo desde tu panel."
+      : "El pago está pendiente. El plan se activará automáticamente cuando Mercado Pago lo apruebe.";
+    limpiarRetornoPagoPlan();
+    mensaje(texto, retorno === "fallido");
+    alert(texto);
+    return;
+  }
+
+  const paymentId = params.get("payment_id") || params.get("collection_id");
+  if (retorno !== "retorno" || !paymentId) {
+    limpiarRetornoPagoPlan();
+    mensaje("Mercado Pago no devolvió un identificador verificable.", true);
+    return;
+  }
+
+  try {
+    mensaje("Verificando el pago del plan con Mercado Pago…");
+    const resultado = await api.verificarPagoPlanProfesional(paymentId);
+    limpiarRetornoPagoPlan();
+    await refrescarNube();
+    const texto = `Pago aprobado. Plan ${resultado.plan || "profesional"} activo${resultado.venceEn ? ` hasta ${new Date(resultado.venceEn).toLocaleDateString("es-PE")}` : ""}.`;
+    mensaje(texto);
+    alert(texto);
+  } catch (error) {
+    retornoPagoPlanProcesado = false;
+    mensaje(error.message || "No se pudo verificar el pago del plan.", true);
+    alert(error.message || "No se pudo verificar el pago del plan.");
+  }
+}
+
 document.addEventListener("submit", async (event) => {
   const form = event.target;
   if (!(form instanceof HTMLFormElement)) return;
@@ -341,7 +418,87 @@ document.addEventListener("submit", async (event) => {
     }, "Sesión iniciada correctamente.");
     return;
   }
+  if (form.id === "pvAccountDeletionForm") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const datos = new FormData(form);
+    if (datos.get("confirmacion") !== "on") return;
+    await ejecutar(form, async () => {
+      const solicitud = await api.solicitarEliminacionCuenta(datos.get("motivo"));
+      document.getElementById("pvAccountDeletionStatus").textContent = `Solicitud ${solicitud.estado}. VIGNA confirmará cuando la eliminación haya concluido.`;
+    }, "Solicitud de eliminación registrada.");
+    return;
+  }
   const datos = new FormData(form);
+  if (form.matches("[data-specialty-create]")) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(form, () => api.crearEspecialidad({
+      profesion: datos.get("profesion"),
+      principal: datos.get("principal") === "on",
+      experiencia: datos.get("experiencia"),
+      descripcion: datos.get("descripcion")
+    }), "Profesión registrada y enviada a revisión.");
+    return;
+  }
+  if (form.matches("[data-specialty-form]")) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(form, () => api.actualizarEspecialidad(form.dataset.specialtyForm, {
+      principal: datos.get("principal") === "on",
+      experiencia: datos.get("experiencia"),
+      descripcion: datos.get("descripcion")
+    }, datos.getAll("evidencias")), "Especialidad y evidencias actualizadas.");
+    return;
+  }
+  if (form.id === "milestoneForm") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const boton = form.querySelector("[data-create-milestone]");
+    await ejecutar(form, () => api.crearHito(boton.dataset.createMilestone, datos.get("titulo"), datos.get("detalle"), datos.get("fechaObjetivo")), "Hito creado y vinculado al contrato.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  if (form.id === "paymentDeclarationForm") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const boton = form.querySelector("[data-declare-payment]");
+    const comprobante = datos.get("comprobante");
+    await ejecutar(form, () => api.declararPago(boton.dataset.declarePayment, {
+      monto: datos.get("monto"), metodo: datos.get("metodo"), referencia: datos.get("referencia"),
+      fechaPago: datos.get("fechaPago"), nota: datos.get("nota")
+    }, comprobante instanceof File && comprobante.size ? comprobante : null), "Pago declarado y notificado al profesional.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  if (form.id === "changeOrderForm") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const boton = form.querySelector("[data-propose-change]");
+    await ejecutar(form, () => api.proponerOrdenCambio(boton.dataset.proposeChange, {
+      descripcion: datos.get("descripcion"), motivo: datos.get("motivo"),
+      impactoMonto: datos.get("impactoMonto"), impactoDias: Number(datos.get("impactoDias") || 0)
+    }), "Orden de cambio enviada a la otra parte.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  if (form.id === "contractMessageForm") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const boton = form.querySelector("[data-send-contract-message]");
+    const adjunto = datos.get("adjunto");
+    await ejecutar(form, () => api.enviarMensajeContrato(boton.dataset.sendContractMessage, datos.get("mensaje"), adjunto instanceof File && adjunto.size ? adjunto : null), "Mensaje agregado al expediente contractual.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  if (form.id === "contractActuationForm") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const boton = form.querySelector("[data-request-actuation]");
+    await ejecutar(form, () => api.solicitarActuacionContrato(boton.dataset.requestActuation, datos.get("tipo"), datos.get("motivo")), "Solicitud contractual registrada y notificada.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
   const acciones = {
     formProfesional: [() => api.registrarProfesional(datos), "Perfil profesional enviado a revisión."],
     formCliente: [() => api.registrarCliente(datos), "Cuenta de cliente enviada a revisión."],
@@ -357,6 +514,22 @@ document.addEventListener("submit", async (event) => {
 }, true);
 
 document.addEventListener("click", async (event) => {
+  const recuperar = event.target.closest("[data-password-reset]");
+  if (recuperar) {
+    const form = document.getElementById("pvLoginForm");
+    const correo = form?.elements?.correo?.value || "";
+    await ejecutar(form, () => api.recuperarPassword(correo), "Si la cuenta existe, Firebase enviará instrucciones de recuperación al correo indicado.");
+    return;
+  }
+  if (event.target.closest("[data-account-deletion-open]")) {
+    document.getElementById("pvAccessDialog")?.close();
+    document.getElementById("pvAccountDeletionDialog")?.showModal();
+    return;
+  }
+  if (event.target.closest("[data-account-deletion-close]")) {
+    document.getElementById("pvAccountDeletionDialog")?.close();
+    return;
+  }
   const destinoAviso = event.target.closest("[data-pv-notification-target]");
   if (destinoAviso) {
     const destino = destinoAviso.dataset.pvNotificationTarget;
@@ -389,10 +562,7 @@ document.addEventListener("click", async (event) => {
   }
   const acceso = event.target.closest("[data-pv-access]");
   if (acceso) {
-    if (api.usuarioActual()) {
-      await api.cerrarSesion();
-      location.reload();
-    } else document.getElementById("pvAccessDialog")?.showModal();
+    document.getElementById("pvAccessDialog")?.showModal();
     return;
   }
   if (event.target.closest("[data-pv-close]")) document.getElementById("pvAccessDialog")?.close();
@@ -400,6 +570,22 @@ document.addEventListener("click", async (event) => {
   if (event.target.closest("#pvLogoutButton")) {
     await api.cerrarSesion();
     location.reload();
+    return;
+  }
+  const eliminacionAdmin = event.target.closest("[data-admin-deletion]");
+  if (eliminacionAdmin) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const estado = eliminacionAdmin.dataset.deletionState;
+    const nota = prompt(estado === "Completada"
+      ? "Describe brevemente qué datos fueron eliminados o anonimizados antes de confirmar:"
+      : "Nota administrativa del trámite:", "");
+    if (nota === null) return;
+    if (estado === "Completada" && nota.trim().length < 10) {
+      alert("La confirmación final requiere una nota de al menos 10 caracteres.");
+      return;
+    }
+    await ejecutar(null, () => api.actualizarSolicitudEliminacion(eliminacionAdmin.dataset.adminDeletion, estado, nota), `Solicitud marcada como ${estado}.`);
     return;
   }
   const elegir = event.target.closest("[data-contract-quote]");
@@ -445,6 +631,38 @@ document.addEventListener("click", async (event) => {
     }, "Plan de productos y ejecución abierto de forma segura.");
     return;
   }
+  const abrirMensaje = event.target.closest("[data-open-message-file]");
+  if (abrirMensaje) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(null, async () => {
+      const adjunto = await api.abrirAdjuntoMensaje(abrirMensaje.dataset.contractId, abrirMensaje.dataset.openMessageFile);
+      const enlace = document.createElement("a");
+      enlace.href = adjunto.url;
+      enlace.target = "_blank";
+      enlace.rel = "noopener";
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+    }, "Adjunto contractual abierto de forma segura.");
+    return;
+  }
+  const abrirEspecialidad = event.target.closest("[data-open-specialty-file]");
+  if (abrirEspecialidad) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(null, async () => {
+      const evidencia = await api.abrirEvidenciaEspecialidad(abrirEspecialidad.dataset.openSpecialtyFile, abrirEspecialidad.dataset.filePath);
+      const enlace = document.createElement("a");
+      enlace.href = evidencia.url;
+      enlace.target = "_blank";
+      enlace.rel = "noopener";
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+    }, "Evidencia de especialidad abierta de forma segura.");
+    return;
+  }
   const subir = event.target.closest("[data-upload-contract]");
   if (subir) {
     event.preventDefault();
@@ -452,6 +670,15 @@ document.addEventListener("click", async (event) => {
     const file = document.getElementById("signedContractFile")?.files?.[0];
     if (!file) return alert("Selecciona el contrato firmado.");
     await ejecutar(null, () => api.registrarContratoFirmado(subir.dataset.uploadContract, file), "Contrato firmado guardado en Firebase Storage.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  const confirmarFirmado = event.target.closest("[data-confirm-signed-contract]");
+  if (confirmarFirmado) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (!document.getElementById("contractHashAcceptance")?.checked) return alert("Confirma que revisaste esta versión del documento.");
+    await ejecutar(null, () => api.confirmarContratoFirmado(confirmarFirmado.dataset.confirmSignedContract), "Documento contractual confirmado.");
     document.getElementById("contractDialog")?.close();
     return;
   }
@@ -490,9 +717,18 @@ document.addEventListener("click", async (event) => {
     event.stopImmediatePropagation();
     const calificacion = document.getElementById("serviceRating")?.value;
     const comentario = document.getElementById("serviceReview")?.value;
+    const aceptacion = document.getElementById("serviceAcceptance")?.checked === true;
+    if (!aceptacion) return alert("Debes aceptar expresamente el acta de entrega y conformidad.");
     if (!confirm("¿Confirmas tu conformidad y deseas cerrar el servicio?")) return;
-    await ejecutar(null, () => api.cerrarServicio(cerrarServicio.dataset.closeService, calificacion, comentario), "Servicio cerrado y calificación registrada.");
+    await ejecutar(null, () => api.cerrarServicio(cerrarServicio.dataset.closeService, calificacion, comentario, aceptacion), "Acta aceptada, servicio cerrado y calificación registrada.");
     document.getElementById("contractDialog")?.close();
+    return;
+  }
+  if (event.target.closest("[data-print-handover]")) {
+    event.preventDefault();
+    document.body.classList.add("printing-handover");
+    window.addEventListener("afterprint", () => document.body.classList.remove("printing-handover"), { once: true });
+    window.print();
     return;
   }
   const abrirEvidencia = event.target.closest("[data-open-service-evidence]");
@@ -511,11 +747,123 @@ document.addEventListener("click", async (event) => {
     }, "Evidencia abierta de forma segura.");
     return;
   }
+  const enviarHito = event.target.closest("[data-submit-milestone]");
+  if (enviarHito) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const tarjeta = enviarHito.closest("[data-execution-record]");
+    await ejecutar(null, () => api.registrarAvanceHito(enviarHito.dataset.contractId, enviarHito.dataset.submitMilestone, tarjeta?.querySelector("[data-hito-files]")?.files, tarjeta?.querySelector("[data-hito-note]")?.value), "Avance enviado al cliente para revisión.");
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  const revisarHito = event.target.closest("[data-review-milestone]");
+  if (revisarHito) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const comentario = revisarHito.closest("[data-execution-record]")?.querySelector("[data-hito-response]")?.value;
+    await ejecutar(null, () => api.resolverHito(revisarHito.dataset.contractId, revisarHito.dataset.reviewMilestone, revisarHito.dataset.decision, comentario), `Hito ${revisarHito.dataset.decision.toLowerCase()}.`);
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  const revisarPago = event.target.closest("[data-review-payment]");
+  if (revisarPago) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const comentario = revisarPago.closest("[data-execution-record]")?.querySelector("[data-payment-response]")?.value;
+    await ejecutar(null, () => api.resolverPago(revisarPago.dataset.contractId, revisarPago.dataset.reviewPayment, revisarPago.dataset.decision, comentario), `Pago ${revisarPago.dataset.decision.toLowerCase()}.`);
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  const revisarCambio = event.target.closest("[data-review-change]");
+  if (revisarCambio) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const respuesta = revisarCambio.closest("[data-execution-record]")?.querySelector("[data-change-response]")?.value;
+    await ejecutar(null, () => api.resolverOrdenCambio(revisarCambio.dataset.contractId, revisarCambio.dataset.reviewChange, revisarCambio.dataset.decision, respuesta), `Orden de cambio ${revisarCambio.dataset.decision.toLowerCase()}.`);
+    document.getElementById("contractDialog")?.close();
+    return;
+  }
+  const abrirEjecucion = event.target.closest("[data-open-execution-file]");
+  if (abrirEjecucion) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(null, async () => {
+      const evidencia = await api.abrirEvidenciaEjecucion(abrirEjecucion.dataset.openExecutionFile, abrirEjecucion.dataset.executionType, abrirEjecucion.dataset.recordId, abrirEjecucion.dataset.filePath);
+      const enlace = document.createElement("a");
+      enlace.href = evidencia.url;
+      enlace.target = "_blank";
+      enlace.rel = "noopener";
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+    }, "Archivo privado abierto de forma segura.");
+    return;
+  }
   const admin = event.target.closest("[data-admin-professional]");
   if (admin) {
     event.preventDefault();
     event.stopImmediatePropagation();
     await ejecutar(null, () => api.cambiarEstadoProfesional(admin.dataset.adminProfessional, admin.dataset.state), `Perfil ${admin.dataset.state.toLowerCase()}.`);
+    return;
+  }
+  const migrarProfesiones = event.target.closest("[data-admin-migrate-specialties]");
+  if (migrarProfesiones) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(null, () => api.migrarProfesionesLegadas(migrarProfesiones.dataset.adminMigrateSpecialties), "Profesiones antiguas registradas como pendientes.");
+    return;
+  }
+  const especialidad = event.target.closest("[data-admin-specialty]");
+  if (especialidad) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(null, () => api.cambiarEstadoEspecialidad(especialidad.dataset.adminSpecialty, especialidad.dataset.state), `Especialidad ${especialidad.dataset.state.toLowerCase()}.`);
+    return;
+  }
+  const portafolio = event.target.closest("[data-admin-portfolio]");
+  if (portafolio) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const observacion = portafolio.dataset.state === "Aprobado" ? "" : prompt("Indica el motivo u observación para el profesional:", "") || "";
+    await ejecutar(null, () => api.moderarPortafolio(portafolio.dataset.adminPortfolio, portafolio.dataset.state, observacion), `Portafolio ${portafolio.dataset.state.toLowerCase()}.`);
+    return;
+  }
+  const solicitarPlan = event.target.closest("[data-request-plan]");
+  if (solicitarPlan) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (operacionEnCurso) return;
+    operacionEnCurso = true;
+    solicitarPlan.disabled = true;
+    mensaje(api.esPlataformaNativa() ? "Consultando la tienda del dispositivo…" : "Preparando el pago seguro…");
+    try {
+      const pago = await api.iniciarPagoPlanProfesional(solicitarPlan.dataset.requestPlan);
+      window.location.assign(pago.init_point);
+    } catch (error) {
+      console.error(error);
+      mensaje(error.message || "No se pudo iniciar el pago del plan.", true);
+      alert(error.message || "No se pudo iniciar el pago del plan.");
+      solicitarPlan.disabled = false;
+      operacionEnCurso = false;
+    }
+    return;
+  }
+  const activarPlan = event.target.closest("[data-admin-activate-plan]");
+  if (activarPlan) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (!confirm(`¿Confirmas que corresponde activar el plan ${activarPlan.dataset.planType}?`)) return;
+    await ejecutar(null, () => api.activarPlanProfesional(activarPlan.dataset.adminActivatePlan, activarPlan.dataset.planType), "Plan profesional activado y perfil habilitado según su estado.");
+    return;
+  }
+  const resolverActuacion = event.target.closest("[data-resolve-actuation]");
+  if (resolverActuacion) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const resolucion = resolverActuacion.closest(".execution-inline-form")?.querySelector("[data-actuation-resolution]")?.value || "";
+    await ejecutar(null, () => api.resolverActuacionContrato(resolverActuacion.dataset.resolveActuation, resolverActuacion.dataset.decision, resolucion), `Actuación ${resolverActuacion.dataset.decision.toLowerCase()}.`);
+    document.getElementById("contractDialog")?.close();
+    return;
   }
   const revisarProfesional = event.target.closest("[data-review-professional]");
   if (revisarProfesional) {
@@ -558,7 +906,22 @@ api.observarSesion(async (user) => {
     }
   }
   actualizarNavegacion(user);
+  const formularioEliminacion = document.getElementById("pvAccountDeletionForm");
+  const invitadoEliminacion = document.getElementById("pvAccountDeletionGuest");
+  if (formularioEliminacion) formularioEliminacion.hidden = !user;
+  if (invitadoEliminacion) invitadoEliminacion.hidden = Boolean(user);
+  if (user) {
+    document.getElementById("pvAccountDeletionEmail").textContent = user.email || user.uid;
+    try {
+      const solicitud = await api.obtenerSolicitudEliminacion();
+      if (solicitud) document.getElementById("pvAccountDeletionStatus").textContent = `Solicitud ${solicitud.estado} desde ${fechaNotificacion(solicitud.solicitadoEn)}.`;
+    } catch (error) {
+      console.warn("No se pudo consultar la solicitud de eliminación.", error);
+    }
+  }
+  if (new URLSearchParams(location.search).get("eliminar-cuenta") === "1") document.getElementById("pvAccountDeletionDialog")?.showModal();
   await refrescarNube();
+  await procesarRetornoPagoPlan(user);
   if (user && api.usuarioActual()?.uid === user.uid) {
     detenerActividad = await api.observarActividad(
       (actividad) => recibirActividadEnTiempoReal(actividad, user),

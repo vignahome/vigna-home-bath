@@ -8,3 +8,17 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 .vscode/
+hosting-profesionales/
+.firebase/
+
+# Capacitor: artefactos locales, compilaciones y secretos de firma.
+android/.gradle/
+android/local.properties
+android/app/build/
+android/build/
+android/*.jks
+android/*.keystore
+ios/App/Pods/
+ios/App/App.xcworkspace/xcuserdata/
+ios/App/App.xcodeproj/xcuserdata/
+ios/DerivedData/

@@ -1,0 +1,27 @@
+{
+  "name": "VIGNA",
+  "short_name": "VIGNA",
+  "description": "Red de profesionales verificados para solicitudes, cotizaciones y contratos.",
+  "lang": "es-PE",
+  "start_url": "/mvp-profesionales",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/images/app-icons/vigna-app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/app-icons/vigna-app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

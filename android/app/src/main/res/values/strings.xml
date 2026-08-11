@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VIGNA</string>
+    <string name="title_activity_main">VIGNA</string>
+    <string name="package_name">pe.vigna.profesionales</string>
+    <string name="custom_url_scheme">pe.vigna.profesionales</string>
+</resources>
