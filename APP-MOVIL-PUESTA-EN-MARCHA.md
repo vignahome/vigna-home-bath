@@ -40,6 +40,8 @@ npm run mobile:open:android
 
 Antes de publicar en Google Play se debe definir el número de versión, crear una clave de firma privada y generar un Android App Bundle firmado. La clave, sus contraseñas y `local.properties` nunca deben incluirse en Git.
 
+La configuración segura y el comando de compilación están descritos en `TIENDAS-MOVILES.md`.
+
 ## iOS
 
 Requiere una Mac con Xcode y una cuenta de Apple Developer. Para abrir el proyecto desde macOS:
@@ -62,3 +64,5 @@ Además de las pruebas funcionales actuales, la publicación comercial requiere:
 - configuración de firma y versionado fuera del repositorio.
 
 La publicación en Firebase Hosting es independiente de la publicación en tiendas. Las reglas de Firebase no se modifican al sincronizar Capacitor.
+
+Ejecuta `npm run mobile:check:store` para validar identidad, versión, permisos y protección de las credenciales de firma.
