@@ -18,9 +18,9 @@ exigir(manifest.display === "standalone", "la aplicación no abre en modo indepe
 exigir(manifest.start_url === "/mvp-profesionales", "la ruta de inicio no abre Profesionales Vigna’s");
 exigir(manifest.icons.some((icono) => icono.sizes === "192x192"), "falta el icono PWA de 192 px");
 exigir(manifest.icons.some((icono) => icono.sizes === "512x512" && icono.purpose.includes("maskable")), "falta el icono adaptable de 512 px");
-exigir(html.includes('rel="manifest" href="manifest.webmanifest?v=2"'), "la página no enlaza el manifiesto vigente");
+exigir(html.includes('rel="manifest" href="manifest.webmanifest?v=3"'), "la página no enlaza el manifiesto vigente");
 exigir(html.includes('name="apple-mobile-web-app-capable"'), "falta compatibilidad de instalación en iOS");
-exigir(html.includes('rel="apple-touch-icon"'), "falta el icono de inicio para iOS");
+exigir(html.includes('rel="apple-touch-icon" href="images/app-icons/apple-touch-icon.png?v=3"'), "falta el icono de inicio vigente para iOS");
 exigir(bootstrap.includes('navigator.serviceWorker.register("/service-worker.js"'), "el modo instalable no registra el service worker");
 exigir(worker.includes('url.origin !== self.location.origin'), "el service worker podría interceptar servicios externos");
 exigir(worker.includes('url.pathname.startsWith("/api/")'), "el service worker no excluye respuestas de API");
