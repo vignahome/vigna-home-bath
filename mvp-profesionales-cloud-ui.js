@@ -60,7 +60,10 @@ function insertarAcceso() {
       <label>Contraseña<input name="password" type="password" autocomplete="current-password" required></label>
       <button class="gold-button" type="submit">Ingresar</button>
     </form>
-    <button id="pvLogoutButton" class="secondary-button" type="button" hidden>Cerrar sesión</button>`;
+    <div id="pvAccountActions" class="table-actions" hidden>
+      <button class="secondary-button" type="button" data-account-deletion-open>Eliminar mi cuenta</button>
+      <button id="pvLogoutButton" class="secondary-button" type="button">Cerrar sesión</button>
+    </div>`;
   document.body.appendChild(dialogo);
 }
 
@@ -290,9 +293,11 @@ function actualizarNavegacion(user) {
     if (boton) boton.hidden = !visible;
   });
   const acceso = document.getElementById("pvAccessButton");
-  if (acceso) acceso.textContent = user ? `${user.email || "Mi cuenta"} · Salir` : "Ingresar";
-  const salir = document.getElementById("pvLogoutButton");
-  if (salir) salir.hidden = !user;
+  if (acceso) acceso.textContent = user ? `${user.email || "Mi cuenta"} · Cuenta` : "Ingresar";
+  const login = document.getElementById("pvLoginForm");
+  const acciones = document.getElementById("pvAccountActions");
+  if (login) login.hidden = Boolean(user);
+  if (acciones) acciones.hidden = !user;
 }
 
 async function refrescarNube() {
@@ -443,6 +448,7 @@ document.addEventListener("submit", async (event) => {
 
 document.addEventListener("click", async (event) => {
   if (event.target.closest("[data-account-deletion-open]")) {
+    document.getElementById("pvAccessDialog")?.close();
     document.getElementById("pvAccountDeletionDialog")?.showModal();
     return;
   }
@@ -482,10 +488,7 @@ document.addEventListener("click", async (event) => {
   }
   const acceso = event.target.closest("[data-pv-access]");
   if (acceso) {
-    if (api.usuarioActual()) {
-      await api.cerrarSesion();
-      location.reload();
-    } else document.getElementById("pvAccessDialog")?.showModal();
+    document.getElementById("pvAccessDialog")?.showModal();
     return;
   }
   if (event.target.closest("[data-pv-close]")) document.getElementById("pvAccessDialog")?.close();

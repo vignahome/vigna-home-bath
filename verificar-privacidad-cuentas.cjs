@@ -7,6 +7,7 @@ const reglas = leer("firestore.rules");
 const build = leer("preparar-hosting-profesionales.js");
 for (const archivo of ["privacidad-vigna.html", "soporte-vigna.html", "eliminar-cuenta.html", "legal-vigna.css"]) exigir(fs.existsSync(archivo), `Falta ${archivo}`);
 exigir(html.includes("data-account-deletion-open"), "La eliminación no es accesible dentro de la app.");
+exigir(leer("mvp-profesionales-cloud-ui.js").includes('id="pvAccountActions"') && leer("mvp-profesionales-cloud-ui.js").includes("Eliminar mi cuenta"), "La eliminación no es accesible desde el menú de cuenta.");
 exigir(html.includes("privacidad-vigna.html") && html.includes("soporte-vigna.html"), "Faltan enlaces legales dentro de la app.");
 exigir(firebase.includes("solicitarEliminacionCuenta") && firebase.includes("pv_solicitudes_eliminacion"), "Falta el registro autenticado de eliminación.");
 exigir(firebase.includes("actualizarSolicitudEliminacion"), "Falta la gestión administrativa de eliminaciones.");
