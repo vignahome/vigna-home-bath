@@ -49,6 +49,9 @@ assert.match(servidor, /procesarPagoPlanProfesional/, "falta el procesador idemp
 assert.match(servidor, /pagoAnterior\.estado !== "approved"/, "falta protección contra activaciones duplicadas");
 assert.match(servidor, /tipo_pago === "plan_profesional"/, "el webhook no separa los pagos de planes");
 assert.match(firebase, /Authorization: `Bearer \$\{idToken\}`/, "el navegador no autentica el pago");
+assert.match(firebase, /async function obtenerPlanProfesionalPropio\(\)/, "el panel debe poder recuperar el plan propio de forma independiente");
+assert.match(interfaz, /api\.obtenerPlanProfesionalPropio\(\)/, "un error secundario del catálogo no debe ocultar un plan pagado");
+assert.match(interfaz, /planRegistro: plan/, "el plan recuperado debe reflejarse en el perfil visible");
 assert.match(firebase, /isNativePlatform/, "la app nativa debe separar la facturación de tienda");
 assert.match(interfaz, /verificarPagoPlanProfesional/, "falta verificar el retorno de Mercado Pago");
 assert.match(reglas, /match \/pv_pagos_planes\/\{pagoId\}/, "faltan reglas de lectura de pagos de planes");

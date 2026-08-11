@@ -1141,6 +1141,12 @@ async function verificarPagoPlanProfesional(paymentId) {
   return datos;
 }
 
+async function obtenerPlanProfesionalPropio() {
+  const user = exigirUsuario();
+  const snapshot = await getDoc(doc(db, COLECCIONES.planesProfesionales, user.uid));
+  return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
+}
+
 async function activarPlanProfesional(uid, tipo = "") {
   const user = exigirUsuario();
   await exigirPermisoAdmin("finanzas");
@@ -1380,6 +1386,7 @@ export const ProfesionalesFirebase = Object.freeze({
   solicitarPlanProfesional,
   iniciarPagoPlanProfesional,
   verificarPagoPlanProfesional,
+  obtenerPlanProfesionalPropio,
   esPlataformaNativa,
   activarPlanProfesional,
   cargarDatos,

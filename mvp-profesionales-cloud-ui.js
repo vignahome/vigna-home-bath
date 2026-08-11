@@ -317,6 +317,41 @@ async function refrescarNube() {
       : (user ? `Firebase activo · ${rolActual} · ${user.email || "cuenta autenticada"}` : "Firebase activo · catálogo público"), Boolean(datos.registroIncompleto));
   } catch (error) {
     console.error("No se pudieron cargar los datos de Profesionales Vigna’s.", error);
+    const user = api.usuarioActual();
+    if (user && rolActual === "profesional") {
+      try {
+        const plan = await api.obtenerPlanProfesionalPropio();
+        if (plan) {
+          const actuales = mvp.getData();
+          const profesionales = (actuales.profesionales || []).map((perfil) =>
+            (perfil.uid || perfil.id) === user.uid
+              ? {
+                  ...perfil,
+                  planRegistro: plan,
+                  plan: plan.tipo || perfil.plan,
+                  planEstado: plan.estado || perfil.planEstado,
+                  planVenceEn: plan.venceEn || perfil.planVenceEn
+                }
+              : perfil
+          );
+          rolActual = "profesional";
+          const datosParciales = {
+            ...actuales,
+            rol: rolActual,
+            usuarioUid: user.uid,
+            profesionales,
+            planesProfesionales: [plan]
+          };
+          mvp.setData(datosParciales);
+          document.documentElement.classList.remove("pv-cloud-loading");
+          actualizarNavegacion(user, datosParciales);
+          mensaje(`Firebase activo · profesional · ${user.email || "cuenta autenticada"}`);
+          return;
+        }
+      } catch (planError) {
+        console.error("No se pudo recuperar el plan profesional propio.", planError);
+      }
+    }
     mensaje("No se pudo cargar el catálogo. Intenta actualizar la página.", true);
   }
 }
