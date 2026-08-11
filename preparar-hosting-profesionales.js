@@ -23,6 +23,7 @@ const ARCHIVOS = [
   "service-worker.js",
   "legal-vigna.css",
   "privacidad-vigna.html",
+  "terminos-vigna.html",
   "soporte-vigna.html",
   "eliminar-cuenta.html",
   "garantias-reclamos.html",

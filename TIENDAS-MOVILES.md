@@ -30,6 +30,7 @@ VIGNA conecta clientes con profesionales verificados para solicitar, cotizar y g
 ## URLs públicas para las consolas
 
 - Política de privacidad: `https://vigna-plomeros.web.app/privacidad-vigna.html`
+- Términos de uso: `https://vigna-plomeros.web.app/terminos-vigna.html`
 - Soporte: `https://vigna-plomeros.web.app/soporte-vigna.html`
 - Eliminación de cuenta: `https://vigna-plomeros.web.app/eliminar-cuenta.html`
 
