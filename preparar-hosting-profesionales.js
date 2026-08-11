@@ -9,6 +9,7 @@ const ICONOS_APP = [
   path.join("images", "app-icons", "vigna-app-icon-192.png"),
   path.join("images", "app-icons", "vigna-app-icon-512.png"),
   path.join("images", "app-icons", "apple-touch-icon.png"),
+  path.join("images", "app-icons", "vigna-ios-icon-180-v4.png"),
   path.join("images", "app-icons", "favicon-32.png")
 ];
 const ARCHIVOS = [
