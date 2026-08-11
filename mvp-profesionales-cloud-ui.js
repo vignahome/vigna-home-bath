@@ -346,6 +346,17 @@ document.addEventListener("submit", async (event) => {
     }, "Sesión iniciada correctamente.");
     return;
   }
+  if (form.id === "pvAccountDeletionForm") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const datos = new FormData(form);
+    if (datos.get("confirmacion") !== "on") return;
+    await ejecutar(form, async () => {
+      const solicitud = await api.solicitarEliminacionCuenta(datos.get("motivo"));
+      document.getElementById("pvAccountDeletionStatus").textContent = `Solicitud ${solicitud.estado}. VIGNA confirmará cuando la eliminación haya concluido.`;
+    }, "Solicitud de eliminación registrada.");
+    return;
+  }
   const datos = new FormData(form);
   if (form.matches("[data-specialty-create]")) {
     event.preventDefault();
@@ -431,6 +442,14 @@ document.addEventListener("submit", async (event) => {
 }, true);
 
 document.addEventListener("click", async (event) => {
+  if (event.target.closest("[data-account-deletion-open]")) {
+    document.getElementById("pvAccountDeletionDialog")?.showModal();
+    return;
+  }
+  if (event.target.closest("[data-account-deletion-close]")) {
+    document.getElementById("pvAccountDeletionDialog")?.close();
+    return;
+  }
   const destinoAviso = event.target.closest("[data-pv-notification-target]");
   if (destinoAviso) {
     const destino = destinoAviso.dataset.pvNotificationTarget;
@@ -474,6 +493,22 @@ document.addEventListener("click", async (event) => {
   if (event.target.closest("#pvLogoutButton")) {
     await api.cerrarSesion();
     location.reload();
+    return;
+  }
+  const eliminacionAdmin = event.target.closest("[data-admin-deletion]");
+  if (eliminacionAdmin) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const estado = eliminacionAdmin.dataset.deletionState;
+    const nota = prompt(estado === "Completada"
+      ? "Describe brevemente qué datos fueron eliminados o anonimizados antes de confirmar:"
+      : "Nota administrativa del trámite:", "");
+    if (nota === null) return;
+    if (estado === "Completada" && nota.trim().length < 10) {
+      alert("La confirmación final requiere una nota de al menos 10 caracteres.");
+      return;
+    }
+    await ejecutar(null, () => api.actualizarSolicitudEliminacion(eliminacionAdmin.dataset.adminDeletion, estado, nota), `Solicitud marcada como ${estado}.`);
     return;
   }
   const elegir = event.target.closest("[data-contract-quote]");
@@ -781,6 +816,20 @@ api.observarSesion(async (user) => {
     }
   }
   actualizarNavegacion(user);
+  const formularioEliminacion = document.getElementById("pvAccountDeletionForm");
+  const invitadoEliminacion = document.getElementById("pvAccountDeletionGuest");
+  if (formularioEliminacion) formularioEliminacion.hidden = !user;
+  if (invitadoEliminacion) invitadoEliminacion.hidden = Boolean(user);
+  if (user) {
+    document.getElementById("pvAccountDeletionEmail").textContent = user.email || user.uid;
+    try {
+      const solicitud = await api.obtenerSolicitudEliminacion();
+      if (solicitud) document.getElementById("pvAccountDeletionStatus").textContent = `Solicitud ${solicitud.estado} desde ${fechaNotificacion(solicitud.solicitadoEn)}.`;
+    } catch (error) {
+      console.warn("No se pudo consultar la solicitud de eliminación.", error);
+    }
+  }
+  if (new URLSearchParams(location.search).get("eliminar-cuenta") === "1") document.getElementById("pvAccountDeletionDialog")?.showModal();
   await refrescarNube();
   if (user && api.usuarioActual()?.uid === user.uid) {
     detenerActividad = await api.observarActividad(

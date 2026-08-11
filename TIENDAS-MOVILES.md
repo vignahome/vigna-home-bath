@@ -27,10 +27,16 @@ VIGNA conecta clientes con profesionales verificados para solicitar, cotizar y g
 - Firebase Storage almacena documentos y evidencias con acceso protegido por reglas.
 - La aplicación no vende datos personales ni utiliza archivos privados para publicidad.
 
+## URLs públicas para las consolas
+
+- Política de privacidad: `https://vigna-plomeros.web.app/privacidad-vigna.html`
+- Soporte: `https://vigna-plomeros.web.app/soporte-vigna.html`
+- Eliminación de cuenta: `https://vigna-plomeros.web.app/eliminar-cuenta.html`
+
+Estas URLs estarán disponibles después de publicar Hosting. La eliminación también se inicia dentro de la app desde el pie de página.
+
 ## Material que falta aportar en las consolas
 
-- URL pública definitiva de política de privacidad.
-- URL o correo público definitivo de soporte.
 - Nombre legal, dirección y datos del titular de las cuentas de desarrollador.
 - Capturas finales exigidas por cada tamaño de pantalla.
 - Credenciales de revisión para una cuenta de cliente y otra de profesional, sin privilegios administrativos.
@@ -58,7 +64,7 @@ La clave `.jks`, sus contraseñas y `keystore.properties` están excluidos de Gi
 
 ## Secuencia de publicación recomendada
 
-1. Completar política de privacidad y soporte público.
+1. Publicar política de privacidad, soporte y eliminación de cuenta.
 2. Crear las fichas en Play Console y App Store Connect.
 3. Generar la clave de carga Android y el `.aab`.
 4. Archivar iOS desde una Mac.

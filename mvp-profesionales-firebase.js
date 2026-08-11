@@ -44,7 +44,8 @@ const COLECCIONES = Object.freeze({
   actuacionesContrato: "pv_actuaciones_contrato",
   resenas: "pv_resenas",
   auditoria: "pv_auditoria",
-  preferenciasNotificaciones: "pv_preferencias_notificaciones"
+  preferenciasNotificaciones: "pv_preferencias_notificaciones",
+  solicitudesEliminacion: "pv_solicitudes_eliminacion"
 });
 
 const ahora = () => new Date().toISOString();
@@ -268,6 +269,39 @@ async function iniciarSesion(correo, password) {
 
 async function cerrarSesion() {
   await signOut(auth);
+}
+
+async function obtenerSolicitudEliminacion() {
+  const user = exigirUsuario();
+  const snapshot = await getDoc(doc(db, COLECCIONES.solicitudesEliminacion, user.uid));
+  return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
+}
+
+async function solicitarEliminacionCuenta(motivo = "") {
+  const user = exigirUsuario();
+  const referencia = doc(db, COLECCIONES.solicitudesEliminacion, user.uid);
+  const existente = await getDoc(referencia);
+  if (existente.exists()) throw new Error(`Ya existe una solicitud de eliminación con estado ${existente.data().estado || "registrada"}.`);
+  await setDoc(referencia, { uid: user.uid, correo: user.email || "", motivo: String(motivo || "").trim().slice(0, 500), estado: "Pendiente", solicitadoEn: ahora(), actualizadoEn: ahora() });
+  return obtenerSolicitudEliminacion();
+}
+
+async function actualizarSolicitudEliminacion(uid, estado, nota = "") {
+  const admin = exigirUsuario();
+  if (!await esAdmin(admin.uid)) throw new Error("Solo administración puede tramitar eliminaciones.");
+  if (!["En proceso", "Completada", "Rechazada"].includes(estado)) throw new Error("Estado de eliminación no válido.");
+  const referencia = doc(db, COLECCIONES.solicitudesEliminacion, uid);
+  const snapshot = await getDoc(referencia);
+  if (!snapshot.exists()) throw new Error("La solicitud de eliminación no existe.");
+  await updateDoc(referencia, {
+    estado,
+    notaAdministrativa: String(nota || "").trim().slice(0, 1000),
+    atendidoPorUid: admin.uid,
+    atendidoPorCorreo: admin.email || "",
+    actualizadoEn: ahora(),
+    completadoEn: estado === "Completada" ? ahora() : ""
+  });
+  await auditar("Solicitud de eliminación actualizada", `${uid}: ${estado}`, [uid]);
 }
 
 async function obtenerRevisionNotificaciones() {
@@ -1089,6 +1123,7 @@ async function cargarDatos() {
   let portafolios = [];
   let mensajesContrato = [];
   let actuacionesContrato = [];
+  let solicitudesEliminacion = [];
   try {
     resenas = await todos(COLECCIONES.resenas);
   } catch (error) {
@@ -1131,11 +1166,11 @@ async function cargarDatos() {
   }
 
   if (rol === "admin") {
-    [profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, mensajesContrato, actuacionesContrato, especialidades, planesProfesionales, portafolios, auditoria] = await Promise.all([
+    [profesionales, clientes, solicitudes, cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, mensajesContrato, actuacionesContrato, especialidades, planesProfesionales, portafolios, auditoria, solicitudesEliminacion] = await Promise.all([
       todos(COLECCIONES.profesionales), todos(COLECCIONES.clientes), todos(COLECCIONES.solicitudes),
       todos(COLECCIONES.cotizaciones), todos(COLECCIONES.contratos), todos(COLECCIONES.hitos),
       todos(COLECCIONES.pagosDeclarados), todos(COLECCIONES.ordenesCambio), todos(COLECCIONES.mensajesContrato), todos(COLECCIONES.actuacionesContrato), todos(COLECCIONES.profesionesProfesional),
-      todos(COLECCIONES.planesProfesionales), todos(COLECCIONES.portafolios), todos(COLECCIONES.auditoria)
+      todos(COLECCIONES.planesProfesionales), todos(COLECCIONES.portafolios), todos(COLECCIONES.auditoria), todos(COLECCIONES.solicitudesEliminacion)
     ]);
     const privados = await todos(COLECCIONES.profesionalesPrivados);
     const privadosPorUid = new Map(privados.map((item) => [item.uid || item.id, item]));
@@ -1191,7 +1226,7 @@ async function cargarDatos() {
   }
   anexarProfesional();
   const adaptar = (items) => items.map((item) => ({ ...item, clienteId: item.clienteUid || item.clienteId, profesionalId: item.profesionalUid || item.profesionalId, actor: item.actorEmail || item.actorUid || "Sistema" }));
-  return { version: 1, profesionales: adaptar(profesionales), clientes: adaptar(clientes), solicitudes: adaptar(solicitudes), cotizaciones: adaptar(cotizaciones), contratos: adaptar(contratos), hitos: adaptar(hitos), pagosDeclarados: adaptar(pagosDeclarados), ordenesCambio: adaptar(ordenesCambio), mensajesContrato: adaptar(mensajesContrato), actuacionesContrato: adaptar(actuacionesContrato), especialidades: adaptar(especialidades), planesProfesionales: adaptar(planesProfesionales), portafolios: adaptar(portafolios), resenas: adaptar(resenas), auditoria: adaptar(auditoria), nube: true, rol, adminRol };
+  return { version: 1, profesionales: adaptar(profesionales), clientes: adaptar(clientes), solicitudes: adaptar(solicitudes), cotizaciones: adaptar(cotizaciones), contratos: adaptar(contratos), hitos: adaptar(hitos), pagosDeclarados: adaptar(pagosDeclarados), ordenesCambio: adaptar(ordenesCambio), mensajesContrato: adaptar(mensajesContrato), actuacionesContrato: adaptar(actuacionesContrato), especialidades: adaptar(especialidades), planesProfesionales: adaptar(planesProfesionales), portafolios: adaptar(portafolios), resenas: adaptar(resenas), auditoria: adaptar(auditoria), solicitudesEliminacion: adaptar(solicitudesEliminacion), nube: true, rol, adminRol };
 }
 
 const observarSesion = (callback) => onAuthStateChanged(auth, callback);
@@ -1217,6 +1252,9 @@ export const ProfesionalesFirebase = Object.freeze({
   registrarCliente,
   iniciarSesion,
   cerrarSesion,
+  obtenerSolicitudEliminacion,
+  solicitarEliminacionCuenta,
+  actualizarSolicitudEliminacion,
   obtenerRol,
   esAdmin,
   obtenerAdminRol,

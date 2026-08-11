@@ -25,3 +25,5 @@ exigir(paquete.scripts["mobile:build:android:aab"], "falta el comando para gener
 exigir(fs.existsSync("TIENDAS-MOVILES.md"), "falta la ficha y lista de publicación");
 
 console.log("Publicación móvil: identidad, versión, permisos y firma segura verificados.");
+require("./verificar-privacidad-cuentas.cjs");
+if (!require("node:fs").existsSync("DECLARACIONES-PRIVACIDAD-TIENDAS.md")) throw new Error("Faltan las declaraciones de privacidad para tiendas.");

@@ -119,6 +119,27 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /pv_solicitudes_eliminacion/{uid} {
+      allow create: if autenticado() && request.auth.uid == uid &&
+        request.resource.data.uid == uid &&
+        request.resource.data.correo == request.auth.token.email &&
+        request.resource.data.estado == "Pendiente" &&
+        request.resource.data.motivo is string && request.resource.data.motivo.size() <= 500;
+      allow read: if esAdmin() || (autenticado() && request.auth.uid == uid);
+      allow update: if esAdmin() &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.correo == resource.data.correo &&
+        request.resource.data.solicitadoEn == resource.data.solicitadoEn &&
+        request.resource.data.estado in ["En proceso", "Completada", "Rechazada"] &&
+        request.resource.data.notaAdministrativa is string &&
+        (request.resource.data.estado != "Completada" || request.resource.data.notaAdministrativa.size() >= 10) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "estado", "notaAdministrativa", "atendidoPorUid", "atendidoPorCorreo",
+          "actualizadoEn", "completadoEn"
+        ]);
+      allow delete: if false;
+    }
+
     match /pv_profesionales/{uid} {
       allow read: if resource.data.estado == "Aprobado" || esAdmin() ||
         (autenticado() && request.auth.uid == uid);

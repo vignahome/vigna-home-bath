@@ -314,14 +314,22 @@
     <section class="view" id="view-admin">
       <div class="page-intro"><p class="eyebrow">CONTROL Y AUDITORÍA</p><h1>Panel de administración</h1><p>Aprueba perfiles, revisa documentos declarados y consulta contratos.</p><div class="table-actions"><span id="adminRoleBadge" class="status-chip"></span><button id="adminExportCsv" class="secondary-button" type="button">Exportar resumen CSV</button><button id="adminExportJson" class="secondary-button" type="button">Exportar auditoría JSON</button></div></div>
       <div class="metrics" id="adminMetricas"></div>
-      <div class="admin-tabs"><button class="active" data-admin-tab="profesionales">Profesionales</button><button data-admin-tab="clientes">Clientes</button><button data-admin-tab="solicitudes">Solicitudes</button><button data-admin-tab="contratos">Contratos</button><button data-admin-tab="auditoria">Auditoría</button></div>
+      <div class="admin-tabs"><button class="active" data-admin-tab="profesionales">Profesionales</button><button data-admin-tab="clientes">Clientes</button><button data-admin-tab="solicitudes">Solicitudes</button><button data-admin-tab="contratos">Contratos</button><button data-admin-tab="eliminaciones">Eliminaciones</button><button data-admin-tab="auditoria">Auditoría</button></div>
       <div class="admin-panel active" id="admin-profesionales"></div>
       <div class="admin-panel" id="admin-clientes"></div>
       <div class="admin-panel" id="admin-solicitudes"></div>
       <div class="admin-panel" id="admin-contratos"></div>
+      <div class="admin-panel" id="admin-eliminaciones"><p class="private-note">Confirma una eliminación únicamente después de borrar o anonimizar los datos aplicables en Authentication, Firestore y Storage, documentando cualquier conservación legal.</p></div>
       <div class="admin-panel" id="admin-auditoria"></div>
     </section>
   </main>
+
+  <footer class="mvp-footer">
+    <span>© VIGNA</span>
+    <a href="privacidad-vigna.html">Privacidad</a>
+    <a href="soporte-vigna.html">Soporte</a>
+    <button type="button" data-account-deletion-open>Eliminar mi cuenta</button>
+  </footer>
 
   <a id="pvAssistanceFab" class="assistance-fab" href="garantias-reclamos.html" aria-label="Asistencia" title="Asistencia">
     <svg viewBox="0 0 64 64" role="img" aria-hidden="true">
@@ -349,6 +357,19 @@
       </div>
     </div>
     <div id="pvNotificationsList" class="pv-notifications-list" aria-live="polite"></div>
+  </dialog>
+  <dialog id="pvAccountDeletionDialog" class="mvp-dialog pv-account-deletion-dialog">
+    <button class="dialog-close" data-account-deletion-close type="button" aria-label="Cerrar">×</button>
+    <div class="page-intro compact"><p class="eyebrow">CONTROL DE TUS DATOS</p><h2>Eliminar mi cuenta VIGNA</h2><p>La solicitud elimina la cuenta y los datos personales asociados que VIGNA no deba conservar por obligaciones contractuales, legales, de seguridad o prevención de fraude.</p></div>
+    <div id="pvAccountDeletionGuest"><p>Debes ingresar con la cuenta que deseas eliminar para verificar tu identidad.</p><button class="gold-button" type="button" data-pv-access>Ingresar para continuar</button></div>
+    <form id="pvAccountDeletionForm" class="mini-form" hidden>
+      <p>Cuenta: <strong id="pvAccountDeletionEmail"></strong></p>
+      <label>Motivo opcional<textarea name="motivo" maxlength="500" placeholder="Puedes indicarnos por qué deseas eliminarla."></textarea></label>
+      <label class="acceptance-check"><input name="confirmacion" type="checkbox" required> Entiendo que perderé acceso a mi cuenta y que esta solicitud no puede deshacerse después de ser procesada.</label>
+      <button class="gold-button" type="submit">Solicitar eliminación definitiva</button>
+      <p id="pvAccountDeletionStatus" class="private-note" aria-live="polite"></p>
+    </form>
+    <p><a href="eliminar-cuenta.html">Información completa sobre eliminación y conservación</a></p>
   </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 

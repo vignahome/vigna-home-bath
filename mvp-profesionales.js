@@ -359,6 +359,21 @@
       if (c.anexoPlanTrabajoNombre) acciones.push(`<button class="tiny-button" data-open-work-plan="${escapar(c.id)}">Abrir plan Excel</button>`);
       return [c.id, c.solicitudId, nombreCompleto(p), dinero(c.total), c.estado, c.archivoFirmado || "Pendiente", htmlSeguro(`<div class="table-actions">${acciones.join("")}</div>`)];
     }));
+    const eliminaciones = data.solicitudesEliminacion || [];
+    const avisoEliminacion = '<p class="private-note">Confirma una eliminación únicamente después de borrar o anonimizar los datos aplicables en Authentication, Firestore y Storage. Documenta cualquier conservación legal.</p>';
+    document.getElementById("admin-eliminaciones").innerHTML = avisoEliminacion + (eliminaciones.length
+      ? tableHtml(["Cuenta", "Solicitud", "Motivo", "Estado", "Atención"], eliminaciones.map((item) => [
+        item.correo || item.uid,
+        item.solicitadoEn ? new Date(item.solicitadoEn).toLocaleString("es-PE") : "Sin fecha",
+        item.motivo || "Sin motivo declarado",
+        item.estado || "Pendiente",
+        htmlSeguro(`<div class="table-actions">
+          ${item.estado === "Pendiente" ? `<button class="tiny-button" data-admin-deletion="${escapar(item.uid)}" data-deletion-state="En proceso">Iniciar trámite</button>` : ""}
+          ${item.estado !== "Completada" ? `<button class="tiny-button approve" data-admin-deletion="${escapar(item.uid)}" data-deletion-state="Completada">Confirmar eliminación</button>` : ""}
+          ${!["Completada", "Rechazada"].includes(item.estado) ? `<button class="tiny-button reject" data-admin-deletion="${escapar(item.uid)}" data-deletion-state="Rechazada">Rechazar con motivo</button>` : ""}
+        </div>`)
+      ]))
+      : '<div class="empty-state"><p>No existen solicitudes de eliminación de cuenta.</p></div>');
     const auditoriaOrdenada = [...data.auditoria].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
     document.getElementById("admin-auditoria").innerHTML = auditoriaOrdenada.map((a) => `<div class="audit-line"><strong>${escapar(a.accion)}</strong> · ${escapar(a.actor)}<small>${new Date(a.fecha).toLocaleString("es-PE")} · ${escapar(a.detalle)}</small></div>`).join("");
   }
