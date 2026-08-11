@@ -1,8 +1,11 @@
-const CACHE_NAME = "profesionales-vigna-shell-v1";
+const CACHE_NAME = "profesionales-vigna-shell-v2";
 const APP_SHELL = [
   "/mvp-profesionales",
   "/mvp-profesionales.css?v=19",
-  "/mvp-profesionales-bootstrap.js?v=18"
+  "/mvp-profesionales-bootstrap.js?v=19",
+  "/manifest.webmanifest?v=2",
+  "/images/app-icons/vigna-app-icon-192.png",
+  "/images/app-icons/vigna-app-icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {

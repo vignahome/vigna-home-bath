@@ -5,6 +5,12 @@ const RAIZ = __dirname;
 const SALIDA = path.join(RAIZ, "hosting-profesionales");
 const LOGO = path.join("images", "logo", "ChatGPT Image 26 may 2026, 11_05_03 p.m..png");
 const PLANTILLA_CONTRATO = path.join("plantillas", "plantilla-productos-paso-a-paso-vigna.xlsx");
+const ICONOS_APP = [
+  path.join("images", "app-icons", "vigna-app-icon-192.png"),
+  path.join("images", "app-icons", "vigna-app-icon-512.png"),
+  path.join("images", "app-icons", "apple-touch-icon.png"),
+  path.join("images", "app-icons", "favicon-32.png")
+];
 const ARCHIVOS = [
   "firebase.js",
   "mvp-profesionales.css",
@@ -18,7 +24,8 @@ const ARCHIVOS = [
   "garantias-reclamos.css",
   "garantias-reclamos.js",
   PLANTILLA_CONTRATO,
-  LOGO
+  LOGO,
+  ...ICONOS_APP
 ];
 
 fs.rmSync(SALIDA, { recursive: true, force: true });

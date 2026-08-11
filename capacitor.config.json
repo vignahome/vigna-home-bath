@@ -1,0 +1,8 @@
+{
+  "appId": "pe.vigna.profesionales",
+  "appName": "Profesionales Vigna’s",
+  "webDir": "hosting-profesionales",
+  "server": {
+    "androidScheme": "https"
+  }
+}
