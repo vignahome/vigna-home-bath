@@ -26,6 +26,7 @@ const PROFESIONALES_COLLECTION = "pv_profesionales";
 const USUARIOS_COLLECTION = "pv_usuarios";
 const AUDITORIA_PROFESIONALES_COLLECTION = "pv_auditoria";
 const CONTRATOS_PROFESIONALES_COLLECTION = "pv_contratos";
+const VENTANA_LIMITES_MS = 15 * 60 * 1000;
 const ORIGENES_OFICIALES = [
   PUBLIC_BASE_URL,
   "https://vigna-plomeros.web.app",
@@ -122,6 +123,19 @@ function inicializarFirebaseAdmin() {
 const adminDb = inicializarFirebaseAdmin();
 
 app.disable("x-powered-by");
+app.set("trust proxy", 1);
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(self)");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  if (req.secure || req.headers["x-forwarded-proto"] === "https") {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
+  next();
+});
 app.use(cors({
   origin(origin, callback) {
     if (!origin || ALLOWED_ORIGINS.has(origin.replace(/\/$/, ""))) return callback(null, true);
@@ -129,6 +143,38 @@ app.use(cors({
   }
 }));
 app.use(express.json({ limit: "20kb" }));
+
+function crearLimitadorSolicitudes({ maximo, ventanaMs = VENTANA_LIMITES_MS, nombre }) {
+  const solicitudes = new Map();
+  return function limitarSolicitudes(req, res, next) {
+    const ahora = Date.now();
+    const clave = `${nombre}:${req.ip || req.socket?.remoteAddress || "desconocido"}`;
+    let registro = solicitudes.get(clave);
+    if (!registro || registro.reiniciaEn <= ahora) {
+      registro = { cantidad: 0, reiniciaEn: ahora + ventanaMs };
+      solicitudes.set(clave, registro);
+    }
+    registro.cantidad += 1;
+    const restantes = Math.max(0, maximo - registro.cantidad);
+    res.setHeader("RateLimit-Limit", String(maximo));
+    res.setHeader("RateLimit-Remaining", String(restantes));
+    res.setHeader("RateLimit-Reset", String(Math.ceil(registro.reiniciaEn / 1000)));
+    if (solicitudes.size > 10000) {
+      for (const [itemClave, item] of solicitudes) {
+        if (item.reiniciaEn <= ahora) solicitudes.delete(itemClave);
+      }
+    }
+    if (registro.cantidad > maximo) {
+      res.setHeader("Retry-After", String(Math.ceil((registro.reiniciaEn - ahora) / 1000)));
+      return res.status(429).json({ error: "Demasiadas solicitudes. Espera unos minutos antes de intentarlo nuevamente." });
+    }
+    return next();
+  };
+}
+
+const limitarCreacionPagos = crearLimitadorSolicitudes({ maximo: 10, nombre: "crear-pago" });
+const limitarVerificacionPagos = crearLimitadorSolicitudes({ maximo: 60, nombre: "verificar-pago" });
+const limitarPdfContratos = crearLimitadorSolicitudes({ maximo: 30, nombre: "pdf-contrato" });
 
 function credencialDisponible(res) {
   if (ACCESS_TOKEN && ACCESS_TOKEN !== "coloca_aqui_tu_nuevo_access_token") return true;
@@ -1009,11 +1055,11 @@ async function crearPagoPlan(req, res) {
   }
 }
 
-app.post("/crear-pago-plan", crearPagoPlan);
+app.post("/crear-pago-plan", limitarCreacionPagos, crearPagoPlan);
 // Compatibilidad temporal con las páginas web anteriores. También exige sesión Firebase.
-app.post("/crear-pago", crearPagoPlan);
+app.post("/crear-pago", limitarCreacionPagos, crearPagoPlan);
 
-app.post("/crear-pago-productos", async (req, res) => {
+app.post("/crear-pago-productos", limitarCreacionPagos, async (req, res) => {
   if (!credencialDisponible(res)) return;
 
   const productos = resolverCarrito(req.body?.items);
@@ -1195,7 +1241,7 @@ app.post("/webhook-mercadopago", async (req, res) => {
   }
 });
 
-app.get("/verificar-pago-plan/:paymentId", async (req, res) => {
+app.get("/verificar-pago-plan/:paymentId", limitarVerificacionPagos, async (req, res) => {
   if (!credencialDisponible(res)) return;
   const sesion = await exigirProfesionalAutenticado(req, res);
   if (!sesion) return;
@@ -1219,12 +1265,12 @@ app.get("/verificar-pago-plan/:paymentId", async (req, res) => {
   }
 });
 
-app.get("/verificar-pago/:paymentId", async (req, res) => {
+app.get("/verificar-pago/:paymentId", limitarVerificacionPagos, async (req, res) => {
   req.url = `/verificar-pago-plan/${encodeURIComponent(req.params.paymentId || "")}`;
   return res.redirect(307, req.url);
 });
 
-app.get("/api/profesionales/contratos/:contratoId/pdf", async (req, res) => {
+app.get("/api/profesionales/contratos/:contratoId/pdf", limitarPdfContratos, async (req, res) => {
   try {
     const usuario = await exigirUsuarioFirebase(req, res);
     if (!usuario) return;
@@ -1266,5 +1312,6 @@ module.exports = {
   validarDatosPagoPlan,
   sumarMeses,
   obtenerOrigenRetorno,
-  generarPdfContrato
+  generarPdfContrato,
+  crearLimitadorSolicitudes
 };

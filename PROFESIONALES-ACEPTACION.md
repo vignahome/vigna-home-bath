@@ -30,6 +30,7 @@ Integración base: `main`
 - Verificación de correo iniciada al crear cuentas y vencimiento documental registrado.
 - Libro de Reclamaciones enlazado con expedientes privados de Asistencia.
 - Política inicial de conservación, cancelaciones, pagos, reembolsos y garantías publicada.
+- Encabezados defensivos en Hosting/API y límites de abuso para creación/verificación de pagos y descarga de contratos.
 
 Prueba visual local ejecutada en 1440 px, 1024 px y 390 px: sin errores de página, ID duplicados ni desbordamiento horizontal. La prueba detectó y permitió corregir una inicialización de métricas sin reseñas.
 
