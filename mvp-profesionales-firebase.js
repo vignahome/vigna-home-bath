@@ -1266,7 +1266,16 @@ async function cargarDatos() {
     auditoria = auditoriaCliente;
   } else if (rol === "profesional") {
     const perfil = await getDoc(doc(db, COLECCIONES.profesionales, user.uid));
-    profesionales = perfil.exists() ? [{ id: perfil.id, ...perfil.data() }] : [];
+    if (!perfil.exists()) {
+      anexarProfesional();
+      const adaptarIncompleto = (items) => items.map((item) => ({ ...item, clienteId: item.clienteUid || item.clienteId, profesionalId: item.profesionalUid || item.profesionalId, actor: item.actorEmail || item.actorUid || "Sistema" }));
+      return {
+        version: 1, usuarioUid: user.uid, profesionales: adaptarIncompleto(profesionales), clientes: [], solicitudes: [], cotizaciones: [], contratos: [], hitos: [],
+        pagosDeclarados: [], ordenesCambio: [], mensajesContrato: [], actuacionesContrato: [], especialidades: [], planesProfesionales: [],
+        portafolios: adaptarIncompleto(portafolios), resenas: adaptarIncompleto(resenas), auditoria: [], solicitudesEliminacion: [], nube: true, rol, adminRol
+      };
+    }
+    if (!profesionales.some((item) => item.id === user.uid)) profesionales.unshift({ id: perfil.id, ...perfil.data() });
     const perfilDatos = perfil.data() || {};
     const [especialidadesPropias, planPropio, portafolioPropio] = await Promise.all([
       porCampo(COLECCIONES.profesionesProfesional, "profesionalUid", user.uid),

@@ -42,7 +42,7 @@ assert.match(firebase, /isNativePlatform/, "la app nativa debe separar la factur
 assert.match(interfaz, /verificarPagoPlanProfesional/, "falta verificar el retorno de Mercado Pago");
 assert.match(reglas, /match \/pv_pagos_planes\/\{pagoId\}/, "faltan reglas de lectura de pagos de planes");
 assert.match(reglas, /allow create, update, delete: if false;/, "el cliente no debe poder escribir pagos verificados");
-assert.match(firebase, /profesionales = perfil\.exists\(\) \? \[\{ id: perfil\.id, \.\.\.perfil\.data\(\) \}\] : \[\]/, "el panel profesional debe cargar exclusivamente el perfil de la sesión");
+assert.match(firebase, /if \(!perfil\.exists\(\)\)[\s\S]*usuarioUid: user\.uid[\s\S]*solicitudes: \[\]/, "un perfil incompleto debe cargar sin consultar datos privados ni fallar todo el catálogo");
 assert.match(firebase, /usuarioUid: user\.uid/, "los datos deben identificar al usuario autenticado");
 assert.match(aplicacion, /\(item\.uid \|\| item\.id\) === data\.usuarioUid/, "el panel debe seleccionar el perfil por UID autenticado");
 assert.match(aplicacion, /No se mostrará información de otra cuenta/, "un perfil incompleto debe fallar de forma segura");
