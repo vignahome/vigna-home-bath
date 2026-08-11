@@ -359,7 +359,8 @@
       if (c.anexoPlanTrabajoNombre) acciones.push(`<button class="tiny-button" data-open-work-plan="${escapar(c.id)}">Abrir plan Excel</button>`);
       return [c.id, c.solicitudId, nombreCompleto(p), dinero(c.total), c.estado, c.archivoFirmado || "Pendiente", htmlSeguro(`<div class="table-actions">${acciones.join("")}</div>`)];
     }));
-    document.getElementById("admin-auditoria").innerHTML = data.auditoria.map((a) => `<div class="audit-line"><strong>${escapar(a.accion)}</strong> · ${escapar(a.actor)}<small>${new Date(a.fecha).toLocaleString("es-PE")} · ${escapar(a.detalle)}</small></div>`).join("");
+    const auditoriaOrdenada = [...data.auditoria].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    document.getElementById("admin-auditoria").innerHTML = auditoriaOrdenada.map((a) => `<div class="audit-line"><strong>${escapar(a.accion)}</strong> · ${escapar(a.actor)}<small>${new Date(a.fecha).toLocaleString("es-PE")} · ${escapar(a.detalle)}</small></div>`).join("");
   }
 
   function tableHtml(headers, rows) {

@@ -19,5 +19,6 @@ exigir(reglas.includes('adminPuede("finanzas")'), "las reglas no protegen finanz
 exigir(html.includes('id="adminExportCsv"') && html.includes('id="adminExportJson"'), "faltan exportaciones administrativas");
 exigir(interfaz.includes("Conversión") && interfaz.includes("Calificación") && interfaz.includes("Planes activos"), "faltan KPI administrativos");
 exigir(interfaz.includes("descargarAdministracion"), "las exportaciones no están implementadas");
+exigir(interfaz.includes("const auditoriaOrdenada = [...data.auditoria].sort"), "la auditoría no ordena primero los eventos recientes");
 
 console.log("Roles administrativos, KPI y exportaciones: integración verificada.");
