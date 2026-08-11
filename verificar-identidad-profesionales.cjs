@@ -48,6 +48,12 @@ const fs = require("node:fs");
     "un fallo remoto no debe reutilizar perfiles de una sesión o demo anterior");
   assert.doesNotMatch(aplicacion, /profesionales\s*\[\s*0\s*\]/,
     "ningún panel debe seleccionar automáticamente el primer profesional");
+  assert.match(aplicacion, /function profesionPublica\(perfil\)[\s\S]*aprobadas\.includes\(perfil\.profesionPrincipal\)[\s\S]*aprobadas\[0\]/,
+    "el catálogo debe sustituir una profesión principal todavía no verificada");
+  assert.match(interfaz, /panel: rolActual === "cliente" \|\| rolActual === "profesional"/,
+    "la cuenta administradora no debe abrir un panel profesional inexistente");
+  assert.match(interfaz, /rolActual === "admin"[\s\S]*mvp\.mostrarVista\("admin"\)/,
+    "la cuenta administradora debe entrar directamente a Administración");
   assert.match(servidor, /uidMetadata && uidReferencia && uidMetadata === uidReferencia/,
     "Mercado Pago debe coincidir en metadata y external_reference");
   assert.match(servidor, /pagoAnterior\.estado !== "approved"/,

@@ -285,7 +285,7 @@ function insertarPasswords() {
 function actualizarNavegacion(user, datos = null) {
   const reglas = {
     solicitud: rolActual === "cliente" || rolActual === "admin",
-    panel: rolActual === "cliente" || rolActual === "profesional" || rolActual === "admin",
+    panel: rolActual === "cliente" || rolActual === "profesional",
     admin: rolActual === "admin",
     "registro-profesional": !user || Boolean(datos?.registroIncompleto && rolActual === "profesional"),
     "registro-cliente": !user
@@ -311,6 +311,9 @@ async function refrescarNube() {
     document.documentElement.classList.remove("pv-cloud-loading");
     const user = api.usuarioActual();
     actualizarNavegacion(user, datos);
+    if (rolActual === "admin" && document.getElementById("view-panel")?.classList.contains("active")) {
+      mvp.mostrarVista("admin");
+    }
     actualizarNotificacionesGlobales(datos, user);
     mensaje(datos.registroIncompleto
       ? "Tu registro profesional quedó incompleto. Abre “Soy profesional” y envíalo nuevamente con el mismo correo."

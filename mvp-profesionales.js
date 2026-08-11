@@ -135,6 +135,13 @@ import { seleccionarPerfilProfesional } from "./mvp-profesionales-identidad.mjs?
     return independientes.length ? aprobadas : (perfil.profesiones || []);
   }
 
+  function profesionPublica(perfil) {
+    const aprobadas = profesionesAprobadas(perfil);
+    return aprobadas.includes(perfil.profesionPrincipal)
+      ? perfil.profesionPrincipal
+      : (aprobadas[0] || "Profesión pendiente de verificación");
+  }
+
   function planVigente(perfil) {
     const plan = perfil.planRegistro || {};
     const estado = plan.estado || perfil.planEstado || "";
@@ -205,8 +212,8 @@ import { seleccionarPerfilProfesional } from "./mvp-profesionales-identidad.mjs?
     container.innerHTML = results.map((p) => `
       <article class="professional-card">
         <div class="card-top"><div class="professional-avatar">${escapar(p.fotoIniciales || nombreCompleto(p).split(" ").map((x) => x[0]).join("").slice(0, 2))}</div><span class="status-chip ${estadoClase(p.estado)}">${escapar(p.estado)}</span></div>
-        <h3>${escapar(nombreCompleto(p))}</h3><div class="primary-profession">${escapar(p.profesionPrincipal)}</div>
-        <div class="chip-list">${profesionesAprobadas(p).map((prof) => `<span class="profession-chip ${prof === p.profesionPrincipal ? "primary" : ""}">${escapar(prof)} · verificada</span>`).join("")}</div>
+        <h3>${escapar(nombreCompleto(p))}</h3><div class="primary-profession">${escapar(profesionPublica(p))}</div>
+        <div class="chip-list">${profesionesAprobadas(p).map((prof) => `<span class="profession-chip ${prof === profesionPublica(p) ? "primary" : ""}">${escapar(prof)} · verificada</span>`).join("")}</div>
         <div class="card-meta"><span class="rating">★★★★★ ${Number(p.calificacion || 0).toFixed(1)}</span><span>Ranking VIGNA ${Number(p.rankingPuntaje || 0)}/100</span><span>✓ ${Number(p.trabajos || 0)} servicios registrados</span><span>⌖ ${escapar(p.coberturaDetalle)}</span><span>◷ ${Number(p.experiencia || 0)} años de experiencia</span></div>
         <div class="card-actions"><button class="secondary-button" data-profile="${p.id}">Ver perfil</button><button class="gold-button" data-request="${p.id}">Solicitar servicio</button></div>
       </article>`).join("");
@@ -215,7 +222,7 @@ import { seleccionarPerfilProfesional } from "./mvp-profesionales-identidad.mjs?
   function renderPeopleSelectors() {
     const clientOptions = data.clientes.map((c) => `<option value="${c.id}">${escapar(nombreCompleto(c))}</option>`).join("");
     document.getElementById("solicitudCliente").innerHTML = clientOptions || '<option value="">Registra un cliente primero</option>';
-    document.getElementById("solicitudProfesional").innerHTML = '<option value="">Cualquiera compatible</option>' + data.profesionales.filter((p) => p.estado === "Aprobado").map((p) => `<option value="${p.id}">${escapar(nombreCompleto(p))} - ${escapar(p.profesionPrincipal)}</option>`).join("");
+    document.getElementById("solicitudProfesional").innerHTML = '<option value="">Cualquiera compatible</option>' + data.profesionales.filter((p) => p.estado === "Aprobado").map((p) => `<option value="${p.id}">${escapar(nombreCompleto(p))} - ${escapar(profesionPublica(p))}</option>`).join("");
     const professionalOptions = data.profesionales.map((p) => `<option value="${p.id}">${escapar(nombreCompleto(p))}</option>`).join("");
     document.getElementById("panelProfesional").innerHTML = professionalOptions || '<option value="">Sin profesionales</option>';
     if (data.profesionales.some((p) => p.id === panelProfesionalId)) document.getElementById("panelProfesional").value = panelProfesionalId;
@@ -475,7 +482,7 @@ import { seleccionarPerfilProfesional } from "./mvp-profesionales-identidad.mjs?
         }).join("")}</div></section>`
       : "";
     const content = document.getElementById("profileDialogContent");
-    content.innerHTML = `<div class="profile-hero"><div class="professional-avatar">${escapar(p.fotoIniciales)}</div><div><p class="eyebrow">${escapar(p.estado)} · Ranking ${Number(p.rankingPuntaje || puntajeRanking(p))}/100</p><h1>${escapar(p.nombrePublico || nombreCompleto(p))}</h1><p class="primary-profession">${escapar(p.profesionPrincipal)}</p><p class="rating">★★★★★ ${Number(p.calificacion || 0).toFixed(1)} · ${p.trabajos || 0} servicios</p></div></div><div class="chip-list">${profesionesAprobadas(p).map((x) => `<span class="profession-chip ${x === p.profesionPrincipal ? "primary" : ""}">${escapar(x)} · verificada</span>`).join("")}</div><p>${escapar(p.descripcion)}</p><div class="profile-detail-grid"><div class="detail-box"><h3>Cobertura</h3><p>${escapar(p.coberturaDetalle)}</p><p>${escapar(p.distancia || "")}</p></div><div class="detail-box"><h3>Disponibilidad</h3><p>${escapar(p.disponibilidad || "Previa coordinación")}</p><p>Idiomas: ${escapar((p.idiomas || []).join?.(", ") || p.idiomas || "Español")}</p></div><div class="detail-box"><h3>Experiencia</h3><p>${p.experiencia} años</p><p>Plan vigente: ${escapar(p.plan || "Sin plan")}</p></div></div>${opinionesHtml}<div class="form-actions no-print"><button class="gold-button" data-request="${p.id}">Solicitar servicio</button></div>`;
+    content.innerHTML = `<div class="profile-hero"><div class="professional-avatar">${escapar(p.fotoIniciales)}</div><div><p class="eyebrow">${escapar(p.estado)} · Ranking ${Number(p.rankingPuntaje || puntajeRanking(p))}/100</p><h1>${escapar(p.nombrePublico || nombreCompleto(p))}</h1><p class="primary-profession">${escapar(profesionPublica(p))}</p><p class="rating">★★★★★ ${Number(p.calificacion || 0).toFixed(1)} · ${p.trabajos || 0} servicios</p></div></div><div class="chip-list">${profesionesAprobadas(p).map((x) => `<span class="profession-chip ${x === profesionPublica(p) ? "primary" : ""}">${escapar(x)} · verificada</span>`).join("")}</div><p>${escapar(p.descripcion)}</p><div class="profile-detail-grid"><div class="detail-box"><h3>Cobertura</h3><p>${escapar(p.coberturaDetalle)}</p><p>${escapar(p.distancia || "")}</p></div><div class="detail-box"><h3>Disponibilidad</h3><p>${escapar(p.disponibilidad || "Previa coordinación")}</p><p>Idiomas: ${escapar((p.idiomas || []).join?.(", ") || p.idiomas || "Español")}</p></div><div class="detail-box"><h3>Experiencia</h3><p>${p.experiencia} años</p><p>Plan vigente: ${escapar(p.plan || "Sin plan")}</p></div></div>${opinionesHtml}<div class="form-actions no-print"><button class="gold-button" data-request="${p.id}">Solicitar servicio</button></div>`;
     document.getElementById("profileDialog").showModal();
   }
 
