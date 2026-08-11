@@ -1173,6 +1173,8 @@ const porArray = (nombre, campo, valor) => documentos(query(collection(db, nombr
 async function cargarDatos() {
   const user = auth.currentUser;
   const rol = await obtenerRol(user?.uid);
+  const registroUsuario = user ? await getDoc(doc(db, COLECCIONES.usuarios, user.uid)) : null;
+  const registroIncompleto = Boolean(user && registroUsuario?.data()?.estadoRegistro !== "completo");
   const adminRol = rol === "admin" ? await obtenerAdminRol(user?.uid) : "";
   let profesionales = await porCampo(COLECCIONES.profesionales, "estado", "Aprobado");
   let clientes = [];
@@ -1265,6 +1267,15 @@ async function cargarDatos() {
     actuacionesContrato = actuacionesCliente;
     auditoria = auditoriaCliente;
   } else if (rol === "profesional") {
+    if (registroIncompleto) {
+      anexarProfesional();
+      const adaptarIncompleto = (items) => items.map((item) => ({ ...item, clienteId: item.clienteUid || item.clienteId, profesionalId: item.profesionalUid || item.profesionalId, actor: item.actorEmail || item.actorUid || "Sistema" }));
+      return {
+        version: 1, usuarioUid: user.uid, registroIncompleto: true, profesionales: adaptarIncompleto(profesionales), clientes: [], solicitudes: [], cotizaciones: [], contratos: [], hitos: [],
+        pagosDeclarados: [], ordenesCambio: [], mensajesContrato: [], actuacionesContrato: [], especialidades: [], planesProfesionales: [],
+        portafolios: adaptarIncompleto(portafolios), resenas: adaptarIncompleto(resenas), auditoria: [], solicitudesEliminacion: [], nube: true, rol, adminRol
+      };
+    }
     const perfil = await getDoc(doc(db, COLECCIONES.profesionales, user.uid));
     if (!perfil.exists()) {
       anexarProfesional();

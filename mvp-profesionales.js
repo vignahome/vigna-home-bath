@@ -134,10 +134,10 @@
   }
 
   function planVigente(perfil) {
-    if (["Mensual", "Semestral", "Anual"].includes(perfil.plan) && !perfil.planEstado) return true;
-    if (perfil.planEstado !== "Activo") return false;
-    const vencimiento = Date.parse(perfil.planVenceEn || "");
-    return !Number.isFinite(vencimiento) || vencimiento > Date.now();
+    const plan = perfil.planRegistro || {};
+    const estado = plan.estado || perfil.planEstado || "";
+    const vencimiento = Date.parse(plan.venceEn || perfil.planVenceEn || "");
+    return estado === "Activo" && Number.isFinite(vencimiento) && vencimiento > Date.now();
   }
 
   function puntajeRanking(perfil) {
@@ -299,7 +299,10 @@
     document.getElementById("listaPortafolio").innerHTML = portfolio.length ? portfolio.map((item) => `<article class="portfolio-card"><div class="before-after"><figure><img src="${item.antes}" alt="Antes"><figcaption>ANTES</figcaption></figure><figure><img src="${item.despues}" alt="Después"><figcaption>DESPUÉS</figcaption></figure></div><div class="portfolio-copy"><div class="table-actions"><span class="status-chip ${estadoClase(item.estado)}">${escapar(item.estado || "Pendiente")}</span><small>${escapar(item.categoria || "Proyecto")}</small></div><h3>${escapar(item.titulo)}</h3><p><strong>Reto:</strong> ${escapar(item.reto || item.descripcion || "")}</p><p><strong>Solución:</strong> ${escapar(item.solucion || "")}</p><small>${escapar(item.ubicacion || "")} ${item.duracion ? `· ${escapar(item.duracion)}` : ""} · ${item.videoNombre ? `Video: ${escapar(item.videoNombre)}` : `${Number(item.proceso?.length || 0)} fotos de proceso`}</small>${item.observacion ? `<p class="private-note">Observación: ${escapar(item.observacion)}</p>` : ""}</div></article>`).join("") : '<div class="empty-state"><p>Agrega tu primer proyecto verificable.</p></div>';
     const plan = p.planRegistro || {};
     const vigente = planVigente(p);
-    document.getElementById("professionalPlanStatus").innerHTML = `<div class="plan-current"><span class="status-chip ${vigente ? "approved" : "pending"}">${escapar(p.planEstado || plan.estado || "Sin plan")}</span><strong>${escapar(p.plan || plan.tipo || "Sin plan")}</strong><small>${p.planVenceEn ? `Vence ${escapar(new Date(p.planVenceEn).toLocaleDateString("es-PE"))}` : "Selecciona un plan para activar la publicación."}</small></div>`;
+    const estadoPlan = plan.estado || p.planEstado || "Sin plan";
+    const tipoPlan = plan.tipo || (estadoPlan === "Activo" ? p.plan : "") || "Sin plan";
+    const vencePlan = plan.venceEn || p.planVenceEn || "";
+    document.getElementById("professionalPlanStatus").innerHTML = `<div class="plan-current"><span class="status-chip ${vigente ? "approved" : "pending"}">${escapar(estadoPlan)}</span><strong>${escapar(tipoPlan)}</strong><small>${vigente ? `Vence ${escapar(new Date(vencePlan).toLocaleDateString("es-PE"))}` : "Selecciona un plan para activar la publicación."}</small></div>`;
     const opcionesPlan = document.getElementById("professionalPlanOptions");
     if (opcionesPlan) opcionesPlan.hidden = vigente;
     const notaPlan = document.getElementById("professionalPlanNote");

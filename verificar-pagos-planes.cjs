@@ -46,5 +46,8 @@ assert.match(firebase, /if \(!perfil\.exists\(\)\)[\s\S]*usuarioUid: user\.uid[\
 assert.match(firebase, /usuarioUid: user\.uid/, "los datos deben identificar al usuario autenticado");
 assert.match(aplicacion, /\(item\.uid \|\| item\.id\) === data\.usuarioUid/, "el panel debe seleccionar el perfil por UID autenticado");
 assert.match(aplicacion, /No se mostrará información de otra cuenta/, "un perfil incompleto debe fallar de forma segura");
+assert.match(aplicacion, /estado === "Activo" && Number\.isFinite\(vencimiento\) && vencimiento > Date\.now\(\)/, "un plan solo debe figurar activo con estado y vencimiento vigentes");
+assert.match(firebase, /registroIncompleto: true/, "la carga debe identificar registros profesionales incompletos");
+assert.match(interfaz, /datos\?\.registroIncompleto && rolActual === "profesional"/, "la cuenta incompleta debe poder reabrir el registro profesional");
 
 console.log("Pagos de planes: autenticación, verificación, idempotencia y separación móvil verificadas.");

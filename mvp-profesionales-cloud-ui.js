@@ -282,12 +282,12 @@ function insertarPasswords() {
   agregar("formCliente");
 }
 
-function actualizarNavegacion(user) {
+function actualizarNavegacion(user, datos = null) {
   const reglas = {
     solicitud: rolActual === "cliente" || rolActual === "admin",
     panel: rolActual === "cliente" || rolActual === "profesional" || rolActual === "admin",
     admin: rolActual === "admin",
-    "registro-profesional": !user,
+    "registro-profesional": !user || Boolean(datos?.registroIncompleto && rolActual === "profesional"),
     "registro-cliente": !user
   };
   Object.entries(reglas).forEach(([vista, visible]) => {
@@ -310,9 +310,11 @@ async function refrescarNube() {
     mvp.setData(datos);
     document.documentElement.classList.remove("pv-cloud-loading");
     const user = api.usuarioActual();
-    actualizarNavegacion(user);
+    actualizarNavegacion(user, datos);
     actualizarNotificacionesGlobales(datos, user);
-    mensaje(user ? `Firebase activo · ${rolActual} · ${user.email || "cuenta autenticada"}` : "Firebase activo · catálogo público");
+    mensaje(datos.registroIncompleto
+      ? "Tu registro profesional quedó incompleto. Abre “Soy profesional” y envíalo nuevamente con el mismo correo."
+      : (user ? `Firebase activo · ${rolActual} · ${user.email || "cuenta autenticada"}` : "Firebase activo · catálogo público"), Boolean(datos.registroIncompleto));
   } catch (error) {
     console.error("No se pudieron cargar los datos de Profesionales Vigna’s.", error);
     mensaje("No se pudo cargar el catálogo. Intenta actualizar la página.", true);
