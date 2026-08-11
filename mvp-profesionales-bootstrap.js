@@ -1,5 +1,5 @@
-import "./mvp-profesionales-cloud-ui.js?v=22";
-await import("./mvp-profesionales.js?v=14");
+import "./mvp-profesionales-cloud-ui.js?v=23";
+await import("./mvp-profesionales.js?v=15");
 
 if ("serviceWorker" in navigator && location.protocol === "https:") {
   window.addEventListener("load", () => {

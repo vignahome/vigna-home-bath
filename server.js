@@ -638,11 +638,14 @@ function validarDatosPagoPlan(pago) {
   const tipoPago = String(pago.metadata?.tipo_pago || "").toLowerCase();
   const planId = String(pago.metadata?.plan_id || pago.additional_info?.items?.[0]?.id || "").toLowerCase();
   const plan = PLANES[planId];
-  const profesionalUid = String(pago.metadata?.profesional_uid || pago.external_reference || "").trim();
+  const uidMetadata = String(pago.metadata?.profesional_uid || "").trim();
+  const uidReferencia = String(pago.external_reference || "").trim();
+  const identidadConsistente = Boolean(uidMetadata && uidReferencia && uidMetadata === uidReferencia);
+  const profesionalUid = identidadConsistente ? uidMetadata : "";
   const totalPagado = Number(pago.transaction_amount || 0);
   const estado = String(pago.status || "").toLowerCase();
   const aprobado = tipoPago === "plan_profesional" && estado === "approved" && pago.currency_id === "PEN" &&
-    plan && plomeroIdValido(profesionalUid) && Math.abs(totalPagado - plan.precio) < 0.001;
+    plan && identidadConsistente && plomeroIdValido(profesionalUid) && Math.abs(totalPagado - plan.precio) < 0.001;
 
   return {
     valido: Boolean(aprobado),
@@ -689,6 +692,17 @@ async function procesarPagoPlanProfesional(pago) {
     const ahoraIso = ahoraFecha.toISOString();
     const pagoAnterior = pagoSnap.data() || {};
     const planActual = planSnap.data() || {};
+    if (pagoAnterior.profesionalUid && pagoAnterior.profesionalUid !== validacion.profesionalUid) {
+      throw new Error("El pago ya está asociado a otra cuenta profesional.");
+    }
+    if ((planActual.uid && planActual.uid !== validacion.profesionalUid) ||
+        (planActual.profesionalUid && planActual.profesionalUid !== validacion.profesionalUid)) {
+      throw new Error("El plan almacenado no corresponde a la cuenta profesional.");
+    }
+    const profesionalActual = profesionalSnap.data() || {};
+    if (profesionalActual.uid && profesionalActual.uid !== validacion.profesionalUid) {
+      throw new Error("El perfil almacenado no corresponde a la cuenta profesional.");
+    }
     const basePago = {
       id: paymentId,
       paymentId,

@@ -1,3 +1,5 @@
+import { seleccionarPerfilProfesional } from "./mvp-profesionales-identidad.mjs?v=1";
+
 (function () {
   "use strict";
 
@@ -71,7 +73,7 @@
   }
 
   let data = cargar();
-  let panelProfesionalId = data.profesionales[0]?.id || "";
+  let panelProfesionalId = "";
 
   function cargar() {
     try {
@@ -278,7 +280,7 @@
       document.getElementById("professionalSpecialtiesCard").hidden = true;
       document.getElementById("professionalRequestsCard").hidden = true;
       document.getElementById("panelMetricas").innerHTML = "";
-      document.getElementById("listaCotizaciones").innerHTML = '<div class="empty-state"><h3>Perfil profesional incompleto</h3><p>Completa nuevamente el registro para terminar de crear este perfil. No se mostrará información de otra cuenta.</p></div>';
+      document.getElementById("listaCotizaciones").innerHTML = '<div class="empty-state"><h3>Perfil profesional incompleto</h3><p>Completa el registro con esta misma cuenta. No se mostrará información de otra cuenta.</p><button class="gold-button" type="button" data-view="registro-profesional">Completar mi perfil profesional</button></div>';
       return;
     }
     panelProfesionalId = p.id;
@@ -669,12 +671,10 @@
     setData: (nuevo) => {
       if (!nuevo || typeof nuevo !== "object") return;
       data = { ...seedData(), ...nuevo, version: 1 };
-      const profesionalDeSesion = data.rol === "profesional"
-        ? data.profesionales.find((item) => (item.uid || item.id) === data.usuarioUid)
-        : null;
+      const profesionalDeSesion = seleccionarPerfilProfesional(data.profesionales, data.rol, data.usuarioUid);
       panelProfesionalId = profesionalDeSesion?.id || (data.rol === "profesional"
         ? ""
-        : (data.profesionales.some((item) => item.id === panelProfesionalId) ? panelProfesionalId : (data.profesionales[0]?.id || "")));
+        : (data.profesionales.some((item) => item.id === panelProfesionalId) ? panelProfesionalId : ""));
       renderAll();
     },
     reset: () => { localStorage.removeItem(STORAGE_KEY); location.reload(); }

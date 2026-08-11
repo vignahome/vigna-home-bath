@@ -318,41 +318,17 @@ async function refrescarNube() {
   } catch (error) {
     console.error("No se pudieron cargar los datos de Profesionales Vigna’s.", error);
     const user = api.usuarioActual();
-    if (user && rolActual === "profesional") {
-      try {
-        const plan = await api.obtenerPlanProfesionalPropio();
-        if (plan) {
-          const actuales = mvp.getData();
-          const profesionales = (actuales.profesionales || []).map((perfil) =>
-            (perfil.uid || perfil.id) === user.uid
-              ? {
-                  ...perfil,
-                  planRegistro: plan,
-                  plan: plan.tipo || perfil.plan,
-                  planEstado: plan.estado || perfil.planEstado,
-                  planVenceEn: plan.venceEn || perfil.planVenceEn
-                }
-              : perfil
-          );
-          rolActual = "profesional";
-          const datosParciales = {
-            ...actuales,
-            rol: rolActual,
-            usuarioUid: user.uid,
-            profesionales,
-            planesProfesionales: [plan]
-          };
-          mvp.setData(datosParciales);
-          document.documentElement.classList.remove("pv-cloud-loading");
-          actualizarNavegacion(user, datosParciales);
-          mensaje(`Firebase activo · profesional · ${user.email || "cuenta autenticada"}`);
-          return;
-        }
-      } catch (planError) {
-        console.error("No se pudo recuperar el plan profesional propio.", planError);
-      }
-    }
-    mensaje("No se pudo cargar el catálogo. Intenta actualizar la página.", true);
+    const datosSeguros = {
+      version: 1, nube: true, rol: user ? rolActual : "publico", usuarioUid: user?.uid || "",
+      profesionales: [], clientes: [], solicitudes: [], cotizaciones: [], contratos: [], hitos: [],
+      pagosDeclarados: [], ordenesCambio: [], mensajesContrato: [], actuacionesContrato: [],
+      especialidades: [], planesProfesionales: [], portafolios: [], resenas: [], auditoria: [],
+      solicitudesEliminacion: [], cargaFallida: true
+    };
+    mvp.setData(datosSeguros);
+    document.documentElement.classList.remove("pv-cloud-loading");
+    actualizarNavegacion(user, datosSeguros);
+    mensaje("No se pudo sincronizar la cuenta. No se mostrarán datos guardados ni perfiles de otra sesión.", true);
   }
 }
 

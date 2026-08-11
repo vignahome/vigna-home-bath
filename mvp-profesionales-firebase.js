@@ -25,6 +25,10 @@ import {
   ref,
   uploadBytes
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-storage.js";
+import {
+  normalizarPerfilPropio,
+  normalizarPlanPropio
+} from "./mvp-profesionales-identidad.mjs?v=1";
 
 const COLECCIONES = Object.freeze({
   usuarios: "pv_usuarios",
@@ -165,11 +169,17 @@ async function registrarProfesional(form) {
     ? sesionExistente.uid
     : (await createUserWithEmailAndPassword(auth, correo, password)).user.uid;
   const perfilExistente = await getDoc(doc(db, COLECCIONES.profesionales, uid));
-  if (!perfilExistente.exists()) {
+  if (perfilExistente.exists()) {
+    const perfilPropio = normalizarPerfilPropio({ id: perfilExistente.id, data: perfilExistente.data() }, uid);
+    if (!perfilPropio) throw new Error("El perfil existente no corresponde a la sesión autenticada.");
     await setDoc(doc(db, COLECCIONES.usuarios, uid), {
-      uid, rol: "profesional", correo, estadoRegistro: "incompleto", creadoEn: ahora()
+      uid, rol: "profesional", correo, estadoRegistro: "completo"
     }, { merge: true });
+    return perfilPropio;
   }
+  await setDoc(doc(db, COLECCIONES.usuarios, uid), {
+    uid, rol: "profesional", correo, estadoRegistro: "incompleto", creadoEn: ahora()
+  }, { merge: true });
 
   const frente = archivo(form, "documentoFrente");
   const reverso = archivo(form, "documentoReverso");
@@ -1147,7 +1157,9 @@ async function verificarPagoPlanProfesional(paymentId) {
 async function obtenerPlanProfesionalPropio() {
   const user = exigirUsuario();
   const snapshot = await getDoc(doc(db, COLECCIONES.planesProfesionales, user.uid));
-  return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
+  return snapshot.exists()
+    ? normalizarPlanPropio({ ...snapshot.data(), id: snapshot.id }, user.uid)
+    : null;
 }
 
 async function activarPlanProfesional(uid, tipo = "") {
@@ -1179,13 +1191,25 @@ const todos = (nombre) => documentos(collection(db, nombre));
 const porCampo = (nombre, campo, valor) => documentos(query(collection(db, nombre), where(campo, "==", valor)));
 const porArray = (nombre, campo, valor) => documentos(query(collection(db, nombre), where(campo, "array-contains", valor)));
 
+async function consultaSecundaria(tarea, descripcion, respaldo = []) {
+  try {
+    return await tarea();
+  } catch (error) {
+    console.warn(`No se pudo cargar ${descripcion}; el resto del panel seguirá disponible.`, error);
+    return respaldo;
+  }
+}
+
 async function cargarDatos() {
   const user = auth.currentUser;
   const rol = await obtenerRol(user?.uid);
   const registroUsuario = user ? await getDoc(doc(db, COLECCIONES.usuarios, user.uid)) : null;
   const registroIncompleto = Boolean(user && registroUsuario?.data()?.estadoRegistro !== "completo");
   const adminRol = rol === "admin" ? await obtenerAdminRol(user?.uid) : "";
-  let profesionales = await porCampo(COLECCIONES.profesionales, "estado", "Aprobado");
+  let profesionales = await consultaSecundaria(
+    () => porCampo(COLECCIONES.profesionales, "estado", "Aprobado"),
+    "el catálogo público"
+  );
   let clientes = [];
   let solicitudes = [];
   let cotizaciones = [];
@@ -1287,37 +1311,44 @@ async function cargarDatos() {
       };
     }
     if (registroIncompleto) {
-      await setDoc(doc(db, COLECCIONES.usuarios, user.uid), {
+      await consultaSecundaria(() => setDoc(doc(db, COLECCIONES.usuarios, user.uid), {
         uid: user.uid,
         rol: "profesional",
         correo: user.email || registroUsuario?.data()?.correo || "",
         estadoRegistro: "completo"
-      }, { merge: true });
+      }, { merge: true }), "la reparación del marcador de registro", null);
     }
-    const perfilDatos = { ...(perfil.data() || {}), id: perfil.id, uid: user.uid };
+    const perfilDatos = normalizarPerfilPropio({ id: perfil.id, data: perfil.data() }, user.uid);
+    if (!perfilDatos) throw new Error("El perfil profesional no corresponde a la sesión autenticada.");
     profesionales = [
       perfilDatos,
       ...profesionales.filter((item) => item.id !== perfil.id && item.uid !== user.uid)
     ];
-    const [especialidadesPropias, planPropio, portafolioPropio] = await Promise.all([
-      porCampo(COLECCIONES.profesionesProfesional, "profesionalUid", user.uid),
-      getDoc(doc(db, COLECCIONES.planesProfesionales, user.uid)),
-      porCampo(COLECCIONES.portafolios, "profesionalUid", user.uid)
+    const [especialidadesPropias, planSnapshot, portafolioPropio] = await Promise.all([
+      consultaSecundaria(() => porCampo(COLECCIONES.profesionesProfesional, "profesionalUid", user.uid), "las profesiones propias"),
+      consultaSecundaria(() => getDoc(doc(db, COLECCIONES.planesProfesionales, user.uid)), "el plan propio", null),
+      consultaSecundaria(() => porCampo(COLECCIONES.portafolios, "profesionalUid", user.uid), "el portafolio propio")
     ]);
+    const planPropio = planSnapshot?.exists()
+      ? normalizarPlanPropio({ ...planSnapshot.data(), id: planSnapshot.id }, user.uid)
+      : null;
     especialidades = [...new Map([...especialidades, ...especialidadesPropias].map((item) => [item.id, item])).values()];
-    planesProfesionales = planPropio.exists() ? [{ ...planPropio.data(), id: planPropio.id }] : [];
+    planesProfesionales = planPropio ? [planPropio] : [];
     portafolios = [...new Map([...portafolios, ...portafolioPropio].map((item) => [item.id, item])).values()];
-    const asignadas = await porCampo(COLECCIONES.solicitudes, "profesionalUid", user.uid);
+    const asignadas = await consultaSecundaria(() => porCampo(COLECCIONES.solicitudes, "profesionalUid", user.uid), "las solicitudes asignadas");
     const compatibles = [];
     for (const profesion of (perfilDatos.profesiones || []).slice(0, 10)) {
-      compatibles.push(...await porCampo(COLECCIONES.solicitudes, "profesion", profesion));
+      compatibles.push(...await consultaSecundaria(() => porCampo(COLECCIONES.solicitudes, "profesion", profesion), `las solicitudes de ${profesion}`));
     }
     [cotizaciones, contratos, hitos, pagosDeclarados, ordenesCambio, mensajesContrato, actuacionesContrato, auditoria] = await Promise.all([
-      porCampo(COLECCIONES.cotizaciones, "profesionalUid", user.uid), porCampo(COLECCIONES.contratos, "profesionalUid", user.uid),
-      porCampo(COLECCIONES.hitos, "profesionalUid", user.uid), porCampo(COLECCIONES.pagosDeclarados, "profesionalUid", user.uid),
-      porCampo(COLECCIONES.ordenesCambio, "profesionalUid", user.uid),
-      porCampo(COLECCIONES.mensajesContrato, "profesionalUid", user.uid), porCampo(COLECCIONES.actuacionesContrato, "profesionalUid", user.uid),
-      porArray(COLECCIONES.auditoria, "participantes", user.uid)
+      consultaSecundaria(() => porCampo(COLECCIONES.cotizaciones, "profesionalUid", user.uid), "las cotizaciones propias"),
+      consultaSecundaria(() => porCampo(COLECCIONES.contratos, "profesionalUid", user.uid), "los contratos propios"),
+      consultaSecundaria(() => porCampo(COLECCIONES.hitos, "profesionalUid", user.uid), "los hitos propios"),
+      consultaSecundaria(() => porCampo(COLECCIONES.pagosDeclarados, "profesionalUid", user.uid), "los pagos declarados propios"),
+      consultaSecundaria(() => porCampo(COLECCIONES.ordenesCambio, "profesionalUid", user.uid), "las órdenes de cambio propias"),
+      consultaSecundaria(() => porCampo(COLECCIONES.mensajesContrato, "profesionalUid", user.uid), "los mensajes propios"),
+      consultaSecundaria(() => porCampo(COLECCIONES.actuacionesContrato, "profesionalUid", user.uid), "las actuaciones propias"),
+      consultaSecundaria(() => porArray(COLECCIONES.auditoria, "participantes", user.uid), "la auditoría propia")
     ]);
     solicitudes = [...new Map([...asignadas, ...compatibles].map((item) => [item.id, item])).values()];
   }

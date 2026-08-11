@@ -18,6 +18,7 @@ const ARCHIVOS = [
   "mvp-profesionales.css",
   "mvp-profesionales.js",
   "mvp-profesionales-firebase.js",
+  "mvp-profesionales-identidad.mjs",
   "mvp-profesionales-cloud-ui.js",
   "mvp-profesionales-bootstrap.js",
   "manifest.webmanifest",
