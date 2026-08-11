@@ -29,8 +29,8 @@ exigir(ui.includes('if (profileDialog?.open) profileDialog.close()'), "el perfil
 exigir(!firestore.includes("match /pv_profesionales_privados/{uid} {\n      allow read: if true"), "la identidad profesional quedó pública");
 exigir(!firestore.includes("match /pv_contratos/{contratoId} {\n      allow read: if true"), "los contratos quedaron públicos");
 exigir(storage.includes("allow update, delete: if false"), "faltan bloqueos de mutación en Storage");
-exigir(matriz.includes("Pendiente de confirmación o proveedor externo"), "falta separar decisiones externas");
-exigir(matriz.includes("pendiente únicamente de una sesión autenticada"), "falta registrar el bloqueo real de publicación");
+exigir(matriz.includes("Pendiente externo antes del lanzamiento público"), "falta separar decisiones externas");
+exigir(matriz.includes("Despliegue manual de servidor, reglas y Hosting"), "falta registrar el bloqueo real de publicación");
 exigir(proyecto.projects?.default === "vigna-plomeros", "el proyecto Firebase predeterminado no es el autorizado");
 exigir(firebase.firestore?.indexes === "firestore.indexes.json", "falta declarar el archivo de índices");
 exigir(Array.isArray(indices.indexes) && Array.isArray(indices.fieldOverrides), "el archivo de índices no es válido");

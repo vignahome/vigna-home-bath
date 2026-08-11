@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" sizes="1024x1024" href="ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png">
   <link rel="apple-touch-icon-precomposed" sizes="1024x1024" href="ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png">
   <link rel="icon" type="image/png" sizes="32x32" href="images/app-icons/favicon-32.png?v=3">
-  <link rel="stylesheet" href="mvp-profesionales.css?v=19">
+  <link rel="stylesheet" href="mvp-profesionales.css?v=20">
 </head>
 <body>
   <header class="mvp-header">
@@ -113,6 +113,7 @@
             </label>
             <label>Número de documento<input name="documento" required minlength="6" maxlength="20"></label>
             <label>País emisor<input name="paisEmisor" value="Perú" required></label>
+            <label>Vencimiento del documento<input name="documentoVenceEn" type="date" required></label>
             <label>Frente del documento<input name="documentoFrente" type="file" accept="image/*,.pdf" required></label>
             <label>Reverso del documento<input name="documentoReverso" type="file" accept="image/*,.pdf"></label>
             <label>Selfie de verificación<input name="selfie" type="file" accept="image/*" capture="user" required></label>
@@ -145,6 +146,7 @@
             <label><input type="radio" name="coberturaTipo" value="Nacional"> Todo el Perú</label>
             <label><input type="radio" name="coberturaTipo" value="Departamentos"> Departamentos seleccionados</label>
             <label><input type="radio" name="coberturaTipo" value="Local" checked> Provincia o distritos específicos</label>
+            <label><input type="radio" name="coberturaTipo" value="Remoto"> Solo asesoría remota</label>
           </div>
           <div class="form-grid two compact-top">
             <label>Zonas donde trabajas<textarea name="coberturaDetalle" required placeholder="Ej. Lima: Surco, Miraflores y San Borja"></textarea></label>
@@ -197,6 +199,7 @@
           <div class="form-section-title"><span>2</span><div><h2>Verificación de identidad</h2><p>Los archivos son privados y solo podrán ser revisados por administración.</p></div></div>
           <div class="form-grid three">
             <label>País emisor<input name="paisEmisor" value="Perú" required></label>
+            <label>Vencimiento del documento<input name="documentoVenceEn" type="date" required></label>
             <label>Frente del documento<input name="documentoFrente" type="file" accept="image/*,.pdf" required></label>
             <label>Reverso del documento<input name="documentoReverso" type="file" accept="image/*,.pdf"></label>
             <label>Selfie de verificación<input name="selfie" type="file" accept="image/*" capture="user" required></label>
@@ -282,9 +285,9 @@
           <form id="formCotizacion" class="mini-form">
             <label>Solicitud<select name="solicitudId" id="cotizacionSolicitud" required></select></label>
             <div class="quote-editor">
-              <fieldset><legend>Económica</legend><input name="economicaPrecio" type="number" min="0" placeholder="Precio total" required><input name="economicaMateriales" type="number" min="0" placeholder="Materiales"><input name="economicaManoObra" type="number" min="0" placeholder="Mano de obra"><input name="economicaDuracion" placeholder="Duración"><textarea name="economicaDetalle" placeholder="Alcance e inclusiones"></textarea></fieldset>
-              <fieldset><legend>Recomendada</legend><input name="recomendadaPrecio" type="number" min="0" placeholder="Precio total" required><input name="recomendadaMateriales" type="number" min="0" placeholder="Materiales"><input name="recomendadaManoObra" type="number" min="0" placeholder="Mano de obra"><input name="recomendadaDuracion" placeholder="Duración"><textarea name="recomendadaDetalle" placeholder="Alcance e inclusiones"></textarea></fieldset>
-              <fieldset><legend>Premium</legend><input name="premiumPrecio" type="number" min="0" placeholder="Precio total" required><input name="premiumMateriales" type="number" min="0" placeholder="Materiales"><input name="premiumManoObra" type="number" min="0" placeholder="Mano de obra"><input name="premiumDuracion" placeholder="Duración"><textarea name="premiumDetalle" placeholder="Alcance e inclusiones"></textarea></fieldset>
+              <fieldset><legend>Económica</legend><input name="economicaMateriales" type="number" min="0" step="0.01" placeholder="Materiales" required><input name="economicaManoObra" type="number" min="0" step="0.01" placeholder="Mano de obra" required><input name="economicaOtros" type="number" min="0" step="0.01" value="0" placeholder="Transporte, permisos u otros"><input name="economicaPrecio" type="number" min="0" step="0.01" placeholder="Total calculado" readonly required><input name="economicaDuracion" placeholder="Duración" required><textarea name="economicaDetalle" placeholder="Alcance e inclusiones" required></textarea></fieldset>
+              <fieldset><legend>Recomendada</legend><input name="recomendadaMateriales" type="number" min="0" step="0.01" placeholder="Materiales" required><input name="recomendadaManoObra" type="number" min="0" step="0.01" placeholder="Mano de obra" required><input name="recomendadaOtros" type="number" min="0" step="0.01" value="0" placeholder="Transporte, permisos u otros"><input name="recomendadaPrecio" type="number" min="0" step="0.01" placeholder="Total calculado" readonly required><input name="recomendadaDuracion" placeholder="Duración" required><textarea name="recomendadaDetalle" placeholder="Alcance e inclusiones" required></textarea></fieldset>
+              <fieldset><legend>Premium</legend><input name="premiumMateriales" type="number" min="0" step="0.01" placeholder="Materiales" required><input name="premiumManoObra" type="number" min="0" step="0.01" placeholder="Mano de obra" required><input name="premiumOtros" type="number" min="0" step="0.01" value="0" placeholder="Transporte, permisos u otros"><input name="premiumPrecio" type="number" min="0" step="0.01" placeholder="Total calculado" readonly required><input name="premiumDuracion" placeholder="Duración" required><textarea name="premiumDetalle" placeholder="Alcance e inclusiones" required></textarea></fieldset>
             </div>
             <div class="form-grid two"><label>Válida hasta<input name="validaHasta" type="date" required></label><label>Disponibilidad estimada<input name="disponibilidadEstimada" required placeholder="Ej. desde el lunes"></label></div>
             <label>Responsable de materiales<select name="responsableMateriales"><option>Profesional</option><option>Cliente</option><option>Mixto</option></select></label>
@@ -300,6 +303,7 @@
               </select>
             </label>
             <label>Duración y condiciones<textarea name="condiciones" required placeholder="Plazo, forma de pago, garantía y exclusiones."></textarea></label>
+            <label>Forma y calendario de pago<textarea name="formaPago" required placeholder="Ej. 30% al inicio, 40% al aprobar el avance y 30% contra entrega."></textarea></label>
             <button class="gold-button" type="submit">Enviar cotización</button>
           </form>
         </article>
@@ -329,6 +333,7 @@
     <a href="privacidad-vigna.html">Privacidad</a>
     <a href="terminos-vigna.html">Términos</a>
     <a href="soporte-vigna.html">Soporte</a>
+    <a href="libro-reclamaciones.html">Libro de Reclamaciones</a>
     <button type="button" data-account-deletion-open>Eliminar mi cuenta</button>
   </footer>
 
@@ -375,6 +380,6 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="vigna-config.js?v=2"></script>
-  <script type="module" src="mvp-profesionales-bootstrap.js?v=24"></script>
+  <script type="module" src="mvp-profesionales-bootstrap.js?v=25"></script>
 </body>
 </html>

@@ -673,6 +673,22 @@ document.addEventListener("click", async (event) => {
     document.getElementById("contractDialog")?.close();
     return;
   }
+  const descargarPdf = event.target.closest("[data-download-contract-pdf]");
+  if (descargarPdf) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await ejecutar(null, async () => {
+      const archivo = await api.descargarPdfContrato(descargarPdf.dataset.downloadContractPdf);
+      const enlace = document.createElement("a");
+      enlace.href = archivo.url;
+      enlace.download = archivo.nombre;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      setTimeout(() => URL.revokeObjectURL(archivo.url), 30000);
+    }, "PDF contractual generado de forma segura.");
+    return;
+  }
   const confirmarFirmado = event.target.closest("[data-confirm-signed-contract]");
   if (confirmarFirmado) {
     event.preventDefault();

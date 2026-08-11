@@ -1,7 +1,7 @@
 {
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check firebase.js && node --check js/script.js && node --check js/productos.js && node --check js/producto.js && node --check js/checkout.js && node --check js/admin.js && node --check js/cuenta.js && node --check plomeros.js && node --check mvp-profesionales.js && node --check mvp-profesionales-firebase.js && node --check mvp-profesionales-cloud-ui.js && node --check mvp-profesionales-bootstrap.js && node --check mvp-profesionales-identidad.mjs && node --check service-worker.js && node --check garantias-reclamos.js && node --check panel-vigna.js && node --check vigna-config.js && node --check preparar-hosting-profesionales.js && node verificar-identidad-profesionales.cjs && node verificar-garantias-reclamos.cjs && node verificar-ejecucion-contratos.cjs && node verificar-guia-profesionales.cjs && node verificar-portafolio-solicitudes-cotizaciones.cjs && node verificar-contrato-bilateral.cjs && node verificar-comunicacion-contractual.cjs && node verificar-administracion-profesionales.cjs && node verificar-especialidades-evidencias.cjs && node verificar-aceptacion-profesionales.cjs && node verificar-pagos-planes.cjs && node verificar-app-movil.cjs && node verificar-publicacion-movil.cjs",
+    "check": "node --check server.js && node --check firebase.js && node --check js/script.js && node --check js/productos.js && node --check js/producto.js && node --check js/checkout.js && node --check js/admin.js && node --check js/cuenta.js && node --check mvp-profesionales.js && node --check mvp-profesionales-firebase.js && node --check mvp-profesionales-cloud-ui.js && node --check mvp-profesionales-bootstrap.js && node --check mvp-profesionales-identidad.mjs && node --check service-worker.js && node --check garantias-reclamos.js && node --check panel-vigna.js && node --check vigna-config.js && node --check preparar-hosting-profesionales.js && node verificar-identidad-profesionales.cjs && node verificar-garantias-reclamos.cjs && node verificar-ejecucion-contratos.cjs && node verificar-guia-profesionales.cjs && node verificar-portafolio-solicitudes-cotizaciones.cjs && node verificar-contrato-bilateral.cjs && node verificar-comunicacion-contractual.cjs && node verificar-administracion-profesionales.cjs && node verificar-especialidades-evidencias.cjs && node verificar-aceptacion-profesionales.cjs && node verificar-pagos-planes.cjs && node verificar-app-movil.cjs && node verificar-publicacion-movil.cjs && node verificar-preparacion-produccion.cjs && node verificar-pdf-contrato.cjs",
     "build:profesionales": "node preparar-hosting-profesionales.js",
     "mobile:sync": "npm run build:profesionales && cap sync",
     "mobile:assets": "capacitor-assets generate --ios --android --assetPath assets --iconBackgroundColor '#050505' --iconBackgroundColorDark '#050505' --splashBackgroundColor '#050505' --splashBackgroundColorDark '#050505'",
@@ -23,7 +23,8 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "firebase-admin": "^13.10.0",
-    "mercadopago": "^3.1.0"
+    "mercadopago": "^3.1.0",
+    "pdfkit": "^0.17.2"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",

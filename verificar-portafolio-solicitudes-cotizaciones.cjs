@@ -11,7 +11,7 @@ const exigir = (condicion, mensaje) => { if (!condicion) throw new Error(`Verifi
 
 [
   "situacionActual", "resultadoEsperado", "responsableMateriales", "restricciones",
-  "validaHasta", "disponibilidadEstimada", "exclusiones", "economicaMateriales", "premiumManoObra"
+  "validaHasta", "disponibilidadEstimada", "exclusiones", "economicaMateriales", "premiumManoObra", "economicaOtros", "formaPago"
 ].forEach((campo) => exigir(html.includes(`name="${campo}"`), `falta el campo estructurado ${campo}`));
 
 exigir(html.includes('id="professionalRequests"'), "el panel profesional no muestra las solicitudes compatibles");
@@ -28,6 +28,8 @@ exigir(storage.includes("portafolio/{proyectoId}/{archivo}"), "faltan reglas de 
 exigir(firebase.includes("cotizacionRaizId"), "falta la raíz de versionado de cotizaciones");
 exigir(firebase.includes("reemplazaA"), "falta trazabilidad entre versiones de cotización");
 exigir(firebase.includes("Number(anterior?.version || 0) + 1"), "las versiones no son incrementales");
+exigir(firebase.includes("materiales + manoObra + otros"), "el total no se calcula desde el desglose");
+exigir(firebase.includes("adjuntos.length > 10"), "la solicitud no limita la cantidad de adjuntos");
 exigir(firestore.includes("request.resource.data.version >= 1"), "las reglas no validan la versión");
 
 console.log("Portafolio moderado, solicitudes guiadas y cotizaciones versionadas: integración verificada.");
