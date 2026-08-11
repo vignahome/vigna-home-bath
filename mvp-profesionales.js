@@ -270,8 +270,17 @@
     document.getElementById("professionalRequestsCard").hidden = false;
     listadoTitulo.textContent = "Cotizaciones y contratos";
 
-    const p = data.profesionales.find((item) => item.id === panelProfesionalId) || data.profesionales[0];
-    if (!p) return;
+    const p = data.profesionales.find((item) => item.id === panelProfesionalId);
+    if (!p) {
+      selector.hidden = true;
+      herramientas.hidden = true;
+      document.getElementById("professionalPlanCard").hidden = true;
+      document.getElementById("professionalSpecialtiesCard").hidden = true;
+      document.getElementById("professionalRequestsCard").hidden = true;
+      document.getElementById("panelMetricas").innerHTML = "";
+      document.getElementById("listaCotizaciones").innerHTML = '<div class="empty-state"><h3>Perfil profesional incompleto</h3><p>Completa nuevamente el registro para terminar de crear este perfil. No se mostrará información de otra cuenta.</p></div>';
+      return;
+    }
     panelProfesionalId = p.id;
     document.getElementById("panelProfesional").value = p.id;
     document.getElementById("panelEstado").innerHTML = `<span class="status-chip ${estadoClase(p.estado)}">${escapar(p.estado)}</span>`;
@@ -657,9 +666,12 @@
     setData: (nuevo) => {
       if (!nuevo || typeof nuevo !== "object") return;
       data = { ...seedData(), ...nuevo, version: 1 };
-      panelProfesionalId = data.profesionales.some((item) => item.id === panelProfesionalId)
-        ? panelProfesionalId
-        : (data.profesionales[0]?.id || "");
+      const profesionalDeSesion = data.rol === "profesional"
+        ? data.profesionales.find((item) => (item.uid || item.id) === data.usuarioUid)
+        : null;
+      panelProfesionalId = profesionalDeSesion?.id || (data.rol === "profesional"
+        ? ""
+        : (data.profesionales.some((item) => item.id === panelProfesionalId) ? panelProfesionalId : (data.profesionales[0]?.id || "")));
       renderAll();
     },
     reset: () => { localStorage.removeItem(STORAGE_KEY); location.reload(); }

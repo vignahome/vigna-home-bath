@@ -159,8 +159,11 @@ async function registrarProfesional(form) {
   if (password !== texto(form, "passwordConfirm")) throw new Error("Las contraseñas no coinciden.");
   const profesiones = form.getAll("profesiones").map(String);
   if (!profesiones.length) throw new Error("Selecciona al menos una profesión.");
-  const credencial = await createUserWithEmailAndPassword(auth, correo, password);
-  const uid = credencial.user.uid;
+  const sesionExistente = auth.currentUser;
+  const mismoCorreo = sesionExistente?.email?.trim().toLowerCase() === correo.trim().toLowerCase();
+  const uid = mismoCorreo
+    ? sesionExistente.uid
+    : (await createUserWithEmailAndPassword(auth, correo, password)).user.uid;
   await setDoc(doc(db, COLECCIONES.usuarios, uid), {
     uid, rol: "profesional", correo, estadoRegistro: "incompleto", creadoEn: ahora()
   });
@@ -1263,7 +1266,7 @@ async function cargarDatos() {
     auditoria = auditoriaCliente;
   } else if (rol === "profesional") {
     const perfil = await getDoc(doc(db, COLECCIONES.profesionales, user.uid));
-    if (perfil.exists() && !profesionales.some((item) => item.id === user.uid)) profesionales.unshift({ id: perfil.id, ...perfil.data() });
+    profesionales = perfil.exists() ? [{ id: perfil.id, ...perfil.data() }] : [];
     const perfilDatos = perfil.data() || {};
     const [especialidadesPropias, planPropio, portafolioPropio] = await Promise.all([
       porCampo(COLECCIONES.profesionesProfesional, "profesionalUid", user.uid),
@@ -1289,7 +1292,7 @@ async function cargarDatos() {
   }
   anexarProfesional();
   const adaptar = (items) => items.map((item) => ({ ...item, clienteId: item.clienteUid || item.clienteId, profesionalId: item.profesionalUid || item.profesionalId, actor: item.actorEmail || item.actorUid || "Sistema" }));
-  return { version: 1, profesionales: adaptar(profesionales), clientes: adaptar(clientes), solicitudes: adaptar(solicitudes), cotizaciones: adaptar(cotizaciones), contratos: adaptar(contratos), hitos: adaptar(hitos), pagosDeclarados: adaptar(pagosDeclarados), ordenesCambio: adaptar(ordenesCambio), mensajesContrato: adaptar(mensajesContrato), actuacionesContrato: adaptar(actuacionesContrato), especialidades: adaptar(especialidades), planesProfesionales: adaptar(planesProfesionales), portafolios: adaptar(portafolios), resenas: adaptar(resenas), auditoria: adaptar(auditoria), solicitudesEliminacion: adaptar(solicitudesEliminacion), nube: true, rol, adminRol };
+  return { version: 1, usuarioUid: user.uid, profesionales: adaptar(profesionales), clientes: adaptar(clientes), solicitudes: adaptar(solicitudes), cotizaciones: adaptar(cotizaciones), contratos: adaptar(contratos), hitos: adaptar(hitos), pagosDeclarados: adaptar(pagosDeclarados), ordenesCambio: adaptar(ordenesCambio), mensajesContrato: adaptar(mensajesContrato), actuacionesContrato: adaptar(actuacionesContrato), especialidades: adaptar(especialidades), planesProfesionales: adaptar(planesProfesionales), portafolios: adaptar(portafolios), resenas: adaptar(resenas), auditoria: adaptar(auditoria), solicitudesEliminacion: adaptar(solicitudesEliminacion), nube: true, rol, adminRol };
 }
 
 const observarSesion = (callback) => onAuthStateChanged(auth, callback);

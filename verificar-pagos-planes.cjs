@@ -5,6 +5,7 @@ const { validarDatosPagoPlan, sumarMeses } = require("./server.js");
 const servidor = fs.readFileSync("server.js", "utf8");
 const firebase = fs.readFileSync("mvp-profesionales-firebase.js", "utf8");
 const interfaz = fs.readFileSync("mvp-profesionales-cloud-ui.js", "utf8");
+const aplicacion = fs.readFileSync("mvp-profesionales.js", "utf8");
 const reglas = fs.readFileSync("firestore.rules", "utf8");
 
 const pagoValido = validarDatosPagoPlan({
@@ -41,5 +42,9 @@ assert.match(firebase, /isNativePlatform/, "la app nativa debe separar la factur
 assert.match(interfaz, /verificarPagoPlanProfesional/, "falta verificar el retorno de Mercado Pago");
 assert.match(reglas, /match \/pv_pagos_planes\/\{pagoId\}/, "faltan reglas de lectura de pagos de planes");
 assert.match(reglas, /allow create, update, delete: if false;/, "el cliente no debe poder escribir pagos verificados");
+assert.match(firebase, /profesionales = perfil\.exists\(\) \? \[\{ id: perfil\.id, \.\.\.perfil\.data\(\) \}\] : \[\]/, "el panel profesional debe cargar exclusivamente el perfil de la sesión");
+assert.match(firebase, /usuarioUid: user\.uid/, "los datos deben identificar al usuario autenticado");
+assert.match(aplicacion, /\(item\.uid \|\| item\.id\) === data\.usuarioUid/, "el panel debe seleccionar el perfil por UID autenticado");
+assert.match(aplicacion, /No se mostrará información de otra cuenta/, "un perfil incompleto debe fallar de forma segura");
 
 console.log("Pagos de planes: autenticación, verificación, idempotencia y separación móvil verificadas.");
