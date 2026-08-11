@@ -38,6 +38,8 @@ assert.deepEqual(require("./server.js").PLANES.semestral, { id: "semestral", nom
 assert.deepEqual(require("./server.js").PLANES.anual, { id: "anual", nombre: "VIGNA Profesional Anual + 2 meses gratis", precio: 199.9, meses: 14 });
 
 assert.match(servidor, /verifyIdToken\(token, true\)/, "el servidor debe verificar una sesión Firebase vigente");
+assert.match(servidor, /https:\/\/vigna-plomeros\.web\.app/, "el Hosting oficial debe estar autorizado por CORS");
+assert.match(servidor, /https:\/\/vigna-plomeros\.firebaseapp\.com/, "el dominio alternativo de Firebase debe estar autorizado por CORS");
 assert.match(servidor, /procesarPagoPlanProfesional/, "falta el procesador idempotente de planes");
 assert.match(servidor, /pagoAnterior\.estado !== "approved"/, "falta protección contra activaciones duplicadas");
 assert.match(servidor, /tipo_pago === "plan_profesional"/, "el webhook no separa los pagos de planes");

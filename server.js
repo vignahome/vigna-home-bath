@@ -24,9 +24,16 @@ const PLANES_PROFESIONALES_COLLECTION = "pv_planes_profesionales";
 const PROFESIONALES_COLLECTION = "pv_profesionales";
 const USUARIOS_COLLECTION = "pv_usuarios";
 const AUDITORIA_PROFESIONALES_COLLECTION = "pv_auditoria";
+const ORIGENES_OFICIALES = [
+  PUBLIC_BASE_URL,
+  "https://vigna-plomeros.web.app",
+  "https://vigna-plomeros.firebaseapp.com",
+  "http://localhost:5500",
+  "http://127.0.0.1:5500"
+];
 const ALLOWED_ORIGINS = new Set(
-  (process.env.ALLOWED_ORIGINS || `${PUBLIC_BASE_URL},http://localhost:5500,http://127.0.0.1:5500`)
-    .split(",").map((origin) => origin.trim().replace(/\/$/, "")).filter(Boolean)
+  [...ORIGENES_OFICIALES, ...String(process.env.ALLOWED_ORIGINS || "").split(",")]
+    .map((origin) => origin.trim().replace(/\/$/, "")).filter(Boolean)
 );
 
 const PLANES = Object.freeze({
