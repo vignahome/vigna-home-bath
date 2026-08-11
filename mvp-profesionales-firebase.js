@@ -121,13 +121,14 @@ async function contratoAutorizado(contratoId) {
 
 async function esAdmin(uid = auth.currentUser?.uid) {
   if (!uid) return false;
-  return (await getDoc(doc(db, "admins", uid))).exists();
+  const snapshot = await getDoc(doc(db, "admins", uid));
+  return snapshot.exists() && snapshot.data().activo !== false;
 }
 
 async function obtenerAdminRol(uid = auth.currentUser?.uid) {
   if (!uid) return "";
   const snapshot = await getDoc(doc(db, "admins", uid));
-  if (!snapshot.exists()) return "";
+  if (!snapshot.exists() || snapshot.data().activo === false) return "";
   const rol = String(snapshot.data().rol || "superadmin").toLowerCase();
   return ["superadmin", "moderacion", "soporte", "finanzas"].includes(rol) ? rol : "superadmin";
 }

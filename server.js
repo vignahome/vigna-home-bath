@@ -1283,7 +1283,10 @@ app.get("/api/profesionales/contratos/:contratoId/pdf", limitarPdfContratos, asy
     if (!contratoSnapshot.exists) return res.status(404).json({ error: "El contrato no existe." });
     const contrato = { id: contratoSnapshot.id, ...contratoSnapshot.data() };
     const participante = [contrato.clienteUid, contrato.profesionalUid].includes(usuario.uid);
-    if (!participante && !adminSnapshot.exists) return res.status(403).json({ error: "No tienes acceso a este contrato." });
+    const adminDatos = adminSnapshot.data() || {};
+    const administradorActivo = adminSnapshot.exists && adminDatos.activo !== false &&
+      ["admin", "superadmin", "moderacion", "soporte", "finanzas"].includes(String(adminDatos.rol || "superadmin").toLowerCase());
+    if (!participante && !administradorActivo) return res.status(403).json({ error: "No tienes acceso a este contrato." });
     return generarPdfContrato(res, contrato);
   } catch (error) {
     console.error("No se pudo generar el PDF contractual.", { message: error.message });
