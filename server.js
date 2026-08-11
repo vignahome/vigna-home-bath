@@ -31,8 +31,8 @@ const ALLOWED_ORIGINS = new Set(
 
 const PLANES = Object.freeze({
   mensual: Object.freeze({ id: "mensual", nombre: "VIGNA Profesional Mensual", precio: 19.9, meses: 1 }),
-  semestral: Object.freeze({ id: "semestral", nombre: "VIGNA Profesional Semestral + 1 mes gratis", precio: 89.9, meses: 7 }),
-  anual: Object.freeze({ id: "anual", nombre: "VIGNA Profesional Anual + 2 meses gratis", precio: 149.9, meses: 14 })
+  semestral: Object.freeze({ id: "semestral", nombre: "VIGNA Profesional Semestral + 1 mes gratis", precio: 99.9, meses: 7 }),
+  anual: Object.freeze({ id: "anual", nombre: "VIGNA Profesional Anual + 2 meses gratis", precio: 199.9, meses: 14 })
 });
 
 const ARCHIVOS_CATALOGO = Object.freeze([

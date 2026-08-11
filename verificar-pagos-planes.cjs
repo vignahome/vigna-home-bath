@@ -34,8 +34,8 @@ assert.equal(validarDatosPagoPlan({
 assert.equal(sumarMeses("2026-01-15T00:00:00.000Z", 1).toISOString(), "2026-02-15T00:00:00.000Z");
 assert.equal(sumarMeses("2026-01-15T00:00:00.000Z", 7).toISOString(), "2026-08-15T00:00:00.000Z");
 assert.equal(sumarMeses("2026-01-15T00:00:00.000Z", 14).toISOString(), "2027-03-15T00:00:00.000Z");
-assert.deepEqual(require("./server.js").PLANES.semestral, { id: "semestral", nombre: "VIGNA Profesional Semestral + 1 mes gratis", precio: 89.9, meses: 7 });
-assert.deepEqual(require("./server.js").PLANES.anual, { id: "anual", nombre: "VIGNA Profesional Anual + 2 meses gratis", precio: 149.9, meses: 14 });
+assert.deepEqual(require("./server.js").PLANES.semestral, { id: "semestral", nombre: "VIGNA Profesional Semestral + 1 mes gratis", precio: 99.9, meses: 7 });
+assert.deepEqual(require("./server.js").PLANES.anual, { id: "anual", nombre: "VIGNA Profesional Anual + 2 meses gratis", precio: 199.9, meses: 14 });
 
 assert.match(servidor, /verifyIdToken\(token, true\)/, "el servidor debe verificar una sesión Firebase vigente");
 assert.match(servidor, /procesarPagoPlanProfesional/, "falta el procesador idempotente de planes");
