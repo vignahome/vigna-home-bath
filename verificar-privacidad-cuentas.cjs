@@ -3,6 +3,7 @@ const exigir = (condicion, mensaje) => { if (!condicion) throw new Error(mensaje
 const leer = (archivo) => fs.readFileSync(archivo, "utf8");
 const html = leer("mvp-profesionales.html");
 const firebase = leer("mvp-profesionales-firebase.js");
+const interfazNube = leer("mvp-profesionales-cloud-ui.js");
 const reglas = leer("firestore.rules");
 const build = leer("preparar-hosting-profesionales.js");
 for (const archivo of ["privacidad-vigna.html", "soporte-vigna.html", "eliminar-cuenta.html", "legal-vigna.css"]) exigir(fs.existsSync(archivo), `Falta ${archivo}`);
@@ -11,6 +12,8 @@ exigir(leer("mvp-profesionales-cloud-ui.js").includes('id="pvAccountActions"') &
 exigir(html.includes("privacidad-vigna.html") && html.includes("soporte-vigna.html"), "Faltan enlaces legales dentro de la app.");
 exigir(firebase.includes("solicitarEliminacionCuenta") && firebase.includes("pv_solicitudes_eliminacion"), "Falta el registro autenticado de eliminación.");
 exigir(firebase.includes("actualizarSolicitudEliminacion"), "Falta la gestión administrativa de eliminaciones.");
+exigir(firebase.includes("sendPasswordResetEmail") && firebase.includes("recuperarPassword"), "Falta recuperación segura de contraseña.");
+exigir(interfazNube.includes("data-password-reset"), "Falta acceso visible a recuperación de contraseña.");
 exigir(html.includes('data-admin-tab="eliminaciones"') && html.includes('id="admin-eliminaciones"'), "Falta la cola administrativa de eliminaciones.");
 exigir(reglas.includes("match /pv_solicitudes_eliminacion/{uid}"), "Faltan reglas para solicitudes de eliminación.");
 exigir(reglas.includes('request.resource.data.notaAdministrativa.size() >= 10'), "La confirmación administrativa no exige constancia suficiente.");

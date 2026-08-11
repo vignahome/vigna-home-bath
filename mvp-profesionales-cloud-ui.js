@@ -59,6 +59,7 @@ function insertarAcceso() {
       <label>Correo electrónico<input name="correo" type="email" autocomplete="email" required></label>
       <label>Contraseña<input name="password" type="password" autocomplete="current-password" required></label>
       <button class="gold-button" type="submit">Ingresar</button>
+      <button class="secondary-button" type="button" data-password-reset>Olvidé mi contraseña</button>
     </form>
     <div id="pvAccountActions" class="table-actions" hidden>
       <button class="secondary-button" type="button" data-account-deletion-open>Eliminar mi cuenta</button>
@@ -447,6 +448,13 @@ document.addEventListener("submit", async (event) => {
 }, true);
 
 document.addEventListener("click", async (event) => {
+  const recuperar = event.target.closest("[data-password-reset]");
+  if (recuperar) {
+    const form = document.getElementById("pvLoginForm");
+    const correo = form?.elements?.correo?.value || "";
+    await ejecutar(form, () => api.recuperarPassword(correo), "Si la cuenta existe, Firebase enviará instrucciones de recuperación al correo indicado.");
+    return;
+  }
   if (event.target.closest("[data-account-deletion-open]")) {
     document.getElementById("pvAccessDialog")?.close();
     document.getElementById("pvAccountDeletionDialog")?.showModal();

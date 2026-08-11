@@ -16,6 +16,7 @@ import {
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
@@ -265,6 +266,17 @@ async function registrarCliente(form) {
 async function iniciarSesion(correo, password) {
   await signInWithEmailAndPassword(auth, correo, password);
   return { user: auth.currentUser, rol: await obtenerRol() };
+}
+
+async function recuperarPassword(correo) {
+  const email = String(correo || "").trim().toLowerCase();
+  if (!email || !email.includes("@")) throw new Error("Ingresa un correo electrónico válido.");
+  try {
+    await sendPasswordResetEmail(auth, email);
+  } catch (error) {
+    if (error?.code === "auth/user-not-found") return;
+    throw error;
+  }
 }
 
 async function cerrarSesion() {
@@ -1251,6 +1263,7 @@ export const ProfesionalesFirebase = Object.freeze({
   registrarProfesional,
   registrarCliente,
   iniciarSesion,
+  recuperarPassword,
   cerrarSesion,
   obtenerSolicitudEliminacion,
   solicitarEliminacionCuenta,
