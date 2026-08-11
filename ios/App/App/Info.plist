@@ -24,6 +24,12 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>VIGNA utiliza la cámara únicamente cuando eliges tomar fotografías o videos para verificar tu identidad, documentar una solicitud o registrar evidencias de un servicio.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>VIGNA utiliza el micrófono únicamente cuando decides grabar un video como documento o evidencia de un servicio.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>VIGNA accede a las fotos y videos que selecciones para adjuntarlos a perfiles, solicitudes, contratos o evidencias.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
