@@ -28,6 +28,7 @@ const ARCHIVOS = [
   "terminos-vigna.html",
   "soporte-vigna.html",
   "eliminar-cuenta.html",
+  "libro-reclamaciones.html",
   "garantias-reclamos.html",
   "garantias-reclamos.css",
   "garantias-reclamos.js",

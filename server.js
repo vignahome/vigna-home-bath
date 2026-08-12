@@ -5,6 +5,7 @@ const cors = require("cors");
 const fs = require("node:fs");
 const path = require("node:path");
 const { randomUUID } = require("node:crypto");
+const PDFDocument = require("pdfkit");
 const { initializeApp: initializeAdminApp, cert, applicationDefault, getApps: getAdminApps } = require("firebase-admin/app");
 const { getFirestore: getAdminFirestore } = require("firebase-admin/firestore");
 const { getAuth: getAdminAuth } = require("firebase-admin/auth");
@@ -24,6 +25,8 @@ const PLANES_PROFESIONALES_COLLECTION = "pv_planes_profesionales";
 const PROFESIONALES_COLLECTION = "pv_profesionales";
 const USUARIOS_COLLECTION = "pv_usuarios";
 const AUDITORIA_PROFESIONALES_COLLECTION = "pv_auditoria";
+const CONTRATOS_PROFESIONALES_COLLECTION = "pv_contratos";
+const VENTANA_LIMITES_MS = 15 * 60 * 1000;
 const ORIGENES_OFICIALES = [
   PUBLIC_BASE_URL,
   "https://vigna-plomeros.web.app",
@@ -120,6 +123,19 @@ function inicializarFirebaseAdmin() {
 const adminDb = inicializarFirebaseAdmin();
 
 app.disable("x-powered-by");
+app.set("trust proxy", 1);
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(self)");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  if (req.secure || req.headers["x-forwarded-proto"] === "https") {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
+  next();
+});
 app.use(cors({
   origin(origin, callback) {
     if (!origin || ALLOWED_ORIGINS.has(origin.replace(/\/$/, ""))) return callback(null, true);
@@ -127,6 +143,38 @@ app.use(cors({
   }
 }));
 app.use(express.json({ limit: "20kb" }));
+
+function crearLimitadorSolicitudes({ maximo, ventanaMs = VENTANA_LIMITES_MS, nombre }) {
+  const solicitudes = new Map();
+  return function limitarSolicitudes(req, res, next) {
+    const ahora = Date.now();
+    const clave = `${nombre}:${req.ip || req.socket?.remoteAddress || "desconocido"}`;
+    let registro = solicitudes.get(clave);
+    if (!registro || registro.reiniciaEn <= ahora) {
+      registro = { cantidad: 0, reiniciaEn: ahora + ventanaMs };
+      solicitudes.set(clave, registro);
+    }
+    registro.cantidad += 1;
+    const restantes = Math.max(0, maximo - registro.cantidad);
+    res.setHeader("RateLimit-Limit", String(maximo));
+    res.setHeader("RateLimit-Remaining", String(restantes));
+    res.setHeader("RateLimit-Reset", String(Math.ceil(registro.reiniciaEn / 1000)));
+    if (solicitudes.size > 10000) {
+      for (const [itemClave, item] of solicitudes) {
+        if (item.reiniciaEn <= ahora) solicitudes.delete(itemClave);
+      }
+    }
+    if (registro.cantidad > maximo) {
+      res.setHeader("Retry-After", String(Math.ceil((registro.reiniciaEn - ahora) / 1000)));
+      return res.status(429).json({ error: "Demasiadas solicitudes. Espera unos minutos antes de intentarlo nuevamente." });
+    }
+    return next();
+  };
+}
+
+const limitarCreacionPagos = crearLimitadorSolicitudes({ maximo: 10, nombre: "crear-pago" });
+const limitarVerificacionPagos = crearLimitadorSolicitudes({ maximo: 60, nombre: "verificar-pago" });
+const limitarPdfContratos = crearLimitadorSolicitudes({ maximo: 30, nombre: "pdf-contrato" });
 
 function credencialDisponible(res) {
   if (ACCESS_TOKEN && ACCESS_TOKEN !== "coloca_aqui_tu_nuevo_access_token") return true;
@@ -175,6 +223,62 @@ async function exigirProfesionalAutenticado(req, res) {
     }
     throw error;
   }
+}
+
+async function exigirUsuarioFirebase(req, res) {
+  if (!adminDb) {
+    res.status(503).json({ error: "El servidor no tiene Firebase configurado." });
+    return null;
+  }
+  const token = obtenerBearer(req);
+  if (!token) {
+    res.status(401).json({ error: "Inicia sesión nuevamente para continuar." });
+    return null;
+  }
+  try {
+    return await getAdminAuth().verifyIdToken(token, true);
+  } catch (error) {
+    if (String(error.code || "").startsWith("auth/")) {
+      res.status(401).json({ error: "La sesión ya no es válida. Ingresa nuevamente." });
+      return null;
+    }
+    throw error;
+  }
+}
+
+function dineroContrato(valor) {
+  return `S/ ${Number(valor || 0).toFixed(2)}`;
+}
+
+function escribirSeccionContrato(pdf, titulo, contenido) {
+  pdf.moveDown(0.6).font("Helvetica-Bold").fontSize(12).fillColor("#865400").text(titulo, { keepTogether: true });
+  pdf.moveDown(0.2).font("Helvetica").fontSize(9.5).fillColor("#171717").text(String(contenido || "No especificado"), { lineGap: 2 });
+}
+
+function generarPdfContrato(res, contrato) {
+  const pdf = new PDFDocument({ size: "A4", margins: { top: 42, right: 46, bottom: 48, left: 46 }, info: { Title: `Contrato ${contrato.id}`, Author: "VIGNA Home & Bath" } });
+  res.type("application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="contrato-${String(contrato.id).replace(/[^a-zA-Z0-9_-]/g, "-")}.pdf"`);
+  res.setHeader("Cache-Control", "private, no-store, max-age=0");
+  pdf.pipe(res);
+  pdf.font("Helvetica-Bold").fontSize(18).fillColor("#865400").text("PROFESIONALES VIGNA'S", { align: "right" });
+  pdf.moveDown(0.2).fontSize(9).fillColor("#555555").text(`CONTRATO ${contrato.id} - VERSION ${Number(contrato.version || 1)}`);
+  pdf.text(`Emitido: ${contrato.creadoEn || "No registrado"} | Solicitud: ${contrato.solicitudId || ""} | Cotizacion: ${contrato.cotizacionId || ""} v${Number(contrato.cotizacionVersion || 1)}`);
+  pdf.moveDown().fontSize(17).fillColor("#171717").text("Contrato de prestacion de servicios");
+  pdf.moveDown(0.5).font("Helvetica").fontSize(10).text(`Cliente: ${contrato.clienteNombre || ""} - ${contrato.clienteTipoDocumento || "Documento"} ${contrato.clienteDocumento || ""}`);
+  pdf.text(`Profesional: ${contrato.profesionalNombre || ""} - ${contrato.profesionalTipoDocumento || "Documento"} ${contrato.profesionalDocumento || ""}`);
+  escribirSeccionContrato(pdf, "Objeto, alcance y entregables", `${contrato.descripcionSolicitud || "Servicio acordado"}\n${contrato.detalle || ""}`);
+  const desglose = contrato.desglose || {};
+  escribirSeccionContrato(pdf, "Precio y pagos", `Opcion: ${contrato.opcion || ""}\nMateriales: ${dineroContrato(desglose.materiales)}\nMano de obra: ${dineroContrato(desglose.manoObra)}\nTransporte, permisos u otros: ${dineroContrato(desglose.otros)}\nTOTAL: ${dineroContrato(contrato.total)}\nForma de pago: ${contrato.formaPago || "Segun acuerdo documentado entre las partes."}`);
+  const ubicacion = contrato.ubicacion || {};
+  escribirSeccionContrato(pdf, "Lugar, plazo y responsabilidades", `${ubicacion.departamento || ""}, ${ubicacion.provincia || ""}, ${ubicacion.distrito || ""}\nDireccion contractual: ${ubicacion.direccion || "Registrada en el expediente privado"}${ubicacion.referencia ? ` - ${ubicacion.referencia}` : ""}\nInicio preferido: ${ubicacion.fecha || "Por coordinar"}${ubicacion.fechaFin ? ` - Fin esperado: ${ubicacion.fechaFin}` : ""}\nMateriales: ${contrato.responsableMaterialesSolicitud || contrato.responsableMateriales || "Por definir"}\nRestricciones: ${contrato.restricciones || "Sin restricciones adicionales declaradas."}`);
+  escribirSeccionContrato(pdf, "Garantia", `${Number(contrato.garantiaDias || 0)} dias desde el cierre conforme. ${contrato.exclusiones || ""}`);
+  escribirSeccionContrato(pdf, "Condiciones, cambios y cancelacion", `${contrato.condiciones || ""}\nTodo cambio de alcance, precio o plazo requiere una orden escrita aceptada en el expediente. Las pausas, cancelaciones y reclamos deben registrarse con motivo y evidencia.`);
+  escribirSeccionContrato(pdf, "Privacidad y evidencias", "Las partes autorizan el tratamiento restringido de los datos y archivos necesarios para ejecutar, acreditar y resolver el servicio conforme a los terminos y la politica de privacidad de VIGNA. La publicacion de fotografias requiere autorizacion independiente.");
+  pdf.moveDown(2.4).strokeColor("#222222").moveTo(60, pdf.y).lineTo(250, pdf.y).stroke().moveTo(345, pdf.y).lineTo(535, pdf.y).stroke();
+  pdf.moveDown(0.4).font("Helvetica-Bold").fontSize(9).fillColor("#171717").text("Firma del cliente", 60, pdf.y, { width: 190, align: "center" }).text("Firma del profesional", 345, pdf.y - 11, { width: 190, align: "center" });
+  pdf.moveDown(1.2).font("Helvetica").fontSize(8).fillColor("#555555").text(`Estado al generar: ${contrato.estado || "Pendiente de firma"} | Documento generado por VIGNA; la firma digital certificada requiere un proveedor acreditado.`);
+  pdf.end();
 }
 
 function textoSeguro(valor, maximo) {
@@ -951,11 +1055,11 @@ async function crearPagoPlan(req, res) {
   }
 }
 
-app.post("/crear-pago-plan", crearPagoPlan);
+app.post("/crear-pago-plan", limitarCreacionPagos, crearPagoPlan);
 // Compatibilidad temporal con las páginas web anteriores. También exige sesión Firebase.
-app.post("/crear-pago", crearPagoPlan);
+app.post("/crear-pago", limitarCreacionPagos, crearPagoPlan);
 
-app.post("/crear-pago-productos", async (req, res) => {
+app.post("/crear-pago-productos", limitarCreacionPagos, async (req, res) => {
   if (!credencialDisponible(res)) return;
 
   const productos = resolverCarrito(req.body?.items);
@@ -1137,7 +1241,7 @@ app.post("/webhook-mercadopago", async (req, res) => {
   }
 });
 
-app.get("/verificar-pago-plan/:paymentId", async (req, res) => {
+app.get("/verificar-pago-plan/:paymentId", limitarVerificacionPagos, async (req, res) => {
   if (!credencialDisponible(res)) return;
   const sesion = await exigirProfesionalAutenticado(req, res);
   if (!sesion) return;
@@ -1161,9 +1265,34 @@ app.get("/verificar-pago-plan/:paymentId", async (req, res) => {
   }
 });
 
-app.get("/verificar-pago/:paymentId", async (req, res) => {
+app.get("/verificar-pago/:paymentId", limitarVerificacionPagos, async (req, res) => {
   req.url = `/verificar-pago-plan/${encodeURIComponent(req.params.paymentId || "")}`;
   return res.redirect(307, req.url);
+});
+
+app.get("/api/profesionales/contratos/:contratoId/pdf", limitarPdfContratos, async (req, res) => {
+  try {
+    const usuario = await exigirUsuarioFirebase(req, res);
+    if (!usuario) return;
+    const contratoId = String(req.params.contratoId || "");
+    if (!/^[a-zA-Z0-9_-]{1,128}$/.test(contratoId)) return res.status(400).json({ error: "El contrato no es válido." });
+    const [contratoSnapshot, adminSnapshot] = await Promise.all([
+      adminDb.collection(CONTRATOS_PROFESIONALES_COLLECTION).doc(contratoId).get(),
+      adminDb.collection("admins").doc(usuario.uid).get()
+    ]);
+    if (!contratoSnapshot.exists) return res.status(404).json({ error: "El contrato no existe." });
+    const contrato = { id: contratoSnapshot.id, ...contratoSnapshot.data() };
+    const participante = [contrato.clienteUid, contrato.profesionalUid].includes(usuario.uid);
+    const adminDatos = adminSnapshot.data() || {};
+    const administradorActivo = adminSnapshot.exists && adminDatos.activo !== false &&
+      ["admin", "superadmin", "moderacion", "soporte", "finanzas"].includes(String(adminDatos.rol || "superadmin").toLowerCase());
+    if (!participante && !administradorActivo) return res.status(403).json({ error: "No tienes acceso a este contrato." });
+    return generarPdfContrato(res, contrato);
+  } catch (error) {
+    console.error("No se pudo generar el PDF contractual.", { message: error.message });
+    if (!res.headersSent) return res.status(500).json({ error: "No se pudo generar el PDF contractual." });
+    return res.end();
+  }
 });
 
 app.use((error, _req, res, _next) => {
@@ -1185,5 +1314,7 @@ module.exports = {
   validarDatosPagoPedido,
   validarDatosPagoPlan,
   sumarMeses,
-  obtenerOrigenRetorno
+  obtenerOrigenRetorno,
+  generarPdfContrato,
+  crearLimitadorSolicitudes
 };

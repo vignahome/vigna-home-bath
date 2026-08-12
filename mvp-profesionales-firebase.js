@@ -16,6 +16,7 @@ import {
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut
@@ -120,13 +121,14 @@ async function contratoAutorizado(contratoId) {
 
 async function esAdmin(uid = auth.currentUser?.uid) {
   if (!uid) return false;
-  return (await getDoc(doc(db, "admins", uid))).exists();
+  const snapshot = await getDoc(doc(db, "admins", uid));
+  return snapshot.exists() && snapshot.data().activo !== false;
 }
 
 async function obtenerAdminRol(uid = auth.currentUser?.uid) {
   if (!uid) return "";
   const snapshot = await getDoc(doc(db, "admins", uid));
-  if (!snapshot.exists()) return "";
+  if (!snapshot.exists() || snapshot.data().activo === false) return "";
   const rol = String(snapshot.data().rol || "superadmin").toLowerCase();
   return ["superadmin", "moderacion", "soporte", "finanzas"].includes(rol) ? rol : "superadmin";
 }
@@ -151,6 +153,10 @@ async function auditar(accion, detalle, participantes = []) {
     detalle,
     actorUid: user.uid,
     actorEmail: user.email || "",
+    contexto: {
+      agente: String(globalThis.navigator?.userAgent || "").slice(0, 300),
+      idioma: String(globalThis.navigator?.language || "").slice(0, 20)
+    },
     participantes: [...new Set([user.uid, ...participantes.filter(Boolean)])],
     fecha: ahora()
   });
@@ -163,11 +169,15 @@ async function registrarProfesional(form) {
   if (password !== texto(form, "passwordConfirm")) throw new Error("Las contraseñas no coinciden.");
   const profesiones = form.getAll("profesiones").map(String);
   if (!profesiones.length) throw new Error("Selecciona al menos una profesión.");
+  if (profesiones.length > 10) throw new Error("Puedes registrar como máximo 10 profesiones.");
   const sesionExistente = auth.currentUser;
   const mismoCorreo = sesionExistente?.email?.trim().toLowerCase() === correo.trim().toLowerCase();
   const uid = mismoCorreo
     ? sesionExistente.uid
     : (await createUserWithEmailAndPassword(auth, correo, password)).user.uid;
+  if (!mismoCorreo && auth.currentUser && !auth.currentUser.emailVerified) {
+    await sendEmailVerification(auth.currentUser).catch(() => {});
+  }
   const perfilExistente = await getDoc(doc(db, COLECCIONES.profesionales, uid));
   if (perfilExistente.exists()) {
     const perfilPropio = normalizarPerfilPropio({ id: perfilExistente.id, data: perfilExistente.data() }, uid);
@@ -216,7 +226,8 @@ async function registrarProfesional(form) {
   };
   const privado = {
     uid, fechaNacimiento: texto(form, "fechaNacimiento"), tipoDocumento: texto(form, "tipoDocumento"),
-    documento: texto(form, "documento"), paisEmisor: texto(form, "paisEmisor"), direccionPrivada: texto(form, "direccion"),
+    documento: texto(form, "documento"), documentoVenceEn: texto(form, "documentoVenceEn"),
+    paisEmisor: texto(form, "paisEmisor"), direccionPrivada: texto(form, "direccion"),
     referencia: texto(form, "referencia"), documentos: { frenteUrl, reversoUrl, selfieUrl }, actualizadoEn: ahora()
   };
   const especialidades = profesiones.map((profesion) => {
@@ -251,6 +262,7 @@ async function registrarCliente(form) {
   if (password !== texto(form, "passwordConfirm")) throw new Error("Las contraseñas no coinciden.");
   const credencial = await createUserWithEmailAndPassword(auth, correo, password);
   const uid = credencial.user.uid;
+  if (!credencial.user.emailVerified) await sendEmailVerification(credencial.user).catch(() => {});
   await setDoc(doc(db, COLECCIONES.usuarios, uid), {
     uid, rol: "cliente", correo, estadoRegistro: "incompleto", creadoEn: ahora()
   });
@@ -266,6 +278,7 @@ async function registrarCliente(form) {
   const cliente = {
     uid, nombres: texto(form, "nombres"), apellidos: texto(form, "apellidos"), fechaNacimiento: texto(form, "fechaNacimiento"),
     correo, whatsapp: texto(form, "whatsapp"), tipoDocumento: texto(form, "tipoDocumento"), documento: texto(form, "documento"),
+    documentoVenceEn: texto(form, "documentoVenceEn"), correoVerificado: credencial.user.emailVerified === true,
     paisEmisor: texto(form, "paisEmisor"), departamento: texto(form, "departamento"), provincia: texto(form, "provincia"),
     distrito: texto(form, "distrito"), zona: texto(form, "zona"), direccion: texto(form, "direccion"), referencia: texto(form, "referencia"),
     documentos: { frenteUrl, reversoUrl, selfieUrl }, documentosDeclarados: [frenteUrl, reversoUrl, selfieUrl].filter(Boolean).length,
@@ -353,6 +366,7 @@ async function crearSolicitud(form) {
   const user = exigirUsuario();
   if (await obtenerRol(user.uid) !== "cliente") throw new Error("Solo una cuenta de cliente puede crear solicitudes.");
   const adjuntos = form.getAll("archivos").filter((item) => item instanceof File && item.size);
+  if (adjuntos.length > 10) throw new Error("Puedes adjuntar como máximo 10 archivos por solicitud.");
   const solicitudRef = doc(collection(db, COLECCIONES.solicitudes));
   const urls = [];
   for (const item of adjuntos) {
@@ -388,7 +402,9 @@ async function agregarPortafolio(form) {
   const antes = archivo(form, "antes");
   const despues = archivo(form, "despues");
   const video = archivo(form, "video");
-  const proceso = form.getAll("proceso").filter((item) => item instanceof File && item.size).slice(0, 8);
+  const procesoSeleccionado = form.getAll("proceso").filter((item) => item instanceof File && item.size);
+  if (procesoSeleccionado.length > 8) throw new Error("Puedes adjuntar como máximo 8 fotos del proceso.");
+  const proceso = procesoSeleccionado;
   const base = `profesionales-vigna/profesionales/${user.uid}/portafolio/${proyectoRef.id}`;
   const [antesUrl, despuesUrl, videoUrl] = await Promise.all([
     subir(base, antes, { maxMb: 12, tipos: ["image/"] }),
@@ -441,18 +457,24 @@ async function crearCotizacion(form) {
   const anteriores = cotizacionesProfesional.filter((item) => item.solicitudId === solicitudId).sort((a, b) => Number(b.version || 0) - Number(a.version || 0));
   const anterior = anteriores[0] || null;
   const cotizacionRef = doc(collection(db, COLECCIONES.cotizaciones));
-  const opcion = (prefijo, nombre) => ({
-    nombre, precio: Number(form.get(`${prefijo}Precio`) || 0), detalle: texto(form, `${prefijo}Detalle`),
-    materiales: Number(form.get(`${prefijo}Materiales`) || 0), manoObra: Number(form.get(`${prefijo}ManoObra`) || 0),
-    duracion: texto(form, `${prefijo}Duracion`)
-  });
+  const opcion = (prefijo, nombre) => {
+    const materiales = Number(form.get(`${prefijo}Materiales`) || 0);
+    const manoObra = Number(form.get(`${prefijo}ManoObra`) || 0);
+    const otros = Number(form.get(`${prefijo}Otros`) || 0);
+    const precio = Number((materiales + manoObra + otros).toFixed(2));
+    if (![materiales, manoObra, otros, precio].every(Number.isFinite) || precio <= 0) {
+      throw new Error(`La opción ${nombre} debe tener un desglose válido y un total mayor que cero.`);
+    }
+    return { nombre, precio, detalle: texto(form, `${prefijo}Detalle`), materiales, manoObra, otros, duracion: texto(form, `${prefijo}Duracion`) };
+  };
   const cotizacion = {
     id: cotizacionRef.id, solicitudId, profesionalUid: user.uid, clienteUid: solicitud.clienteUid,
     profesionalNombre: nombreCompleto(perfil), profesionalTipoDocumento: identidad.tipoDocumento || "",
     profesionalDocumento: identidad.documento || "",
     opciones: [opcion("economica", "Económica"), opcion("recomendada", "Recomendada"), opcion("premium", "Premium")],
     garantiaDias, validaHasta: texto(form, "validaHasta"), disponibilidadEstimada: texto(form, "disponibilidadEstimada"),
-    responsableMateriales: texto(form, "responsableMateriales"), exclusiones: texto(form, "exclusiones"), condiciones: texto(form, "condiciones"),
+    responsableMateriales: texto(form, "responsableMateriales"), exclusiones: texto(form, "exclusiones"),
+    condiciones: texto(form, "condiciones"), formaPago: texto(form, "formaPago"),
     cotizacionRaizId: anterior?.cotizacionRaizId || anterior?.id || cotizacionRef.id, reemplazaA: anterior?.id || "",
     version: Number(anterior?.version || 0) + 1, estado: "Enviada", creadoEn: ahora(), actualizadoEn: ahora()
   };
@@ -484,15 +506,20 @@ async function aceptarCotizacion(cotizacionId, opcionIndice) {
     tx.set(contratoRef, {
       id: contratoRef.id, solicitudId: cotizacion.solicitudId, cotizacionId, profesionalUid: cotizacion.profesionalUid,
       clienteUid: user.uid, opcion: opcion.nombre, total: opcion.precio, detalle: opcion.detalle,
+      desglose: { materiales: opcion.materiales || 0, manoObra: opcion.manoObra || 0, otros: opcion.otros || 0 },
       clienteNombre: nombreCompleto(cliente), clienteTipoDocumento: cliente.tipoDocumento || "", clienteDocumento: cliente.documento || "",
       profesionalNombre: cotizacion.profesionalNombre || "", profesionalTipoDocumento: cotizacion.profesionalTipoDocumento || "",
       profesionalDocumento: cotizacion.profesionalDocumento || "",
       garantiaDias: Number(cotizacion.garantiaDias || 0), garantiaInicioEn: "", garantiaVenceEn: "",
       responsableMateriales: cotizacion.responsableMateriales || "Por definir", exclusiones: cotizacion.exclusiones || "",
       cotizacionVersion: Number(cotizacion.version || 1), cotizacionRaizId: cotizacion.cotizacionRaizId || cotizacion.id,
-      condiciones: cotizacion.condiciones, version: 1, estado: "Pendiente de firma", archivoFirmado: "", archivoFirmadoUrl: "",
+      condiciones: cotizacion.condiciones, formaPago: cotizacion.formaPago || "Según acuerdo documentado entre las partes.",
+      version: 1, estado: "Pendiente de firma", archivoFirmado: "", archivoFirmadoUrl: "",
       anexoPlanTrabajoNombre: "", anexoPlanTrabajoRuta: "", anexoPlanTrabajoActualizadoEn: "",
-      descripcionSolicitud: solicitud.descripcion || "", ubicacion: { departamento: solicitud.departamento, provincia: solicitud.provincia, distrito: solicitud.distrito, fecha: solicitud.fecha },
+      descripcionSolicitud: solicitud.descripcion || "",
+      ubicacion: { departamento: solicitud.departamento, provincia: solicitud.provincia, distrito: solicitud.distrito, direccion: cliente.direccion || "", referencia: cliente.referencia || "", fecha: solicitud.fecha, fechaFin: solicitud.fechaFin || "" },
+      restricciones: solicitud.restricciones || "Sin restricciones adicionales declaradas.",
+      responsableMaterialesSolicitud: solicitud.responsableMateriales || cotizacion.responsableMateriales || "Por definir",
       creadoEn: ahora(), actualizadoEn: ahora()
     });
     tx.update(cotizacionRef, { estado: "Aceptada", actualizadoEn: ahora() });
@@ -1154,6 +1181,22 @@ async function verificarPagoPlanProfesional(paymentId) {
   return datos;
 }
 
+async function descargarPdfContrato(contratoId) {
+  const user = exigirUsuario();
+  const apiPagosUrl = obtenerApiPagosUrl();
+  if (!apiPagosUrl) throw new Error("El servidor todavía no está configurado para generar documentos.");
+  if (!/^[a-zA-Z0-9_-]{1,128}$/.test(String(contratoId || ""))) throw new Error("El contrato no es válido.");
+  const idToken = await user.getIdToken(true);
+  const respuesta = await fetch(`${apiPagosUrl}/api/profesionales/contratos/${encodeURIComponent(contratoId)}/pdf`, {
+    headers: { Authorization: `Bearer ${idToken}` }
+  });
+  if (!respuesta.ok) {
+    const datos = await respuesta.json().catch(() => ({}));
+    throw new Error(datos.error || "No se pudo generar el PDF contractual.");
+  }
+  return { nombre: `contrato-${contratoId}.pdf`, url: URL.createObjectURL(await respuesta.blob()) };
+}
+
 async function obtenerPlanProfesionalPropio() {
   const user = exigirUsuario();
   const snapshot = await getDoc(doc(db, COLECCIONES.planesProfesionales, user.uid));
@@ -1422,6 +1465,7 @@ export const ProfesionalesFirebase = Object.freeze({
   solicitarPlanProfesional,
   iniciarPagoPlanProfesional,
   verificarPagoPlanProfesional,
+  descargarPdfContrato,
   obtenerPlanProfesionalPropio,
   esPlataformaNativa,
   activarPlanProfesional,

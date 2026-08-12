@@ -4,6 +4,7 @@ const html = leer("mvp-profesionales.html");
 const interfaz = leer("mvp-profesionales.js");
 const firebase = leer("mvp-profesionales-firebase.js");
 const reglas = leer("firestore.rules");
+const servidor = leer("server.js");
 const exigir = (valor, mensaje) => { if (!valor) throw new Error(`Verificación fallida: ${mensaje}`); };
 
 exigir(firebase.includes("async function obtenerAdminRol"), "faltan roles administrativos");
@@ -12,6 +13,9 @@ exigir(firebase.includes('exigirPermisoAdmin("moderacion")'), "la moderación no
 exigir(firebase.includes('exigirPermisoAdmin("soporte")'), "el soporte no está segmentado");
 exigir(firebase.includes('exigirPermisoAdmin("finanzas")'), "finanzas no está segmentado");
 exigir(reglas.includes("function adminPuede(rol)"), "las reglas no reconocen permisos por rol");
+exigir(reglas.includes('data.get("activo", true) != false'), "una cuenta administrativa desactivada conserva permisos en reglas");
+exigir(firebase.includes("snapshot.data().activo !== false"), "una cuenta administrativa desactivada conserva permisos en la interfaz");
+exigir(servidor.includes("const administradorActivo = adminSnapshot.exists && adminDatos.activo !== false"), "una cuenta administrativa desactivada conserva acceso a PDF");
 exigir(reglas.includes('adminRol() == "admin"'), "las cuentas administrativas heredadas no conservan permisos de superadministración");
 exigir(reglas.includes('adminPuede("moderacion")'), "las reglas no protegen moderación");
 exigir(reglas.includes('adminPuede("soporte")'), "las reglas no protegen soporte");

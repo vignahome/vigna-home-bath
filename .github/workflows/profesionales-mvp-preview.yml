@@ -1,9 +1,6 @@
 name: Publicación permanente de Profesionales Vigna's
 
 on:
-  push:
-    branches:
-      - agent/profesionales-vigna-mvp
   workflow_dispatch:
 
 permissions:
@@ -15,7 +12,6 @@ concurrency:
 
 jobs:
   validar-y-publicar:
-    if: github.ref == 'refs/heads/agent/profesionales-vigna-mvp'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 

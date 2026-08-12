@@ -5,6 +5,8 @@ Rama fuente: `agent/profesionales-vigna-mvp`
 
 La configuración publica únicamente el paquete aislado `hosting-profesionales` y las reglas de Firestore/Storage de este repositorio. No fusiona ni modifica `main`.
 
+El workflow de GitHub solo puede iniciarse manualmente. Un `push` no despliega Firebase Hosting, Firestore ni Storage.
+
 ## Verificación previa
 
 ```bash
