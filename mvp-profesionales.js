@@ -19,6 +19,7 @@ import { seleccionarPerfilProfesional } from "./mvp-profesionales-identidad.mjs?
   const nowIso = () => new Date().toISOString();
   const escapar = (value = "") => String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
   const dinero = (value) => `S/ ${Number(value || 0).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const textoSolicitud = (value, respaldo = "No especificado") => escapar(String(value || "").trim() || respaldo);
   const enmascararDocumento = (value = "") => {
     const documentNumber = String(value || "").trim();
     if (!documentNumber) return "Sin número";
@@ -27,6 +28,42 @@ import { seleccionarPerfilProfesional } from "./mvp-profesionales-identidad.mjs?
     return `${"*".repeat(Math.max(3, documentNumber.length - visibleCharacters))}${documentNumber.slice(-visibleCharacters)}`;
   };
   const htmlSeguro = (value) => ({ __htmlSeguro: String(value) });
+
+  function prepararCotizacion(solicitudId) {
+    const quoteSelector = document.getElementById("cotizacionSolicitud");
+    quoteSelector.value = solicitudId;
+    const quoteForm = document.getElementById("formCotizacion");
+    quoteForm.classList.add("direct-target");
+    quoteForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    quoteSelector.focus({ preventScroll: true });
+  }
+
+  function abrirDetalleSolicitud(solicitudId) {
+    const solicitud = data.solicitudes.find((item) => item.id === solicitudId);
+    if (!solicitud) return toast("La solicitud ya no está disponible.");
+    const adjuntos = Array.isArray(solicitud.adjuntos) ? solicitud.adjuntos.filter((url) => /^https:\/\//i.test(String(url || ""))) : [];
+    const archivosHtml = adjuntos.length
+      ? `<div class="request-files">${adjuntos.map((url, indice) => `<a class="execution-file" href="${escapar(url)}" target="_blank" rel="noopener noreferrer">Abrir archivo ${indice + 1}</a>`).join("")}</div>`
+      : '<p class="private-note">El cliente no adjuntó fotografías, videos ni documentos.</p>';
+    document.getElementById("requestDetailDialogContent").innerHTML = `
+      <section class="request-detail">
+        <p class="eyebrow">SOLICITUD COMPLETA</p>
+        <h1>${textoSolicitud(solicitud.profesion, "Servicio")} · ${textoSolicitud(solicitud.distrito, "Ubicación por coordinar")}</h1>
+        <p class="request-detail-lead">Revisa toda la información y los archivos antes de calcular materiales, mano de obra y plazo.</p>
+        <div class="request-detail-grid">
+          <article><h3>Necesidad</h3><p><b>Tipo:</b> ${textoSolicitud(solicitud.tipoNecesidad)}</p><p><b>Trabajo:</b> ${textoSolicitud(solicitud.subcategoria)}</p><p><b>Descripción:</b> ${textoSolicitud(solicitud.descripcion)}</p></article>
+          <article><h3>Lugar y fecha</h3><p>${textoSolicitud(solicitud.departamento)}, ${textoSolicitud(solicitud.provincia)}, ${textoSolicitud(solicitud.distrito)}</p><p><b>Modalidad:</b> ${textoSolicitud(solicitud.modalidadFecha, "Por coordinar")}</p><p><b>Inicio:</b> ${textoSolicitud(solicitud.fecha, "Por coordinar")}${solicitud.fechaFin ? ` · <b>Fin:</b> ${textoSolicitud(solicitud.fechaFin)}` : ""}</p><p><b>Urgencia:</b> ${textoSolicitud(solicitud.urgencia, "Flexible")}</p></article>
+          <article><h3>Estado actual</h3><p>${textoSolicitud(solicitud.situacionActual, "El cliente no agregó este detalle.")}</p></article>
+          <article><h3>Resultado esperado</h3><p>${textoSolicitud(solicitud.resultadoEsperado, "El cliente no agregó este detalle.")}</p></article>
+          <article><h3>Presupuesto y materiales</h3><p><b>Presupuesto:</b> ${textoSolicitud(solicitud.presupuesto, "Por definir")}</p><p><b>Compra de materiales:</b> ${textoSolicitud(solicitud.responsableMateriales, "Por definir")}</p></article>
+          <article><h3>Restricciones y acceso</h3><p>${textoSolicitud(solicitud.restricciones, "Sin restricciones declaradas.")}</p></article>
+        </div>
+        <div class="request-attachments"><h2>Fotos, video o documentos</h2>${archivosHtml}</div>
+        <div class="request-detail-actions"><button class="gold-button" type="button" data-quote-from-detail="${escapar(solicitud.id)}">Continuar y preparar cotización</button></div>
+      </section>`;
+    const dialog = document.getElementById("requestDetailDialog");
+    if (!dialog.open) dialog.showModal();
+  }
 
   function seedData() {
     return {
@@ -302,7 +339,7 @@ import { seleccionarPerfilProfesional } from "./mvp-profesionales-identidad.mjs?
     ].map(([label, value]) => `<div class="metric"><small>${label}</small><strong>${value}</strong></div>`).join("");
     document.getElementById("professionalRequests").innerHTML = requests.length ? requests.map((request) => {
       const yaCotizada = quotes.some((quote) => quote.solicitudId === request.id);
-      return `<article class="list-item" data-professional-request="${escapar(request.id)}" tabindex="-1"><div><h3>${escapar(request.profesion)} · ${escapar(request.distrito)}</h3><p>${escapar(request.subcategoria || request.descripcion || "Servicio solicitado")}</p><p>${escapar(request.situacionActual || "Sin detalle de situación actual.")}</p><small>${escapar(request.presupuesto || "Presupuesto por definir")} · ${escapar(request.urgencia || "Flexible")} · ${escapar(request.fecha || "Fecha por coordinar")}</small></div><div class="table-actions"><span class="status-chip ${estadoClase(request.estado)}">${escapar(request.estado)}</span><button class="${yaCotizada ? "secondary-button" : "gold-button"}" type="button" data-quote-request="${escapar(request.id)}">${yaCotizada ? "Actualizar cotización" : "Cotizar"}</button></div></article>`;
+      return `<article class="list-item" data-professional-request="${escapar(request.id)}" tabindex="-1"><div><h3>${escapar(request.profesion)} · ${escapar(request.distrito)}</h3><p>${escapar(request.subcategoria || request.descripcion || "Servicio solicitado")}</p><p>${escapar(request.situacionActual || "Sin detalle de situación actual.")}</p><small>${escapar(request.presupuesto || "Presupuesto por definir")} · ${escapar(request.urgencia || "Flexible")} · ${escapar(request.fecha || "Fecha por coordinar")}</small></div><div class="table-actions"><span class="status-chip ${estadoClase(request.estado)}">${escapar(request.estado)}</span><button class="secondary-button" type="button" data-request-detail="${escapar(request.id)}">Ver solicitud completa</button><button class="${yaCotizada ? "secondary-button" : "gold-button"}" type="button" data-quote-request="${escapar(request.id)}">${yaCotizada ? "Actualizar cotización" : "Cotizar"}</button></div></article>`;
     }).join("") : '<div class="empty-state"><p>No hay solicitudes compatibles por el momento.</p></div>';
     const portfolio = p.portafolio || [];
     document.getElementById("listaPortafolio").innerHTML = portfolio.length ? portfolio.map((item) => `<article class="portfolio-card"><div class="before-after"><figure><img src="${item.antes}" alt="Antes"><figcaption>ANTES</figcaption></figure><figure><img src="${item.despues}" alt="Después"><figcaption>DESPUÉS</figcaption></figure></div><div class="portfolio-copy"><div class="table-actions"><span class="status-chip ${estadoClase(item.estado)}">${escapar(item.estado || "Pendiente")}</span><small>${escapar(item.categoria || "Proyecto")}</small></div><h3>${escapar(item.titulo)}</h3><p><strong>Reto:</strong> ${escapar(item.reto || item.descripcion || "")}</p><p><strong>Solución:</strong> ${escapar(item.solucion || "")}</p><small>${escapar(item.ubicacion || "")} ${item.duracion ? `· ${escapar(item.duracion)}` : ""} · ${item.videoNombre ? `Video: ${escapar(item.videoNombre)}` : `${Number(item.proceso?.length || 0)} fotos de proceso`}</small>${item.observacion ? `<p class="private-note">Observación: ${escapar(item.observacion)}</p>` : ""}</div></article>`).join("") : '<div class="empty-state"><p>Agrega tu primer proyecto verificable.</p></div>';
@@ -589,12 +626,12 @@ import { seleccionarPerfilProfesional } from "./mvp-profesionales-identidad.mjs?
       setView("solicitud");
     }
     const quoteRequest = event.target.closest("[data-quote-request]"); if (quoteRequest) {
-      const quoteSelector = document.getElementById("cotizacionSolicitud");
-      quoteSelector.value = quoteRequest.dataset.quoteRequest;
-      const quoteForm = document.getElementById("formCotizacion");
-      quoteForm.classList.add("direct-target");
-      quoteForm.scrollIntoView({ behavior: "smooth", block: "start" });
-      quoteSelector.focus({ preventScroll: true });
+      abrirDetalleSolicitud(quoteRequest.dataset.quoteRequest);
+    }
+    const requestDetail = event.target.closest("[data-request-detail]"); if (requestDetail) abrirDetalleSolicitud(requestDetail.dataset.requestDetail);
+    const quoteFromDetail = event.target.closest("[data-quote-from-detail]"); if (quoteFromDetail) {
+      document.getElementById("requestDetailDialog")?.close();
+      prepararCotizacion(quoteFromDetail.dataset.quoteFromDetail);
     }
     const open = event.target.closest("[data-open-quote]"); if (open) openQuote(open.dataset.openQuote);
     const openContractButton = event.target.closest("[data-open-contract]"); if (openContractButton) openContract(openContractButton.dataset.openContract);

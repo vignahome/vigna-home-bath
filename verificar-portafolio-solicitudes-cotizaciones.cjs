@@ -16,7 +16,10 @@ const exigir = (condicion, mensaje) => { if (!condicion) throw new Error(`Verifi
 
 exigir(html.includes('id="professionalRequests"'), "el panel profesional no muestra las solicitudes compatibles");
 exigir(principal.includes('data-quote-request="${escapar(request.id)}"'), "las solicitudes compatibles no permiten iniciar una cotización");
-exigir(principal.includes('quoteSelector.value = quoteRequest.dataset.quoteRequest'), "el botón cotizar no selecciona la solicitud correspondiente");
+exigir(principal.includes("Ver solicitud completa"), "el profesional no puede abrir el detalle de la solicitud");
+exigir(principal.includes("Fotos, video o documentos"), "el detalle no muestra los archivos del cliente");
+exigir(principal.includes("data-quote-from-detail"), "el detalle no permite continuar a la cotización");
+exigir(principal.includes("quoteSelector.value = solicitudId"), "el detalle no selecciona la solicitud correspondiente");
 
 exigir(firebase.includes('portafolios: "pv_portafolios"'), "falta la colección independiente de portafolio");
 exigir(firebase.includes("consentimientoPublicacion: true"), "falta consentimiento verificable del portafolio");
