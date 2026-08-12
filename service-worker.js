@@ -1,8 +1,8 @@
-const CACHE_NAME = "profesionales-vigna-shell-v8";
+const CACHE_NAME = "profesionales-vigna-shell-v9";
 const APP_SHELL = [
   "/mvp-profesionales",
-  "/mvp-profesionales.css?v=20",
-  "/mvp-profesionales-bootstrap.js?v=25",
+  "/mvp-profesionales.css?v=21",
+  "/mvp-profesionales-bootstrap.js?v=26",
   "/manifest.webmanifest?v=3",
   "/images/app-icons/vigna-app-icon-192.png",
   "/images/app-icons/vigna-app-icon-512.png"

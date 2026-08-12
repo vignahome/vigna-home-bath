@@ -23,6 +23,8 @@
   -webkit-text-fill-color:transparent;
 }
 .menu-button,.mvp-dialog,.toast{border-color:var(--gold)}
+.request-detail h1{margin:5px 0 8px;font-size:clamp(28px,4vw,42px)}.request-detail-lead{margin:0 0 22px;color:var(--muted)}.request-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.request-detail-grid article,.request-attachments{padding:16px;background:#181818;border:1px solid #3c3c3c;border-radius:12px}.request-detail-grid h3,.request-attachments h2{margin:0 0 9px;color:var(--gold-light)}.request-detail-grid p{margin:5px 0;color:#ddd}.request-attachments{margin-top:12px}.request-files{display:flex;flex-wrap:wrap;gap:8px}.request-detail-actions{display:flex;justify-content:flex-end;margin-top:18px}
+@media(max-width:650px){.request-detail-grid{grid-template-columns:1fr}.request-detail-actions .gold-button{width:100%}}
 .gold-button:hover,.mvp-nav button.active:hover,.admin-tabs button.active:hover{filter:brightness(1.08) saturate(1.08)}
 
 /* Logotipo oficial VIGNA */
