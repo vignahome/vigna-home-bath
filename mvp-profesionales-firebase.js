@@ -458,14 +458,25 @@ async function crearCotizacion(form) {
   const anterior = anteriores[0] || null;
   const cotizacionRef = doc(collection(db, COLECCIONES.cotizaciones));
   const opcion = (prefijo, nombre) => {
-    const materiales = Number(form.get(`${prefijo}Materiales`) || 0);
+    const nombres = form.getAll("materialNombre");
+    const cantidades = form.getAll("materialCantidad");
+    const unidades = form.getAll("materialUnidad");
+    const preciosUnitarios = form.getAll("materialPrecioUnitario");
+    const materialesDetalle = nombres.map((materialNombre, index) => {
+      const cantidad = Number(cantidades[index] || 0);
+      const precioUnitario = Number(preciosUnitarios[index] || 0);
+      const subtotal = Number((cantidad * precioUnitario).toFixed(2));
+      return { nombre: String(materialNombre || "").trim().slice(0, 160), cantidad, unidad: String(unidades[index] || "Unidad").slice(0, 40), precioUnitario, subtotal };
+    }).filter((item) => item.nombre && item.cantidad > 0 && item.precioUnitario >= 0);
+    if (!materialesDetalle.length || materialesDetalle.length > 50) throw new Error("Agrega entre 1 y 50 materiales válidos.");
+    const materiales = Number(materialesDetalle.reduce((total, item) => total + item.subtotal, 0).toFixed(2));
     const manoObra = Number(form.get(`${prefijo}ManoObra`) || 0);
     const otros = Number(form.get(`${prefijo}Otros`) || 0);
     const precio = Number((materiales + manoObra + otros).toFixed(2));
     if (![materiales, manoObra, otros, precio].every(Number.isFinite) || precio <= 0) {
       throw new Error("La cotización debe tener un desglose válido y un total mayor que cero.");
     }
-    return { nombre, precio, detalle: texto(form, `${prefijo}Detalle`), materiales, manoObra, otros, duracion: texto(form, `${prefijo}Duracion`) };
+    return { nombre, precio, detalle: texto(form, `${prefijo}Detalle`), materiales, materialesDetalle, manoObra, otros, duracion: texto(form, `${prefijo}Duracion`) };
   };
   const cotizacion = {
     id: cotizacionRef.id, solicitudId, profesionalUid: user.uid, clienteUid: solicitud.clienteUid,
@@ -506,7 +517,7 @@ async function aceptarCotizacion(cotizacionId, opcionIndice) {
     tx.set(contratoRef, {
       id: contratoRef.id, solicitudId: cotizacion.solicitudId, cotizacionId, profesionalUid: cotizacion.profesionalUid,
       clienteUid: user.uid, opcion: opcion.nombre, total: opcion.precio, detalle: opcion.detalle,
-      desglose: { materiales: opcion.materiales || 0, manoObra: opcion.manoObra || 0, otros: opcion.otros || 0 },
+      desglose: { materiales: opcion.materiales || 0, materialesDetalle: opcion.materialesDetalle || [], manoObra: opcion.manoObra || 0, otros: opcion.otros || 0 },
       clienteNombre: nombreCompleto(cliente), clienteTipoDocumento: cliente.tipoDocumento || "", clienteDocumento: cliente.documento || "",
       profesionalNombre: cotizacion.profesionalNombre || "", profesionalTipoDocumento: cotizacion.profesionalTipoDocumento || "",
       profesionalDocumento: cotizacion.profesionalDocumento || "",

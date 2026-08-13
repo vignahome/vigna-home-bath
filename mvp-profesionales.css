@@ -206,3 +206,6 @@ form :disabled{cursor:wait;opacity:.7}
 .quote-editor.single fieldset legend,.quote-editor.single fieldset textarea{grid-column:1/-1}
 .contract-options.single{grid-template-columns:1fr}
 @media(max-width:650px){.quote-editor.single fieldset{grid-template-columns:1fr}.quote-editor.single fieldset legend,.quote-editor.single fieldset textarea{grid-column:auto}}
+
+/* Detalle editable de materiales en la cotización */
+.quote-materials{grid-column:1/-1;display:grid;gap:12px;padding:14px;border:1px solid #4b4b4b;border-radius:12px;background:#0d0d0d}.quote-materials-heading{display:flex;align-items:end;justify-content:space-between;gap:12px}.quote-materials-heading div{display:grid}.quote-materials-heading small{color:var(--muted);font-weight:400}.quote-materials-list{display:grid;gap:10px}.quote-material-row{display:grid;grid-template-columns:2fr .7fr 1fr 1fr 1fr auto;gap:8px;align-items:end;padding:10px;border:1px solid #333;border-radius:10px;background:#151515}.quote-material-remove{margin-bottom:2px}@media(max-width:900px){.quote-material-row{grid-template-columns:repeat(2,minmax(0,1fr))}.quote-material-remove{grid-column:1/-1}}@media(max-width:560px){.quote-materials-heading{align-items:stretch;flex-direction:column}.quote-material-row{grid-template-columns:1fr}}
