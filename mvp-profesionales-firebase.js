@@ -463,7 +463,7 @@ async function crearCotizacion(form) {
     const otros = Number(form.get(`${prefijo}Otros`) || 0);
     const precio = Number((materiales + manoObra + otros).toFixed(2));
     if (![materiales, manoObra, otros, precio].every(Number.isFinite) || precio <= 0) {
-      throw new Error(`La opción ${nombre} debe tener un desglose válido y un total mayor que cero.`);
+      throw new Error("La cotización debe tener un desglose válido y un total mayor que cero.");
     }
     return { nombre, precio, detalle: texto(form, `${prefijo}Detalle`), materiales, manoObra, otros, duracion: texto(form, `${prefijo}Duracion`) };
   };
@@ -471,7 +471,7 @@ async function crearCotizacion(form) {
     id: cotizacionRef.id, solicitudId, profesionalUid: user.uid, clienteUid: solicitud.clienteUid,
     profesionalNombre: nombreCompleto(perfil), profesionalTipoDocumento: identidad.tipoDocumento || "",
     profesionalDocumento: identidad.documento || "",
-    opciones: [opcion("economica", "Económica"), opcion("recomendada", "Recomendada"), opcion("premium", "Premium")],
+    opciones: [opcion("cotizacion", "Cotización")],
     garantiaDias, validaHasta: texto(form, "validaHasta"), disponibilidadEstimada: texto(form, "disponibilidadEstimada"),
     responsableMateriales: texto(form, "responsableMateriales"), exclusiones: texto(form, "exclusiones"),
     condiciones: texto(form, "condiciones"), formaPago: texto(form, "formaPago"),

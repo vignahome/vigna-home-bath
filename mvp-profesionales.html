@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" sizes="1024x1024" href="ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png">
   <link rel="apple-touch-icon-precomposed" sizes="1024x1024" href="ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png">
   <link rel="icon" type="image/png" sizes="32x32" href="images/app-icons/favicon-32.png?v=3">
-  <link rel="stylesheet" href="mvp-profesionales.css?v=21">
+  <link rel="stylesheet" href="mvp-profesionales.css?v=22">
 </head>
 <body>
   <header class="mvp-header">
@@ -281,13 +281,11 @@
           <div id="listaPortafolio" class="portfolio-grid"></div>
         </article>
         <article class="dashboard-card">
-          <div class="section-heading small"><div><h2>Crear cotización</h2><p>Tres alternativas comparables.</p></div></div>
+          <div class="section-heading small"><div><h2>Crear cotización</h2><p>Una propuesta clara, descargable en Excel.</p></div></div>
           <form id="formCotizacion" class="mini-form">
             <label>Solicitud<select name="solicitudId" id="cotizacionSolicitud" required></select></label>
-            <div class="quote-editor">
-              <fieldset><legend>Económica</legend><input name="economicaMateriales" type="number" min="0" step="0.01" placeholder="Materiales" required><input name="economicaManoObra" type="number" min="0" step="0.01" placeholder="Mano de obra" required><input name="economicaOtros" type="number" min="0" step="0.01" value="0" placeholder="Transporte, permisos u otros"><input name="economicaPrecio" type="number" min="0" step="0.01" placeholder="Total calculado" readonly required><input name="economicaDuracion" placeholder="Duración" required><textarea name="economicaDetalle" placeholder="Alcance e inclusiones" required></textarea></fieldset>
-              <fieldset><legend>Recomendada</legend><input name="recomendadaMateriales" type="number" min="0" step="0.01" placeholder="Materiales" required><input name="recomendadaManoObra" type="number" min="0" step="0.01" placeholder="Mano de obra" required><input name="recomendadaOtros" type="number" min="0" step="0.01" value="0" placeholder="Transporte, permisos u otros"><input name="recomendadaPrecio" type="number" min="0" step="0.01" placeholder="Total calculado" readonly required><input name="recomendadaDuracion" placeholder="Duración" required><textarea name="recomendadaDetalle" placeholder="Alcance e inclusiones" required></textarea></fieldset>
-              <fieldset><legend>Premium</legend><input name="premiumMateriales" type="number" min="0" step="0.01" placeholder="Materiales" required><input name="premiumManoObra" type="number" min="0" step="0.01" placeholder="Mano de obra" required><input name="premiumOtros" type="number" min="0" step="0.01" value="0" placeholder="Transporte, permisos u otros"><input name="premiumPrecio" type="number" min="0" step="0.01" placeholder="Total calculado" readonly required><input name="premiumDuracion" placeholder="Duración" required><textarea name="premiumDetalle" placeholder="Alcance e inclusiones" required></textarea></fieldset>
+            <div class="quote-editor single">
+              <fieldset><legend>Cotización</legend><input name="cotizacionMateriales" type="number" min="0" step="0.01" placeholder="Materiales" required><input name="cotizacionManoObra" type="number" min="0" step="0.01" placeholder="Mano de obra" required><input name="cotizacionOtros" type="number" min="0" step="0.01" value="0" placeholder="Transporte, permisos u otros"><input name="cotizacionPrecio" type="number" min="0" step="0.01" placeholder="Total calculado" readonly required><input name="cotizacionDuracion" placeholder="Duración" required><textarea name="cotizacionDetalle" placeholder="Alcance e inclusiones" required></textarea></fieldset>
             </div>
             <div class="form-grid two"><label>Válida hasta<input name="validaHasta" type="date" required></label><label>Disponibilidad estimada<input name="disponibilidadEstimada" required placeholder="Ej. desde el lunes"></label></div>
             <label>Responsable de materiales<select name="responsableMateriales"><option>Profesional</option><option>Cliente</option><option>Mixto</option></select></label>
@@ -381,6 +379,6 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="vigna-config.js?v=2"></script>
-  <script type="module" src="mvp-profesionales-bootstrap.js?v=26"></script>
+  <script type="module" src="mvp-profesionales-bootstrap.js?v=27"></script>
 </body>
 </html>
