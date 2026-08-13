@@ -431,9 +431,9 @@ service cloud.firestore {
             ])
           ) ||
           (
-            pvRol("profesional") &&
+            autenticado() &&
             resource.data.profesionalUid == request.auth.uid &&
-            resource.data.estado in ["Pendiente de firma", "Firmado", "En ejecución", "Finalizado"] &&
+            resource.data.estado in ["Pendiente de firma", "Pendiente de confirmación", "Firmado", "En ejecución", "Pausado", "Finalizado"] &&
             request.resource.data.estado == resource.data.estado &&
             request.resource.data.anexoPlanTrabajoNombre is string &&
             request.resource.data.anexoPlanTrabajoNombre != "" &&
