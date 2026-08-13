@@ -143,7 +143,7 @@ service firebase.storage {
       );
       allow create: if (
         esAdmin() || (
-          rolProfesionales("profesional") &&
+          autenticado() &&
           contratoAnexo().profesionalUid == request.auth.uid &&
           contratoAnexo().estado != "Cerrado"
         )
