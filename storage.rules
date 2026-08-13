@@ -137,7 +137,8 @@ service firebase.storage {
 
       allow read: if esAdmin() || (
         autenticado() &&
-        (contratoAnexo().clienteUid == request.auth.uid ||
+        (resource.metadata.propietarioUid == request.auth.uid ||
+         contratoAnexo().clienteUid == request.auth.uid ||
          contratoAnexo().profesionalUid == request.auth.uid)
       );
       allow create: if (
