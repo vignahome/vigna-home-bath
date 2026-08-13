@@ -39,6 +39,8 @@ exigir(principal.includes('data-download-quote'), "la descarga de Excel no está
 exigir(principal.includes("materialesDetalle"), "el detalle de materiales no se conserva en la cotización");
 exigir(firebase.includes("materialesDetalle"), "Firebase no guarda los materiales individuales");
 exigir(html.includes("data-add-quote-material"), "falta el botón para agregar materiales");
+exigir(principal.includes('data.rol === "cliente" ? "Revisar y contratar" : "Ver cotización"'), "el profesional recibe una acción de contratación");
+exigir(principal.includes('if (data.rol !== "cliente") return toast("Solo el cliente puede aceptar una cotización.")'), "falta la barrera de rol al aceptar");
 exigir(firebase.includes("adjuntos.length > 10"), "la solicitud no limita la cantidad de adjuntos");
 exigir(firestore.includes("request.resource.data.version >= 1"), "las reglas no validan la versión");
 exigir(firestore.includes("request.resource.data.opciones.size() in [1, 3]"), "las reglas no admiten cotizaciones nuevas de una opción y antiguas de tres");
