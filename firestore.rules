@@ -307,15 +307,10 @@ service cloud.firestore {
         request.resource.data.version >= 1 &&
         request.resource.data.cotizacionRaizId is string &&
         request.resource.data.opciones is list &&
-        request.resource.data.opciones.size() in [1, 3] &&
+        request.resource.data.opciones.size() == 3 &&
         request.resource.data.opciones[0].precio > 0 &&
-        (
-          request.resource.data.opciones.size() == 1 ||
-          (
-            request.resource.data.opciones[1].precio > 0 &&
-            request.resource.data.opciones[2].precio > 0
-          )
-        ) &&
+        request.resource.data.opciones[1].precio > 0 &&
+        request.resource.data.opciones[2].precio > 0 &&
         request.resource.data.formaPago is string &&
         request.resource.data.formaPago.size() >= 10;
       allow read: if esAdmin() || (
@@ -363,18 +358,12 @@ service cloud.firestore {
           (
             request.resource.data.opcion == cotizacionSeleccionada().opciones[0].nombre &&
             request.resource.data.total == cotizacionSeleccionada().opciones[0].precio
-          ) ||
-          (
-            cotizacionSeleccionada().opciones.size() == 3 &&
-            (
-              (
-                request.resource.data.opcion == cotizacionSeleccionada().opciones[1].nombre &&
-                request.resource.data.total == cotizacionSeleccionada().opciones[1].precio
-              ) || (
-                request.resource.data.opcion == cotizacionSeleccionada().opciones[2].nombre &&
-                request.resource.data.total == cotizacionSeleccionada().opciones[2].precio
-              )
-            )
+          ) || (
+            request.resource.data.opcion == cotizacionSeleccionada().opciones[1].nombre &&
+            request.resource.data.total == cotizacionSeleccionada().opciones[1].precio
+          ) || (
+            request.resource.data.opcion == cotizacionSeleccionada().opciones[2].nombre &&
+            request.resource.data.total == cotizacionSeleccionada().opciones[2].precio
           )
         );
       allow read: if esAdmin() || (
@@ -431,9 +420,9 @@ service cloud.firestore {
             ])
           ) ||
           (
-            pvRol("profesional") &&
+            autenticado() &&
             resource.data.profesionalUid == request.auth.uid &&
-            resource.data.estado in ["Pendiente de firma", "Firmado", "En ejecución", "Finalizado"] &&
+            resource.data.estado in ["Pendiente de firma", "Pendiente de confirmación", "Firmado", "En ejecución", "Pausado", "Finalizado"] &&
             request.resource.data.estado == resource.data.estado &&
             request.resource.data.anexoPlanTrabajoNombre is string &&
             request.resource.data.anexoPlanTrabajoNombre != "" &&
