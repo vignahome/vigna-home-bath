@@ -41,5 +41,7 @@ exigir(firebase.includes("materialesDetalle"), "Firebase no guarda los materiale
 exigir(html.includes("data-add-quote-material"), "falta el botón para agregar materiales");
 exigir(firebase.includes("adjuntos.length > 10"), "la solicitud no limita la cantidad de adjuntos");
 exigir(firestore.includes("request.resource.data.version >= 1"), "las reglas no validan la versión");
+exigir(firestore.includes("request.resource.data.opciones.size() in [1, 3]"), "las reglas no admiten cotizaciones nuevas de una opción y antiguas de tres");
+exigir(firestore.includes("cotizacionSeleccionada().opciones.size() == 3"), "la aceptación no protege la compatibilidad con cotizaciones antiguas");
 
 console.log("Portafolio moderado, solicitudes guiadas y cotizaciones versionadas: integración verificada.");
