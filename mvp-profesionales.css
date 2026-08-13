@@ -199,3 +199,10 @@ form :disabled{cursor:wait;opacity:.7}
 .consent-box a{color:#f1c64f}
 .contract-price-table{width:100%;border-collapse:collapse;margin:12px 0}.contract-price-table th,.contract-price-table td{padding:7px 9px;border:1px solid #b8a87d;text-align:left}.contract-price-table td{text-align:right}.contract-identity{break-inside:avoid}.contract-status-print{break-inside:avoid}.contract-signatures{break-inside:avoid;page-break-inside:avoid}
 @media print{@page{size:A4;margin:16mm 14mm}.mvp-dialog[open]{padding:0!important;overflow:visible!important}.contract-sheet{font-size:10.5pt;line-height:1.38;background:#fff!important}.contract-sheet h1{font-size:19pt;margin:12px 0}.contract-sheet h2{font-size:12pt;margin:14px 0 5px;break-after:avoid}.contract-sheet p{margin:5px 0;orphans:3;widows:3}.contract-signatures{margin:42px 0 14px}.contract-status-print{margin-top:12px}.contract-status-print h2,.contract-status-print p{margin:3px 0}}
+
+/* Cotización única y descarga en Excel */
+.quote-editor.single{grid-template-columns:1fr}
+.quote-editor.single fieldset{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.quote-editor.single fieldset legend,.quote-editor.single fieldset textarea{grid-column:1/-1}
+.contract-options.single{grid-template-columns:1fr}
+@media(max-width:650px){.quote-editor.single fieldset{grid-template-columns:1fr}.quote-editor.single fieldset legend,.quote-editor.single fieldset textarea{grid-column:auto}}

@@ -376,7 +376,8 @@ import { seleccionarPerfilProfesional } from "./mvp-profesionales-identidad.mjs?
     container.innerHTML = quotes.map((q) => {
       const request = data.solicitudes.find((s) => s.id === q.solicitudId);
       const existingContract = data.contratos.find((c) => c.cotizacionId === q.id);
-      return `<article class="list-item"><div><h3>${escapar(q.id)} · ${escapar(request?.profesion || "Servicio")}</h3><p>Económica ${dinero(q.opciones[0].precio)} · Recomendada ${dinero(q.opciones[1].precio)} · Premium ${dinero(q.opciones[2].precio)}</p><p>${escapar(q.condiciones)} · Versión ${q.version}${q.reemplazaA ? ` · Reemplaza ${escapar(q.reemplazaA)}` : ""}</p><small>Válida hasta ${escapar(q.validaHasta || "sin fecha")} · ${escapar(q.disponibilidadEstimada || "disponibilidad por coordinar")}</small></div><div class="table-actions"><span class="status-chip ${estadoClase(q.estado)}">${escapar(q.estado)}</span><button class="gold-button" data-open-quote="${q.id}">${existingContract ? "Ver contrato" : "Revisar y contratar"}</button></div></article>`;
+      const opciones = Array.isArray(q.opciones) ? q.opciones : []; const resumen = opciones.map((opcion) => `${escapar(opcion.nombre || "Cotización")} ${dinero(opcion.precio)}`).join(" · ");
+      return `<article class="list-item"><div><h3>${escapar(q.id)} · ${escapar(request?.profesion || "Servicio")}</h3><p>${resumen || "Cotización sin importe"}</p><p>${escapar(q.condiciones)} · Versión ${q.version}${q.reemplazaA ? ` · Reemplaza ${escapar(q.reemplazaA)}` : ""}</p><small>Válida hasta ${escapar(q.validaHasta || "sin fecha")} · ${escapar(q.disponibilidadEstimada || "disponibilidad por coordinar")}</small></div><div class="table-actions"><span class="status-chip ${estadoClase(q.estado)}">${escapar(q.estado)}</span><button class="gold-button" data-open-quote="${q.id}">${existingContract ? "Ver contrato" : "Revisar y contratar"}</button></div></article>`;
     }).join("");
   }
 
@@ -523,13 +524,27 @@ import { seleccionarPerfilProfesional } from "./mvp-profesionales-identidad.mjs?
     document.getElementById("profileDialog").showModal();
   }
 
+  function descargarCotizacionExcel(id) {
+    const quote = data.cotizaciones.find((item) => item.id === id); if (!quote) return;
+    const request = data.solicitudes.find((item) => item.id === quote.solicitudId);
+    const professional = data.profesionales.find((item) => item.id === quote.profesionalId);
+    const option = (quote.opciones || [])[0] || {};
+    const xml = (value) => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const row = (label, value, type = "String") => `<Row><Cell ss:StyleID="Label"><Data ss:Type="String">${xml(label)}</Data></Cell><Cell ss:StyleID="${type === "Number" ? "Money" : "Value"}"><Data ss:Type="${type}">${xml(value)}</Data></Cell></Row>`;
+    const workbook = `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="Title"><Font ss:Bold="1" ss:Size="16" ss:Color="#8A6400"/><Interior ss:Color="#FFF4CC" ss:Pattern="Solid"/></Style><Style ss:ID="Label"><Font ss:Bold="1"/><Interior ss:Color="#F2F2F2" ss:Pattern="Solid"/></Style><Style ss:ID="Value"><Alignment ss:WrapText="1" ss:Vertical="Top"/></Style><Style ss:ID="Money"><NumberFormat ss:Format="&quot;S/ &quot;#,##0.00"/></Style></Styles><Worksheet ss:Name="Cotización"><Table><Column ss:Width="180"/><Column ss:Width="420"/><Row ss:Height="28"><Cell ss:MergeAcross="1" ss:StyleID="Title"><Data ss:Type="String">COTIZACIÓN PROFESIONALES VIGNA'S</Data></Cell></Row>${row("Cotización", quote.id)}${row("Versión", quote.version, "Number")}${row("Solicitud", quote.solicitudId)}${row("Servicio", request?.profesion || "Servicio profesional")}${row("Profesional", nombreCompleto(professional) || quote.profesionalNombre)}${row("Ubicación", [request?.departamento, request?.provincia, request?.distrito].filter(Boolean).join(", "))}${row("Alcance", option.detalle || "")}${row("Duración", option.duracion || "Por coordinar")}${row("Materiales", Number(option.materiales || 0), "Number")}${row("Mano de obra", Number(option.manoObra || 0), "Number")}${row("Transporte, permisos u otros", Number(option.otros || 0), "Number")}${row("TOTAL", Number(option.precio || 0), "Number")}${row("Responsable de materiales", quote.responsableMateriales || "Por definir")}${row("Exclusiones", quote.exclusiones || "Sin exclusiones declaradas")}${row("Garantía", quote.garantiaDias ? `${quote.garantiaDias} días` : "Por definir")}${row("Válida hasta", quote.validaHasta || "No indicada")}${row("Disponibilidad", quote.disponibilidadEstimada || "Por coordinar")}${row("Forma de pago", quote.formaPago || "Por coordinar")}${row("Condiciones", quote.condiciones || "")}</Table><WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>1</SplitHorizontal><TopRowBottomPane>1</TopRowBottomPane></WorksheetOptions></Worksheet></Workbook>`;
+    const blob = new Blob([workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
+    const url = URL.createObjectURL(blob); const link = document.createElement("a");
+    link.href = url; link.download = `cotizacion-${String(quote.id).replace(/[^a-z0-9_-]/gi, "-")}.xls`; document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000); toast("Cotización descargada en Excel.");
+  }
+
   function openQuote(id) {
     const quote = data.cotizaciones.find((q) => q.id === id); if (!quote) return;
     const existing = data.contratos.find((c) => c.cotizacionId === id);
     if (existing) return openContract(existing.id);
     const request = data.solicitudes.find((s) => s.id === quote.solicitudId);
     const professional = data.profesionales.find((p) => p.id === quote.profesionalId);
-    document.getElementById("contractDialogContent").innerHTML = `<div class="contract-sheet"><div class="contract-brand"><img src="images/logo/ChatGPT Image 26 may 2026, 11_05_03 p.m..png" alt="VIGNA Home & Bath"><strong>Profesionales Vigna’s</strong></div><p class="eyebrow">COTIZACIÓN ${escapar(quote.id)} · VERSIÓN ${quote.version}</p><h1>${escapar(request?.profesion || "Servicio profesional")}</h1><p>Profesional: ${escapar(nombreCompleto(professional))}</p><p>Válida hasta: ${escapar(quote.validaHasta || "No indicada")} · Disponibilidad: ${escapar(quote.disponibilidadEstimada || "Por coordinar")}</p><div class="contract-options">${quote.opciones.map((option, index) => `<div class="contract-option ${index === 1 ? "selected" : ""}"><h2>${escapar(option.nombre)}</h2><strong>${dinero(option.precio)}</strong><p>${escapar(option.detalle || "Según alcance")}</p><small>Materiales ${dinero(option.materiales || 0)} · Mano de obra ${dinero(option.manoObra || 0)} · ${escapar(option.duracion || "Duración por coordinar")}</small><button class="gold-button no-print" data-contract-quote="${quote.id}" data-option="${index}">Elegir esta opción</button></div>`).join("")}</div><h2>Materiales y exclusiones</h2><p>Responsable: ${escapar(quote.responsableMateriales || "Por definir")}.</p><p>${escapar(quote.exclusiones || "Sin exclusiones declaradas.")}</p><h2>Garantía</h2><p>${quote.garantiaDias ? `${Number(quote.garantiaDias)} días desde el cierre conforme del servicio.` : "Plazo no estructurado en esta cotización."}</p><h2>Condiciones</h2><p>${escapar(quote.condiciones)}</p></div>`;
+    document.getElementById("contractDialogContent").innerHTML = `<div class="contract-sheet"><div class="contract-brand"><img src="images/logo/ChatGPT Image 26 may 2026, 11_05_03 p.m..png" alt="VIGNA Home & Bath"><strong>Profesionales Vigna’s</strong></div><p class="eyebrow">COTIZACIÓN ${escapar(quote.id)} · VERSIÓN ${quote.version}</p><h1>${escapar(request?.profesion || "Servicio profesional")}</h1><p>Profesional: ${escapar(nombreCompleto(professional))}</p><p>Válida hasta: ${escapar(quote.validaHasta || "No indicada")} · Disponibilidad: ${escapar(quote.disponibilidadEstimada || "Por coordinar")}</p><div class="contract-options ${quote.opciones.length === 1 ? "single" : ""}">${quote.opciones.map((option, index) => `<div class="contract-option ${quote.opciones.length === 1 || index === 1 ? "selected" : ""}"><h2>${escapar(option.nombre)}</h2><strong>${dinero(option.precio)}</strong><p>${escapar(option.detalle || "Según alcance")}</p><small>Materiales ${dinero(option.materiales || 0)} · Mano de obra ${dinero(option.manoObra || 0)} · Otros ${dinero(option.otros || 0)} · ${escapar(option.duracion || "Duración por coordinar")}</small><button class="gold-button no-print" data-contract-quote="${quote.id}" data-option="${index}">${quote.opciones.length === 1 ? "Aceptar cotización" : "Elegir esta opción"}</button></div>`).join("")}</div><div class="form-actions no-print"><button class="secondary-button" type="button" data-download-quote="${quote.id}">Descargar cotización en Excel</button></div><h2>Materiales y exclusiones</h2><p>Responsable: ${escapar(quote.responsableMateriales || "Por definir")}.</p><p>${escapar(quote.exclusiones || "Sin exclusiones declaradas.")}</p><h2>Garantía</h2><p>${quote.garantiaDias ? `${Number(quote.garantiaDias)} días desde el cierre conforme del servicio.` : "Plazo no estructurado en esta cotización."}</p><h2>Condiciones</h2><p>${escapar(quote.condiciones)}</p></div>`;
     document.getElementById("contractDialog").showModal();
   }
 
@@ -634,6 +649,7 @@ import { seleccionarPerfilProfesional } from "./mvp-profesionales-identidad.mjs?
       prepararCotizacion(quoteFromDetail.dataset.quoteFromDetail);
     }
     const open = event.target.closest("[data-open-quote]"); if (open) openQuote(open.dataset.openQuote);
+    const downloadQuote = event.target.closest("[data-download-quote]"); if (downloadQuote) descargarCotizacionExcel(downloadQuote.dataset.downloadQuote);
     const openContractButton = event.target.closest("[data-open-contract]"); if (openContractButton) openContract(openContractButton.dataset.openContract);
     const choose = event.target.closest("[data-contract-quote]"); if (choose) createContract(choose.dataset.contractQuote, Number(choose.dataset.option));
     const adminAction = event.target.closest("[data-admin-professional]"); if (adminAction) { const p = data.profesionales.find((x) => x.id === adminAction.dataset.adminProfessional); if (p) { p.estado = adminAction.dataset.state; guardar("Estado profesional actualizado", `${p.id}: ${p.estado}`, "Administrador MVP"); toast(`Perfil ${p.estado.toLowerCase()}.`); } }
@@ -649,14 +665,12 @@ import { seleccionarPerfilProfesional } from "./mvp-profesionales-identidad.mjs?
   document.getElementById("filtroZona").addEventListener("input", renderMarketplace);
   document.getElementById("selectorProfesiones").addEventListener("change", syncPrincipal);
   document.getElementById("formCotizacion").addEventListener("input", (event) => {
-    if (!/^(economica|recomendada|premium)(Materiales|ManoObra|Otros)$/.test(event.target.name || "")) return;
-    for (const prefijo of ["economica", "recomendada", "premium"]) {
-      const materiales = Number(document.querySelector(`[name="${prefijo}Materiales"]`)?.value || 0);
-      const manoObra = Number(document.querySelector(`[name="${prefijo}ManoObra"]`)?.value || 0);
-      const otros = Number(document.querySelector(`[name="${prefijo}Otros"]`)?.value || 0);
-      const total = document.querySelector(`[name="${prefijo}Precio"]`);
-      if (total) total.value = (materiales + manoObra + otros).toFixed(2);
-    }
+    if (!/^cotizacion(Materiales|ManoObra|Otros)$/.test(event.target.name || "")) return;
+    const materiales = Number(document.querySelector('[name="cotizacionMateriales"]')?.value || 0);
+    const manoObra = Number(document.querySelector('[name="cotizacionManoObra"]')?.value || 0);
+    const otros = Number(document.querySelector('[name="cotizacionOtros"]')?.value || 0);
+    const total = document.querySelector('[name="cotizacionPrecio"]');
+    if (total) total.value = (materiales + manoObra + otros).toFixed(2);
   });
   document.getElementById("panelProfesional").addEventListener("change", (event) => { panelProfesionalId = event.target.value; renderPanel(); });
 
@@ -686,9 +700,9 @@ import { seleccionarPerfilProfesional } from "./mvp-profesionales-identidad.mjs?
   document.getElementById("formCotizacion").addEventListener("submit", (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget); if (!form.get("solicitudId")) return toast("Crea o selecciona una solicitud.");
     const anteriores = data.cotizaciones.filter((item) => item.solicitudId === form.get("solicitudId") && item.profesionalId === panelProfesionalId).sort((a, b) => Number(b.version || 0) - Number(a.version || 0)); const anterior = anteriores[0]; const nuevaId = uid("CO"); const opcion = (prefijo, nombre) => { const materiales = Number(form.get(`${prefijo}Materiales`) || 0); const manoObra = Number(form.get(`${prefijo}ManoObra`) || 0); const otros = Number(form.get(`${prefijo}Otros`) || 0); return { nombre, precio: Number((materiales + manoObra + otros).toFixed(2)), detalle: form.get(`${prefijo}Detalle`), materiales, manoObra, otros, duracion: form.get(`${prefijo}Duracion`) }; };
-    const q = { id: nuevaId, solicitudId: form.get("solicitudId"), profesionalId: panelProfesionalId, opciones: [opcion("economica", "Económica"), opcion("recomendada", "Recomendada"), opcion("premium", "Premium")], garantiaDias: Number(form.get("garantiaDias") || 0), validaHasta: form.get("validaHasta"), disponibilidadEstimada: form.get("disponibilidadEstimada"), responsableMateriales: form.get("responsableMateriales"), exclusiones: form.get("exclusiones"), condiciones: form.get("condiciones"), formaPago: form.get("formaPago"), cotizacionRaizId: anterior?.cotizacionRaizId || anterior?.id || nuevaId, reemplazaA: anterior?.id || "", version: Number(anterior?.version || 0) + 1, estado: "Enviada", creadoEn: nowIso() };
+    const q = { id: nuevaId, solicitudId: form.get("solicitudId"), profesionalId: panelProfesionalId, opciones: [opcion("cotizacion", "Cotización")], garantiaDias: Number(form.get("garantiaDias") || 0), validaHasta: form.get("validaHasta"), disponibilidadEstimada: form.get("disponibilidadEstimada"), responsableMateriales: form.get("responsableMateriales"), exclusiones: form.get("exclusiones"), condiciones: form.get("condiciones"), formaPago: form.get("formaPago"), cotizacionRaizId: anterior?.cotizacionRaizId || anterior?.id || nuevaId, reemplazaA: anterior?.id || "", version: Number(anterior?.version || 0) + 1, estado: "Enviada", creadoEn: nowIso() };
     data.cotizaciones.unshift(q); const s = data.solicitudes.find((item) => item.id === q.solicitudId); if (s) { s.estado = "Cotizada"; if (!s.profesionalId) s.profesionalId = panelProfesionalId; }
-    guardar("Cotización enviada", `${q.id} para ${q.solicitudId}`, nombreCompleto(data.profesionales.find((p) => p.id === panelProfesionalId))); event.currentTarget.reset(); toast("Cotización con tres opciones enviada.");
+    guardar("Cotización enviada", `${q.id} para ${q.solicitudId}`, nombreCompleto(data.profesionales.find((p) => p.id === panelProfesionalId))); event.currentTarget.reset(); toast("Cotización enviada. El cliente podrá descargarla en Excel.");
   });
 
   function enfocarSolicitud(id) {
