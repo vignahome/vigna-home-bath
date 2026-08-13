@@ -307,10 +307,15 @@ service cloud.firestore {
         request.resource.data.version >= 1 &&
         request.resource.data.cotizacionRaizId is string &&
         request.resource.data.opciones is list &&
-        request.resource.data.opciones.size() == 3 &&
+        request.resource.data.opciones.size() in [1, 3] &&
         request.resource.data.opciones[0].precio > 0 &&
-        request.resource.data.opciones[1].precio > 0 &&
-        request.resource.data.opciones[2].precio > 0 &&
+        (
+          request.resource.data.opciones.size() == 1 ||
+          (
+            request.resource.data.opciones[1].precio > 0 &&
+            request.resource.data.opciones[2].precio > 0
+          )
+        ) &&
         request.resource.data.formaPago is string &&
         request.resource.data.formaPago.size() >= 10;
       allow read: if esAdmin() || (
@@ -358,12 +363,18 @@ service cloud.firestore {
           (
             request.resource.data.opcion == cotizacionSeleccionada().opciones[0].nombre &&
             request.resource.data.total == cotizacionSeleccionada().opciones[0].precio
-          ) || (
-            request.resource.data.opcion == cotizacionSeleccionada().opciones[1].nombre &&
-            request.resource.data.total == cotizacionSeleccionada().opciones[1].precio
-          ) || (
-            request.resource.data.opcion == cotizacionSeleccionada().opciones[2].nombre &&
-            request.resource.data.total == cotizacionSeleccionada().opciones[2].precio
+          ) ||
+          (
+            cotizacionSeleccionada().opciones.size() == 3 &&
+            (
+              (
+                request.resource.data.opcion == cotizacionSeleccionada().opciones[1].nombre &&
+                request.resource.data.total == cotizacionSeleccionada().opciones[1].precio
+              ) || (
+                request.resource.data.opcion == cotizacionSeleccionada().opciones[2].nombre &&
+                request.resource.data.total == cotizacionSeleccionada().opciones[2].precio
+              )
+            )
           )
         );
       allow read: if esAdmin() || (
