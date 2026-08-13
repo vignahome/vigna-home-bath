@@ -11,7 +11,7 @@ const exigir = (condicion, mensaje) => { if (!condicion) throw new Error(`Verifi
 
 [
   "situacionActual", "resultadoEsperado", "responsableMateriales", "restricciones",
-  "validaHasta", "disponibilidadEstimada", "exclusiones", "cotizacionMateriales", "cotizacionManoObra", "cotizacionOtros", "formaPago"
+  "validaHasta", "disponibilidadEstimada", "exclusiones", "materialNombre", "materialCantidad", "materialUnidad", "materialPrecioUnitario", "cotizacionMateriales", "cotizacionManoObra", "cotizacionOtros", "formaPago"
 ].forEach((campo) => exigir(html.includes(`name="${campo}"`), `falta el campo estructurado ${campo}`));
 
 exigir(html.includes('id="professionalRequests"'), "el panel profesional no muestra las solicitudes compatibles");
@@ -36,6 +36,9 @@ exigir(firebase.includes('opciones: [opcion("cotizacion", "Cotización")]'), "la
 exigir(!html.includes("Tres alternativas comparables"), "el formulario todavía anuncia tres alternativas");
 exigir(principal.includes("Descargar cotización en Excel"), "falta la descarga de la cotización en Excel");
 exigir(principal.includes('data-download-quote'), "la descarga de Excel no está conectada a la interfaz");
+exigir(principal.includes("materialesDetalle"), "el detalle de materiales no se conserva en la cotización");
+exigir(firebase.includes("materialesDetalle"), "Firebase no guarda los materiales individuales");
+exigir(html.includes("data-add-quote-material"), "falta el botón para agregar materiales");
 exigir(firebase.includes("adjuntos.length > 10"), "la solicitud no limita la cantidad de adjuntos");
 exigir(firestore.includes("request.resource.data.version >= 1"), "las reglas no validan la versión");
 

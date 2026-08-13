@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" sizes="1024x1024" href="ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png">
   <link rel="apple-touch-icon-precomposed" sizes="1024x1024" href="ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png">
   <link rel="icon" type="image/png" sizes="32x32" href="images/app-icons/favicon-32.png?v=3">
-  <link rel="stylesheet" href="mvp-profesionales.css?v=22">
+  <link rel="stylesheet" href="mvp-profesionales.css?v=23">
 </head>
 <body>
   <header class="mvp-header">
@@ -287,7 +287,20 @@
             <div class="quote-editor single">
               <fieldset>
                 <legend>Cotización</legend>
-                <label>Materiales (S/)<input name="cotizacionMateriales" type="number" min="0" step="0.01" placeholder="Ej. 250.00 — tuberías, válvulas y accesorios" required></label>
+                <section class="quote-materials">
+                  <div class="quote-materials-heading"><div><strong>Materiales</strong><small>Agrega cada material con su cantidad, unidad y precio.</small></div><button class="secondary-button" type="button" data-add-quote-material>Agregar material</button></div>
+                  <div id="quoteMaterialsList" class="quote-materials-list">
+                    <div class="quote-material-row" data-quote-material-row>
+                      <label>Material<input name="materialNombre" placeholder="Ej. Anillo de cera" required></label>
+                      <label>Cantidad<input name="materialCantidad" type="number" min="0.01" step="0.01" value="1" required></label>
+                      <label>Unidad<select name="materialUnidad" required><option>Unidad</option><option>Metro</option><option>Bolsa</option><option>Caja</option><option>Tubo</option><option>Juego</option><option>Otro</option></select></label>
+                      <label>Precio unitario (S/)<input name="materialPrecioUnitario" type="number" min="0" step="0.01" placeholder="Ej. 15.00" required></label>
+                      <label>Subtotal (S/)<input name="materialSubtotal" type="number" readonly placeholder="0.00"></label>
+                      <button class="tiny-button quote-material-remove" type="button" data-remove-quote-material aria-label="Eliminar material">Eliminar</button>
+                    </div>
+                  </div>
+                  <label>Total de materiales (S/)<input name="cotizacionMateriales" type="number" min="0" step="0.01" placeholder="Se suma automáticamente" readonly required></label>
+                </section>
                 <label>Mano de obra (S/)<input name="cotizacionManoObra" type="number" min="0" step="0.01" placeholder="Ej. 180.00 — instalación y pruebas" required></label>
                 <label>Otros gastos (S/)<input name="cotizacionOtros" type="number" min="0" step="0.01" placeholder="Ej. 30.00 — transporte o permisos"></label>
                 <label>Total calculado (S/)<input name="cotizacionPrecio" type="number" min="0" step="0.01" placeholder="Se calcula automáticamente" readonly required></label>
@@ -390,6 +403,6 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="vigna-config.js?v=2"></script>
-  <script type="module" src="mvp-profesionales-bootstrap.js?v=27"></script>
+  <script type="module" src="mvp-profesionales-bootstrap.js?v=28"></script>
 </body>
 </html>
