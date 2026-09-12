@@ -1,0 +1,18 @@
+{
+  "firestore": {
+    "rules": "firestore.marketplace.rules",
+    "indexes": "firestore.marketplace.indexes.json"
+  },
+  "hosting": {
+    "public": "hosting-marketplace",
+    "ignore": [
+      "firebase.json",
+      "firebase.marketplace.json",
+      ".firebaserc",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "cleanUrls": true,
+    "trailingSlash": false
+  }
+}
