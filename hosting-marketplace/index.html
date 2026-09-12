@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="VIGNA Marketplace: productos seleccionados para espacios extraordinarios.">
+  <title>VIGNA Marketplace</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Inicio VIGNA">
+      <span class="brand-mark">V</span>
+      <span>VIGNA</span>
+      <small>MARKETPLACE</small>
+    </a>
+
+    <button class="menu-button" type="button" aria-label="Abrir menú">?</button>
+
+    <nav class="main-nav" aria-label="Navegación principal">
+      <a href="#productos">Productos</a>
+      <a href="#categorias">Categorías</a>
+      <a href="#vender">Vender en VIGNA</a>
+      <a href="https://profesionales.vignahome.com/">Profesionales</a>
+    </nav>
+
+    <div class="header-actions">
+      <a class="text-button" href="cuenta.html">Mi cuenta</a>
+      <button class="cart-button" type="button" aria-label="Abrir carrito">
+        Carrito <span id="cartCount">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-content">
+        <p class="eyebrow">DISEÑO · CALIDAD · CONFIANZA</p>
+        <h1>Productos que transforman espacios.</h1>
+        <p class="hero-copy">
+          Descubre marcas y vendedores seleccionados en una experiencia internacional,
+          segura y creada con la esencia profesional de VIGNA.
+        </p>
+
+        <form class="search-box" role="search">
+          <input id="searchInput" type="search" placeholder="¿Qué producto estás buscando?" aria-label="Buscar productos">
+          <button type="submit">Buscar</button>
+        </form>
+
+        <div class="hero-actions">
+          <a class="primary-button" href="#productos">Explorar productos</a>
+          <a class="secondary-button" href="#vender">Quiero vender</a>
+        </div>
+      </div>
+
+      <aside class="hero-card">
+        <span class="status-dot"></span>
+        <p>Marketplace VIGNA</p>
+        <strong>Compra a vendedores verificados</strong>
+        <small>Productos, inventario y pedidos gestionados en una sola plataforma.</small>
+      </aside>
+    </section>
+
+    <section class="categories" id="categorias">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">EXPLORA</p>
+          <h2>Categorías destacadas</h2>
+        </div>
+      </div>
+
+      <div class="category-grid">
+        <button data-category="Baño"><span>01</span>Baño</button>
+        <button data-category="Cocina"><span>02</span>Cocina</button>
+        <button data-category="Iluminación"><span>03</span>Iluminación</button>
+        <button data-category="Construcción"><span>04</span>Construcción</button>
+        <button data-category="Decoración"><span>05</span>Decoración</button>
+        <button data-category="Herramientas"><span>06</span>Herramientas</button>
+      </div>
+    </section>
+
+    <section class="products-section" id="productos">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">SELECCIÓN VIGNA</p>
+          <h2>Productos destacados</h2>
+        </div>
+
+        <select id="sortProducts" aria-label="Ordenar productos">
+          <option value="featured">Destacados</option>
+          <option value="price-low">Menor precio</option>
+          <option value="price-high">Mayor precio</option>
+          <option value="newest">Más recientes</option>
+        </select>
+      </div>
+
+      <div class="product-grid" id="productGrid">
+        <article class="empty-state">
+          <span>V</span>
+          <h3>Preparando el catálogo Marketplace</h3>
+          <p>Aquí aparecerán los productos aprobados de los vendedores VIGNA.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="seller-banner" id="vender">
+      <div>
+        <p class="eyebrow">CRECE CON VIGNA</p>
+        <h2>Convierte tus productos en una marca global.</h2>
+        <p>
+          Crea tu tienda, administra inventario, recibe pedidos y llega a nuevos clientes
+          dentro del ecosistema VIGNA.
+        </p>
+      </div>
+
+      <a class="primary-button" href="registro-vendedor.html">Comenzar a vender</a>
+    </section>
+
+    <section class="trust-grid" aria-label="Beneficios">
+      <article><strong>Vendedores verificados</strong><p>Evaluamos cada solicitud antes de publicar productos.</p></article>
+      <article><strong>Compra protegida</strong><p>Información transparente durante todo el proceso de compra.</p></article>
+      <article><strong>Alcance internacional</strong><p>Una plataforma preparada para múltiples mercados.</p></article>
+    </section>
+  </main>
+
+  <footer>
+    <div class="brand footer-brand"><span class="brand-mark">V</span><span>VIGNA</span></div>
+    <p>Marketplace de productos para espacios extraordinarios.</p>
+    <p>© 2026 VIGNA. Todos los derechos reservados.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
