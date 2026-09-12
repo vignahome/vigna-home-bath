@@ -539,3 +539,246 @@ footer {
     align-self: flex-start;
   }
 }
+
+/* Registro de vendedores */
+.compact-button {
+  min-height: 40px;
+  margin-left: auto;
+  padding: 0 18px;
+  font-size: 13px;
+}
+
+.seller-registration {
+  padding: 70px 0 100px;
+  display: grid;
+  grid-template-columns: minmax(280px, 0.72fr) minmax(560px, 1.28fr);
+  align-items: start;
+  gap: clamp(45px, 8vw, 110px);
+}
+
+.registration-intro {
+  position: sticky;
+  top: 130px;
+}
+
+.registration-intro h1 {
+  margin-bottom: 26px;
+  font-size: clamp(48px, 6vw, 78px);
+}
+
+.registration-steps {
+  margin: 50px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+  list-style: none;
+}
+
+.registration-steps li {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  color: var(--muted);
+  background: rgba(255,255,255,0.02);
+}
+
+.registration-steps li > span {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  flex: 0 0 36px;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 50%;
+  font-weight: 800;
+}
+
+.registration-steps strong,
+.registration-steps small {
+  display: block;
+}
+
+.registration-steps small {
+  margin-top: 3px;
+}
+
+.registration-steps .active {
+  border-color: rgba(53,208,111,0.40);
+  color: var(--white);
+  background: rgba(53,208,111,0.07);
+}
+
+.registration-steps .active > span {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.registration-panel {
+  padding: clamp(28px, 5vw, 52px);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: linear-gradient(145deg, rgba(19,22,20,0.98), rgba(8,9,8,0.98));
+  box-shadow: 0 35px 90px rgba(0,0,0,0.42);
+}
+
+.panel-heading {
+  margin-bottom: 34px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.panel-heading h2 {
+  font-size: clamp(34px, 4vw, 48px);
+}
+
+.secure-badge {
+  padding: 8px 12px;
+  border: 1px solid rgba(53,208,111,0.32);
+  border-radius: 999px;
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.form-grid label {
+  display: grid;
+  gap: 8px;
+  color: #d8dbd8;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+  width: 100%;
+  min-height: 50px;
+  padding: 13px 15px;
+  border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 12px;
+  outline: none;
+  background: #090b09;
+  color: var(--white);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-grid textarea {
+  resize: vertical;
+}
+
+.form-grid input:focus,
+.form-grid select:focus,
+.form-grid textarea:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(217,184,79,0.10);
+}
+
+.full-field {
+  grid-column: 1 / -1;
+}
+
+.check-field {
+  margin: 26px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.check-field input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--green);
+}
+
+.submit-button {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 14px;
+}
+
+.form-note {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.form-message {
+  display: none;
+  margin-bottom: 18px;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.form-message.error {
+  display: block;
+  border: 1px solid rgba(255,91,91,0.35);
+  background: rgba(255,91,91,0.08);
+  color: #ffabab;
+}
+
+.form-message.success {
+  display: block;
+  border: 1px solid rgba(53,208,111,0.35);
+  background: rgba(53,208,111,0.08);
+  color: #82eeaa;
+}
+
+@media (max-width: 900px) {
+  .seller-registration {
+    grid-template-columns: 1fr;
+  }
+
+  .registration-intro {
+    position: static;
+  }
+
+  .registration-steps {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .compact-button {
+    padding: 0 12px;
+    font-size: 11px;
+  }
+
+  .seller-registration {
+    padding-top: 45px;
+  }
+
+  .registration-steps,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .full-field {
+    grid-column: auto;
+  }
+
+  .panel-heading {
+    flex-direction: column;
+  }
+
+  .registration-panel {
+    padding: 24px 18px;
+    border-radius: 20px;
+  }
+}

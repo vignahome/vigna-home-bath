@@ -1,0 +1,149 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Registro de vendedores en VIGNA Marketplace.">
+  <title>Vender en VIGNA</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Volver a VIGNA Marketplace">
+      <span class="brand-mark">V</span>
+      <span>VIGNA</span>
+      <small>MARKETPLACE</small>
+    </a>
+
+    <a class="secondary-button compact-button" href="index.html">Volver al Marketplace</a>
+  </header>
+
+  <main class="seller-registration">
+    <section class="registration-intro">
+      <p class="eyebrow">VENDE EN VIGNA</p>
+      <h1>Haz crecer tu marca con nosotros.</h1>
+      <p class="hero-copy">
+        Registra tu empresa o tienda para ofrecer productos dentro de un marketplace
+        profesional, seguro y preparado para diferentes mercados.
+      </p>
+
+      <ol class="registration-steps" aria-label="Proceso de registro">
+        <li class="active"><span>1</span><div><strong>Datos comerciales</strong><small>Identidad y contacto</small></div></li>
+        <li><span>2</span><div><strong>Verificación</strong><small>Revisión de VIGNA</small></div></li>
+        <li><span>3</span><div><strong>Publicación</strong><small>Productos y tienda</small></div></li>
+      </ol>
+    </section>
+
+    <section class="registration-panel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">SOLICITUD DE VENDEDOR</p>
+          <h2>Información comercial</h2>
+        </div>
+        <span class="secure-badge">Registro protegido</span>
+      </div>
+
+      <form id="sellerRegistrationForm">
+        <div class="form-grid">
+          <label>
+            País o región
+            <select id="sellerCountry" name="country" required>
+              <option value="PE" selected>Perú</option>
+            </select>
+          </label>
+
+          <label>
+            Tipo de vendedor
+            <select id="sellerType" name="sellerType" required>
+              <option value="">Selecciona una opción</option>
+              <option value="company">Empresa</option>
+              <option value="brand">Marca fabricante</option>
+              <option value="store">Tienda o distribuidor</option>
+              <option value="independent">Vendedor independiente</option>
+            </select>
+          </label>
+
+          <label>
+            Nombre comercial
+            <input id="businessName" name="businessName" type="text" placeholder="Ejemplo: Casa Nova" required>
+          </label>
+
+          <label>
+            Razón social o nombre legal
+            <input id="legalName" name="legalName" type="text" placeholder="Nombre registrado legalmente" required>
+          </label>
+
+          <label>
+            Identificación fiscal
+            <input id="taxId" name="taxId" type="text" placeholder="RUC, RFC, NIT, EIN u otro" required>
+          </label>
+
+          <label>
+            Representante o responsable
+            <input id="representativeName" name="representativeName" type="text" placeholder="Nombre completo" required>
+          </label>
+
+          <label>
+            Correo comercial
+            <input id="sellerEmail" name="email" type="email" placeholder="ventas@empresa.com" required>
+          </label>
+
+          <label>
+            Teléfono con código de país
+            <input id="sellerPhone" name="phone" type="tel" placeholder="+51 999 999 999" required>
+          </label>
+
+          <label>
+            Contraseña
+            <input id="sellerPassword" name="password" type="password" minlength="8" placeholder="Mínimo 8 caracteres" required>
+          </label>
+
+          <label>
+            Confirmar contraseña
+            <input id="sellerPasswordConfirm" name="passwordConfirm" type="password" minlength="8" placeholder="Repite tu contraseña" required>
+          </label>
+
+          <label class="full-field">
+            Categorías de productos
+            <select id="productCategory" name="productCategory" required>
+              <option value="">Selecciona la categoría principal</option>
+              <option value="bathroom">Baño</option>
+              <option value="kitchen">Cocina</option>
+              <option value="lighting">Iluminación</option>
+              <option value="construction">Construcción</option>
+              <option value="decoration">Decoración</option>
+              <option value="tools">Herramientas</option>
+              <option value="other">Otra categoría</option>
+            </select>
+          </label>
+
+          <label class="full-field">
+            Descripción de la empresa y sus productos
+            <textarea id="businessDescription" name="description" rows="5" maxlength="600" placeholder="Cuéntanos qué productos vendes, tus principales marcas y mercados actuales." required></textarea>
+          </label>
+        </div>
+
+        <label class="check-field">
+          <input id="sellerTerms" name="terms" type="checkbox" required>
+          <span>Confirmo que la información es verdadera y acepto la revisión comercial y las condiciones para vendedores de VIGNA.</span>
+        </label>
+
+        <div class="form-message" id="sellerFormMessage" role="status" aria-live="polite"></div>
+
+        <button class="primary-button submit-button" type="submit">
+          Enviar solicitud de vendedor
+        </button>
+
+        <p class="form-note">
+          La solicitud permanecerá pendiente hasta ser revisada y aprobada por VIGNA.
+          El registro no genera ningún cobro automático.
+        </p>
+      </form>
+    </section>
+  </main>
+
+  <script src="registro-vendedor.js"></script>
+</body>
+</html>
+
