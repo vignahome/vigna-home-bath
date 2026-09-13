@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel del vendedor | VIGNA Marketplace</title>
+  <style>
+    :root {
+      --fondo: #030504;
+      --panel: #0b100d;
+      --borde: #554719;
+      --dorado: #e5bc3d;
+      --verde: #20e781;
+      --texto: #f5f5f5;
+      --gris: #a9afa9;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top right, rgba(0, 80, 42, .22), transparent 35%),
+        var(--fondo);
+      color: var(--texto);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      min-height: 82px;
+      padding: 18px 5%;
+      border-bottom: 1px solid var(--borde);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .marca {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: 3px;
+    }
+
+    .logo {
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--dorado);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--dorado);
+      font-family: Georgia, serif;
+      font-size: 25px;
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .cerrar-sesion {
+      padding: 11px 18px;
+      border: 1px solid #525852;
+      border-radius: 24px;
+      background: transparent;
+      color: white;
+      font-weight: 700;
+    }
+
+    main {
+      width: min(1120px, 92%);
+      margin: 46px auto;
+    }
+
+    .bienvenida {
+      margin-bottom: 30px;
+    }
+
+    .etiqueta {
+      color: var(--verde);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 3px;
+    }
+
+    h1 {
+      margin: 10px 0;
+      color: var(--dorado);
+      font-family: Georgia, serif;
+      font-size: clamp(38px, 6vw, 66px);
+      font-weight: 500;
+    }
+
+    .subtitulo {
+      color: var(--gris);
+      font-size: 17px;
+      line-height: 1.6;
+    }
+
+    .estado {
+      margin: 28px 0;
+      padding: 22px;
+      border: 1px solid #187944;
+      border-radius: 14px;
+      background: rgba(18, 98, 55, .18);
+      color: var(--verde);
+      line-height: 1.6;
+    }
+
+    .rejilla {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 24px;
+    }
+
+    .tarjeta {
+      padding: 26px;
+      border: 1px solid var(--borde);
+      border-radius: 20px;
+      background: rgba(11, 16, 13, .94);
+    }
+
+    .tarjeta h2 {
+      margin: 0 0 22px;
+      color: var(--dorado);
+      font-family: Georgia, serif;
+      font-size: 28px;
+    }
+
+    .datos {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .dato {
+      padding: 16px;
+      border: 1px solid #29312b;
+      border-radius: 12px;
+      background: #070a08;
+    }
+
+    .dato span {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--gris);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .dato strong {
+      overflow-wrap: anywhere;
+    }
+
+    .progreso {
+      display: grid;
+      gap: 15px;
+    }
+
+    .paso {
+      padding: 16px;
+      border: 1px solid #303630;
+      border-radius: 12px;
+      color: var(--gris);
+    }
+
+    .paso.activo {
+      border-color: #187944;
+      background: rgba(18, 98, 55, .14);
+      color: var(--verde);
+    }
+
+    .productos {
+      margin-top: 24px;
+    }
+
+    .boton-productos {
+      width: 100%;
+      margin-top: 12px;
+      padding: 16px;
+      border: 0;
+      border-radius: 12px;
+      background: #4e4e42;
+      color: #b8b8ae;
+      font-weight: 800;
+      cursor: not-allowed;
+    }
+
+    .aviso {
+      margin: 13px 0 0;
+      color: var(--gris);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .cargando,
+    .error {
+      padding: 25px;
+      border-radius: 14px;
+      background: var(--panel);
+    }
+
+    .error {
+      border: 1px solid #a33;
+      color: #ff8c8c;
+    }
+
+    @media (max-width: 780px) {
+      header {
+        align-items: flex-start;
+      }
+
+      .marca {
+        letter-spacing: 1px;
+      }
+
+      .rejilla,
+      .datos {
+        grid-template-columns: 1fr;
+      }
+
+      main {
+        margin-top: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="marca">
+      <div class="logo">V</div>
+      <div>VIGNA <span style="color:#8f958f;font-size:11px;">MARKETPLACE</span></div>
+    </div>
+
+    <button id="logoutButton" class="cerrar-sesion" type="button">
+      Cerrar sesión
+    </button>
+  </header>
+
+  <main>
+    <div id="loadingBox" class="cargando">Cargando información del vendedor...</div>
+    <div id="errorBox" class="error" hidden></div>
+
+    <section id="sellerPanel" hidden>
+      <div class="bienvenida">
+        <div class="etiqueta">PORTAL DE VENDEDORES</div>
+        <h1 id="welcomeTitle">Bienvenido</h1>
+        <div class="subtitulo">
+          Consulta el estado de tu solicitud y la información registrada.
+        </div>
+      </div>
+
+      <div id="statusBox" class="estado"></div>
+
+      <div class="rejilla">
+        <article class="tarjeta">
+          <h2>Información comercial</h2>
+
+          <div class="datos">
+            <div class="dato">
+              <span>Nombre comercial</span>
+              <strong id="businessName">—</strong>
+            </div>
+
+            <div class="dato">
+              <span>Razón social</span>
+              <strong id="legalName">—</strong>
+            </div>
+
+            <div class="dato">
+              <span>Representante</span>
+              <strong id="representativeName">—</strong>
+            </div>
+
+            <div class="dato">
+              <span>Correo electrónico</span>
+              <strong id="sellerEmail">—</strong>
+            </div>
+
+            <div class="dato">
+              <span>Teléfono</span>
+              <strong id="sellerPhone">—</strong>
+            </div>
+
+            <div class="dato">
+              <span>País</span>
+              <strong>Perú</strong>
+            </div>
+          </div>
+        </article>
+
+        <aside class="tarjeta">
+          <h2>Proceso de activación</h2>
+
+          <div class="progreso">
+            <div class="paso activo">1. Solicitud recibida</div>
+            <div id="reviewStep" class="paso activo">2. Revisión de VIGNA</div>
+            <div id="publicationStep" class="paso">3. Publicación de productos</div>
+          </div>
+
+          <div class="productos">
+            <button id="productsButton" class="boton-productos" type="button" disabled>
+              Publicar productos
+            </button>
+
+            <p id="productsNotice" class="aviso">
+              La publicación se habilitará cuando VIGNA apruebe tu solicitud.
+            </p>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="panel-vendedor.js"></script>
+</body>
+</html>
