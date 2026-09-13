@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administración de vendedores | VIGNA</title>
+  <style>
+    :root {
+      --fondo: #030504;
+      --panel: #0b100d;
+      --borde: #554719;
+      --dorado: #e5bc3d;
+      --verde: #20e781;
+      --rojo: #ff6767;
+      --texto: #f5f5f5;
+      --gris: #a8afa9;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--texto);
+      background:
+        radial-gradient(circle at top right, rgba(0, 90, 48, .2), transparent 35%),
+        var(--fondo);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      min-height: 80px;
+      padding: 18px 5%;
+      border-bottom: 1px solid var(--borde);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .marca {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: 3px;
+    }
+
+    .logo {
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--dorado);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--dorado);
+      font-family: Georgia, serif;
+      font-size: 25px;
+    }
+
+    main {
+      width: min(1120px, 92%);
+      margin: 45px auto;
+    }
+
+    h1 {
+      margin: 8px 0 12px;
+      color: var(--dorado);
+      font-family: Georgia, serif;
+      font-size: clamp(38px, 6vw, 64px);
+      font-weight: 500;
+    }
+
+    .etiqueta {
+      color: var(--verde);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 3px;
+    }
+
+    .subtitulo {
+      color: var(--gris);
+      line-height: 1.6;
+    }
+
+    .login {
+      width: min(520px, 100%);
+      margin: 45px auto;
+      padding: 30px;
+      border: 1px solid var(--borde);
+      border-radius: 20px;
+      background: rgba(11, 16, 13, .96);
+    }
+
+    .login h2 {
+      margin-top: 0;
+      color: var(--dorado);
+      font-family: Georgia, serif;
+      font-size: 30px;
+    }
+
+    label {
+      display: block;
+      margin: 18px 0 8px;
+      font-weight: 700;
+    }
+
+    input {
+      width: 100%;
+      padding: 15px;
+      border: 1px solid #384039;
+      border-radius: 11px;
+      background: #050806;
+      color: white;
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      border-radius: 11px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .55;
+    }
+
+    .principal {
+      width: 100%;
+      margin-top: 22px;
+      padding: 16px;
+      color: #050505;
+      background: linear-gradient(90deg, #f2d36b, #c99920);
+    }
+
+    .cerrar {
+      padding: 11px 18px;
+      border: 1px solid #525852;
+      border-radius: 24px;
+      background: transparent;
+      color: white;
+    }
+
+    .mensaje {
+      margin-top: 18px;
+      padding: 14px;
+      border: 1px solid #a33;
+      border-radius: 10px;
+      color: #ff9494;
+      background: rgba(120, 25, 25, .15);
+    }
+
+    .resumen {
+      margin: 28px 0;
+      padding: 18px;
+      border: 1px solid #187944;
+      border-radius: 13px;
+      color: var(--verde);
+      background: rgba(18, 98, 55, .16);
+    }
+
+    .solicitudes {
+      display: grid;
+      gap: 20px;
+    }
+
+    .solicitud {
+      padding: 24px;
+      border: 1px solid var(--borde);
+      border-radius: 18px;
+      background: rgba(11, 16, 13, .96);
+    }
+
+    .solicitud-cabecera {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .solicitud h2 {
+      margin: 0 0 5px;
+      color: var(--dorado);
+      font-family: Georgia, serif;
+      font-size: 28px;
+    }
+
+    .estado {
+      padding: 8px 12px;
+      border: 1px solid #187944;
+      border-radius: 18px;
+      color: var(--verde);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .datos {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .dato {
+      padding: 13px;
+      border: 1px solid #29312b;
+      border-radius: 10px;
+      background: #060906;
+    }
+
+    .dato span {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--gris);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .dato strong {
+      overflow-wrap: anywhere;
+    }
+
+    .acciones {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .aprobar,
+    .rechazar {
+      padding: 13px 20px;
+    }
+
+    .aprobar {
+      color: #02150b;
+      background: var(--verde);
+    }
+
+    .rechazar {
+      color: white;
+      background: #8d2929;
+    }
+
+    @media (max-width: 760px) {
+      .datos { grid-template-columns: 1fr; }
+      .solicitud-cabecera { flex-direction: column; }
+      .acciones { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="marca">
+      <div class="logo">V</div>
+      <div>VIGNA <span style="color:#8f958f;font-size:11px;">ADMINISTRACIÓN</span></div>
+    </div>
+
+    <button id="logoutButton" class="cerrar" type="button" hidden>
+      Cerrar sesión
+    </button>
+  </header>
+
+  <main>
+    <section id="loginSection" class="login">
+      <div class="etiqueta">ACCESO RESTRINGIDO</div>
+      <h2>Administración VIGNA</h2>
+
+      <form id="adminLoginForm">
+        <label for="adminEmail">Correo administrativo</label>
+        <input id="adminEmail" type="email" autocomplete="username" required>
+
+        <label for="adminPassword">Contraseña</label>
+        <input id="adminPassword" type="password" autocomplete="current-password" required>
+
+        <button class="principal" type="submit">Ingresar como administrador</button>
+      </form>
+
+      <div id="loginMessage" class="mensaje" hidden></div>
+    </section>
+
+    <section id="adminPanel" hidden>
+      <div class="etiqueta">CONTROL DE VENDEDORES</div>
+      <h1>Solicitudes comerciales</h1>
+      <div class="subtitulo">
+        Revisa la información antes de aprobar el acceso para publicar productos.
+      </div>
+
+      <div id="summaryBox" class="resumen">Cargando solicitudes...</div>
+      <div id="applicationsList" class="solicitudes"></div>
+    </section>
+  </main>
+
+  <script type="module" src="admin-vendedores.js"></script>
+</body>
+</html>

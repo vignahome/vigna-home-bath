@@ -32,9 +32,20 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
 
       allow read: if request.auth != null
-        && request.auth.uid == userId;
+      && (
+        request.auth.uid == userId
+        || request.auth.token.email == "vignahome@vignahome.com"
+      );
 
-      allow update, delete: if false;
+    allow update: if request.auth != null
+      && request.auth.token.email == "vignahome@vignahome.com"
+      && request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(["status", "reviewedAt", "reviewedBy"])
+      && request.resource.data.status in ["pending", "approved", "rejected"]
+      && request.resource.data.reviewedAt == request.time
+      && request.resource.data.reviewedBy == request.auth.token.email;
+
+    allow delete: if false;
     }
 
     match /{document=**} {
