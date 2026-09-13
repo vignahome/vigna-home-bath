@@ -41,10 +41,13 @@ function renderStatus(application) {
     publicationStep.classList.add("activo");
     publicationStep.textContent = "3. Cuenta habilitada";
 
-    productsButton.disabled = true;
-    productsButton.textContent = "Módulo de productos en preparación";
+    productsButton.disabled = false;
+    productsButton.textContent = "Gestionar mis productos";
     productsNotice.textContent =
-      "Tu cuenta está aprobada. El módulo de productos será conectado en el siguiente paso.";
+      "Tu cuenta está aprobada. Ya puedes registrar productos en borrador";
+    productsButton.onclick = () => {
+      window.location.href = "productos-vendedor";
+    };
     return;
   }
 

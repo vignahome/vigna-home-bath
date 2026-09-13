@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis productos | VIGNA Marketplace</title>
+  <style>
+    :root {
+      --fondo: #030504;
+      --panel: #0b100d;
+      --borde: #554719;
+      --dorado: #e5bc3d;
+      --verde: #20e781;
+      --rojo: #ff6969;
+      --texto: #f5f5f5;
+      --gris: #a9afa9;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top right, rgba(0, 85, 45, .2), transparent 35%),
+        var(--fondo);
+      color: var(--texto);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      min-height: 80px;
+      padding: 18px 5%;
+      border-bottom: 1px solid var(--borde);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .marca {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: 3px;
+    }
+
+    .logo {
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--dorado);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--dorado);
+      font-family: Georgia, serif;
+      font-size: 25px;
+    }
+
+    .volver {
+      color: white;
+      text-decoration: none;
+      padding: 11px 18px;
+      border: 1px solid #525852;
+      border-radius: 24px;
+      font-weight: 700;
+    }
+
+    main {
+      width: min(1120px, 92%);
+      margin: 42px auto;
+    }
+
+    .etiqueta {
+      color: var(--verde);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 3px;
+    }
+
+    h1 {
+      margin: 8px 0 12px;
+      color: var(--dorado);
+      font-family: Georgia, serif;
+      font-size: clamp(38px, 6vw, 62px);
+      font-weight: 500;
+    }
+
+    .subtitulo {
+      color: var(--gris);
+      line-height: 1.6;
+    }
+
+    .rejilla {
+      display: grid;
+      grid-template-columns: .85fr 1.15fr;
+      gap: 24px;
+      margin-top: 30px;
+      align-items: start;
+    }
+
+    .tarjeta {
+      padding: 25px;
+      border: 1px solid var(--borde);
+      border-radius: 18px;
+      background: rgba(11, 16, 13, .96);
+    }
+
+    .tarjeta h2 {
+      margin: 0 0 20px;
+      color: var(--dorado);
+      font-family: Georgia, serif;
+      font-size: 28px;
+    }
+
+    label {
+      display: block;
+      margin: 15px 0 7px;
+      font-weight: 700;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #354038;
+      border-radius: 10px;
+      background: #050806;
+      color: white;
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .campos-dobles {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .55;
+    }
+
+    .guardar {
+      width: 100%;
+      margin-top: 20px;
+      padding: 15px;
+      color: #061009;
+      background: linear-gradient(90deg, #f2d36b, #c99b23);
+    }
+
+    .mensaje {
+      margin-top: 16px;
+      padding: 13px;
+      border-radius: 10px;
+      line-height: 1.5;
+    }
+
+    .mensaje.success {
+      border: 1px solid #187944;
+      color: var(--verde);
+      background: rgba(18, 98, 55, .16);
+    }
+
+    .mensaje.error {
+      border: 1px solid #963636;
+      color: #ff9898;
+      background: rgba(120, 25, 25, .16);
+    }
+
+    .lista {
+      display: grid;
+      gap: 15px;
+    }
+
+    .producto {
+      padding: 18px;
+      border: 1px solid #30382f;
+      border-radius: 13px;
+      background: #060906;
+    }
+
+    .producto-cabecera {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    .producto h3 {
+      margin: 0 0 7px;
+      color: var(--dorado);
+      font-size: 21px;
+    }
+
+    .estado {
+      height: fit-content;
+      padding: 7px 10px;
+      border: 1px solid #187944;
+      border-radius: 16px;
+      color: var(--verde);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .detalles {
+      margin-top: 13px;
+      color: var(--gris);
+      line-height: 1.6;
+    }
+
+    .eliminar {
+      margin-top: 14px;
+      padding: 10px 14px;
+      color: white;
+      background: #842b2b;
+    }
+
+    .vacio {
+      padding: 25px;
+      border: 1px dashed #414941;
+      border-radius: 12px;
+      color: var(--gris);
+      text-align: center;
+    }
+
+    @media (max-width: 820px) {
+      .rejilla,
+      .campos-dobles {
+        grid-template-columns: 1fr;
+      }
+
+      header {
+        align-items: flex-start;
+      }
+
+      .marca {
+        letter-spacing: 1px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="marca">
+      <div class="logo">V</div>
+      <div>VIGNA <span style="color:#8f958f;font-size:11px;">PRODUCTOS</span></div>
+    </div>
+
+    <a class="volver" href="panel-vendedor">Volver al panel</a>
+  </header>
+
+  <main>
+    <div class="etiqueta">CATÁLOGO DEL VENDEDOR</div>
+    <h1>Mis productos</h1>
+    <div id="sellerName" class="subtitulo">
+      Verificando cuenta de vendedor...
+    </div>
+
+    <section id="productsSection" class="rejilla" hidden>
+      <article class="tarjeta">
+        <h2>Nuevo producto</h2>
+
+        <form id="productForm">
+          <label for="productName">Nombre del producto</label>
+          <input
+            id="productName"
+            type="text"
+            maxlength="120"
+            placeholder="Ejemplo: Grifería monocomando dorada"
+            required>
+
+          <div class="campos-dobles">
+            <div>
+              <label for="productSku">Código o SKU</label>
+              <input
+                id="productSku"
+                type="text"
+                maxlength="40"
+                placeholder="Ejemplo: DER-GR-001"
+                required>
+            </div>
+
+            <div>
+              <label for="productCategory">Categoría</label>
+              <select id="productCategory" required>
+                <option value="">Selecciona</option>
+                <option value="griferias">Griferías</option>
+                <option value="banos">Baños y sanitarios</option>
+                <option value="duchas">Duchas</option>
+                <option value="lavatorios">Lavatorios</option>
+                <option value="accesorios">Accesorios</option>
+                <option value="otros">Otros</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="campos-dobles">
+            <div>
+              <label for="productPrice">Precio en soles</label>
+              <input
+                id="productPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                required>
+            </div>
+
+            <div>
+              <label for="productStock">Stock disponible</label>
+              <input
+                id="productStock"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="0"
+                required>
+            </div>
+          </div>
+
+          <label for="productDescription">Descripción</label>
+          <textarea
+            id="productDescription"
+            maxlength="1000"
+            placeholder="Describe las características principales del producto."
+            required></textarea>
+
+          <button class="guardar" type="submit">
+            Guardar producto como borrador
+          </button>
+
+          <div id="formMessage" class="mensaje" hidden></div>
+        </form>
+      </article>
+
+      <article class="tarjeta">
+        <h2>Productos registrados</h2>
+        <div id="productsList" class="lista">
+          <div class="vacio">Cargando productos...</div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script type="module" src="productos-vendedor.js"></script>
+</body>
+</html>
