@@ -13,6 +13,7 @@ import {
   getDocs,
   query,
   serverTimestamp,
+  updateDoc,
   where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -21,9 +22,27 @@ const formMessage = document.getElementById("formMessage");
 const productsList = document.getElementById("productsList");
 const productsSection = document.getElementById("productsSection");
 const sellerNameBox = document.getElementById("sellerName");
+const submitButton = form.querySelector('button[type="submit"]');
 
 let currentUser = null;
 let sellerApplication = null;
+let editingProductId = null;
+let loadedProducts = [];
+
+const cancelEditButton = document.createElement("button");
+cancelEditButton.type = "button";
+cancelEditButton.textContent = "Cancelar edición";
+cancelEditButton.hidden = true;
+cancelEditButton.style.marginTop = "12px";
+cancelEditButton.style.width = "100%";
+cancelEditButton.style.padding = "16px";
+cancelEditButton.style.border = "1px solid #a62e2e";
+cancelEditButton.style.borderRadius = "10px";
+cancelEditButton.style.background = "#a62e2e";
+cancelEditButton.style.color = "#ffffff";
+cancelEditButton.style.fontWeight = "700";
+cancelEditButton.style.cursor = "pointer";
+submitButton.insertAdjacentElement("afterend", cancelEditButton);
 
 function escapeHtml(value = "") {
   return String(value)
@@ -40,6 +59,36 @@ function showMessage(message, type) {
   formMessage.hidden = false;
 }
 
+function finishEditing() {
+  editingProductId = null;
+  form.reset();
+  submitButton.textContent = "Guardar producto como borrador";
+  cancelEditButton.hidden = true;
+}
+
+function startEditing(productId) {
+  const product = loadedProducts.find((item) => item.id === productId);
+  if (!product) return;
+
+  editingProductId = product.id;
+
+  document.getElementById("productName").value = product.name || "";
+  document.getElementById("productSku").value = product.sku || "";
+  document.getElementById("productCategory").value = product.category || "";
+  document.getElementById("productPrice").value = product.price ?? "";
+  document.getElementById("productStock").value = product.stock ?? "";
+  document.getElementById("productDescription").value = product.description || "";
+
+  submitButton.textContent = "Guardar cambios";
+  cancelEditButton.hidden = false;
+  formMessage.hidden = true;
+
+  form.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
 async function loadProducts() {
   productsList.innerHTML = '<div class="vacio">Cargando productos...</div>';
 
@@ -51,18 +100,18 @@ async function loadProducts() {
 
     const snapshot = await getDocs(productsQuery);
 
-    if (snapshot.empty) {
+    loadedProducts = snapshot.docs.map((item) => ({
+      id: item.id,
+      ...item.data()
+    }));
+
+    if (loadedProducts.length === 0) {
       productsList.innerHTML =
         '<div class="vacio">Todavía no registraste productos.</div>';
       return;
     }
 
-    const products = snapshot.docs.map((item) => ({
-      id: item.id,
-      ...item.data()
-    }));
-
-    productsList.innerHTML = products.map((product) => `
+    productsList.innerHTML = loadedProducts.map((product) => `
       <article class="producto">
         <div class="producto-cabecera">
           <div>
@@ -79,12 +128,21 @@ async function loadProducts() {
           Stock: ${Number(product.stock)}
         </div>
 
-        <button
-          class="eliminar"
-          type="button"
-          data-delete-id="${escapeHtml(product.id)}">
-          Eliminar borrador
-        </button>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <button
+            type="button"
+            data-edit-id="${escapeHtml(product.id)}"
+            style="padding:12px 18px; border:0; border-radius:10px; background:#21df8b; color:#00130b; font-weight:700; cursor:pointer;">
+            Editar producto
+          </button>
+
+          <button
+            class="eliminar"
+            type="button"
+            data-delete-id="${escapeHtml(product.id)}">
+            Eliminar borrador
+          </button>
+        </div>
       </article>
     `).join("");
   } catch (error) {
@@ -136,11 +194,13 @@ form.addEventListener("submit", async (event) => {
   formMessage.hidden = true;
 
   if (!currentUser || sellerApplication?.status !== "approved") {
-    showMessage("Tu cuenta no tiene autorización para registrar productos.", "error");
+    showMessage(
+      "Tu cuenta no tiene autorización para registrar productos.",
+      "error"
+    );
     return;
   }
 
-  const button = form.querySelector('button[type="submit"]');
   const price = Number(document.getElementById("productPrice").value);
   const stock = Number(document.getElementById("productStock").value);
 
@@ -154,50 +214,98 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  button.disabled = true;
-  button.textContent = "Guardando producto...";
+  const productData = {
+    sellerName: sellerApplication.businessName,
+    name: document.getElementById("productName").value.trim(),
+    sku: document.getElementById("productSku").value.trim().toUpperCase(),
+    category: document.getElementById("productCategory").value,
+    description: document.getElementById("productDescription").value.trim(),
+    price,
+    stock,
+    updatedAt: serverTimestamp()
+  };
+
+  submitButton.disabled = true;
+  submitButton.textContent = editingProductId
+    ? "Guardando cambios..."
+    : "Guardando producto...";
 
   try {
-    await addDoc(collection(db, "products"), {
-      sellerId: currentUser.uid,
-      sellerName: sellerApplication.businessName,
-      name: document.getElementById("productName").value.trim(),
-      sku: document.getElementById("productSku").value.trim().toUpperCase(),
-      category: document.getElementById("productCategory").value,
-      description: document.getElementById("productDescription").value.trim(),
-      price,
-      stock,
-      status: "draft",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
+    if (editingProductId) {
+      await updateDoc(
+        doc(db, "products", editingProductId),
+        productData
+      );
 
-    form.reset();
-    showMessage("Producto guardado correctamente como borrador.", "success");
+      finishEditing();
+      showMessage("Producto actualizado correctamente.", "success");
+    } else {
+      await addDoc(collection(db, "products"), {
+        sellerId: currentUser.uid,
+        ...productData,
+        status: "draft",
+        createdAt: serverTimestamp()
+      });
+
+      form.reset();
+      showMessage(
+        "Producto guardado correctamente como borrador.",
+        "success"
+      );
+    }
+
     await loadProducts();
   } catch (error) {
     console.error("Error al guardar producto:", error);
-    showMessage("No fue posible guardar el producto.", "error");
+    showMessage(
+      editingProductId
+        ? "No fue posible actualizar el producto."
+        : "No fue posible guardar el producto.",
+      "error"
+    );
   } finally {
-    button.disabled = false;
-    button.textContent = "Guardar producto como borrador";
+    submitButton.disabled = false;
+    submitButton.textContent = editingProductId
+      ? "Guardar cambios"
+      : "Guardar producto como borrador";
   }
 });
 
+cancelEditButton.addEventListener("click", () => {
+  finishEditing();
+  formMessage.hidden = true;
+});
+
 productsList.addEventListener("click", async (event) => {
-  const button = event.target.closest("button[data-delete-id]");
-  if (!button) return;
+  const editButton = event.target.closest("button[data-edit-id]");
 
-  if (!window.confirm("¿Confirmas que deseas eliminar este borrador?")) return;
+  if (editButton) {
+    startEditing(editButton.dataset.editId);
+    return;
+  }
 
-  button.disabled = true;
+  const deleteButton = event.target.closest("button[data-delete-id]");
+  if (!deleteButton) return;
+
+  if (!window.confirm("¿Confirmas que deseas eliminar este borrador?")) {
+    return;
+  }
+
+  deleteButton.disabled = true;
 
   try {
-    await deleteDoc(doc(db, "products", button.dataset.deleteId));
+    await deleteDoc(
+      doc(db, "products", deleteButton.dataset.deleteId)
+    );
+
+    if (editingProductId === deleteButton.dataset.deleteId) {
+      finishEditing();
+    }
+
     await loadProducts();
   } catch (error) {
     console.error("Error al eliminar producto:", error);
     window.alert("No fue posible eliminar el borrador.");
-    button.disabled = false;
+    deleteButton.disabled = false;
   }
 });
