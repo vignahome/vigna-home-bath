@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso de vendedores | VIGNA Marketplace</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .seller-login-main {
+      min-height: calc(100vh - 90px);
+      display: grid;
+      place-items: center;
+      padding: 70px 24px;
+      background:
+        radial-gradient(circle at 80% 20%, rgba(25, 220, 112, 0.08), transparent 32%),
+        #030504;
+    }
+
+    .seller-login-card {
+      width: min(100%, 520px);
+      padding: 44px;
+      border: 1px solid rgba(216, 175, 55, 0.35);
+      border-radius: 28px;
+      background: #0d110f;
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.45);
+    }
+
+    .seller-login-label {
+      color: #28e47f;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .seller-login-card h1 {
+      margin: 14px 0 10px;
+      color: #f3d46b;
+      font-family: Georgia, serif;
+      font-size: clamp(2.3rem, 7vw, 4rem);
+      line-height: 1;
+    }
+
+    .seller-login-intro {
+      margin: 0 0 30px;
+      color: #b8c0bc;
+      line-height: 1.6;
+    }
+
+    .seller-login-form {
+      display: grid;
+      gap: 20px;
+    }
+
+    .seller-login-form label {
+      display: grid;
+      gap: 9px;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .seller-login-form input {
+      min-height: 54px;
+      padding: 0 16px;
+      border: 1px solid #303833;
+      border-radius: 14px;
+      background: #080b09;
+      color: #ffffff;
+      font: inherit;
+    }
+
+    .seller-login-form input:focus {
+      border-color: #28e47f;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(40, 228, 127, 0.12);
+    }
+
+    .seller-login-button {
+      min-height: 56px;
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #f2d36f, #c99b22);
+      color: #050604;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .seller-login-button:disabled {
+      cursor: wait;
+      opacity: 0.65;
+    }
+
+    .seller-login-message {
+      display: none;
+      padding: 14px 16px;
+      border-radius: 14px;
+      line-height: 1.5;
+    }
+
+    .seller-login-message.success {
+      display: block;
+      border: 1px solid #16884c;
+      background: rgba(22, 136, 76, 0.14);
+      color: #50ef94;
+    }
+
+    .seller-login-message.error {
+      display: block;
+      border: 1px solid #8f3434;
+      background: rgba(143, 52, 52, 0.16);
+      color: #ff8b8b;
+    }
+
+    .seller-login-links {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 24px;
+      font-size: 0.92rem;
+    }
+
+    .seller-login-links a {
+      color: #d8af37;
+      text-decoration: none;
+    }
+
+    @media (max-width: 600px) {
+      .seller-login-card {
+        padding: 30px 20px;
+        border-radius: 22px;
+      }
+
+      .seller-login-links {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="VIGNA Marketplace">
+      <span class="brand-mark">V</span>
+      <span>VIGNA <small>MARKETPLACE</small></span>
+    </a>
+
+    <a class="outline-button" href="index.html">Volver al Marketplace</a>
+  </header>
+
+  <main class="seller-login-main">
+    <section class="seller-login-card">
+      <span class="seller-login-label">Portal de vendedores</span>
+      <h1>Accede a tu cuenta</h1>
+      <p class="seller-login-intro">
+        Consulta el estado de tu solicitud y administra tu tienda cuando sea aprobada por VIGNA.
+      </p>
+
+      <form id="sellerLoginForm" class="seller-login-form">
+        <label for="sellerLoginEmail">
+          Correo electrónico
+          <input
+            id="sellerLoginEmail"
+            name="email"
+            type="email"
+            autocomplete="email"
+            placeholder="ventas@empresa.com"
+            required
+          >
+        </label>
+
+        <label for="sellerLoginPassword">
+          Contraseña
+          <input
+            id="sellerLoginPassword"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Ingresa tu contraseña"
+            required
+          >
+        </label>
+
+        <div
+          id="sellerLoginMessage"
+          class="seller-login-message"
+          role="status"
+          aria-live="polite"
+        ></div>
+
+        <button class="seller-login-button" type="submit">
+          Ingresar como vendedor
+        </button>
+      </form>
+
+      <div class="seller-login-links">
+        <a href="registro-vendedor.html">Crear cuenta de vendedor</a>
+        <a href="index.html">Volver al inicio</a>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="login-vendedor.js"></script>
+</body>
+</html>
