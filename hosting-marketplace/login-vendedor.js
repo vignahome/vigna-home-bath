@@ -1,28 +1,44 @@
 import { auth, db } from "./firebase-config.js";
+
 import {
   signInWithEmailAndPassword,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
 import {
   doc,
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const form = document.getElementById("sellerLoginForm");
+const emailInput = document.getElementById("sellerLoginEmail");
+const passwordInput = document.getElementById("sellerLoginPassword");
 const messageBox = document.getElementById("sellerLoginMessage");
 const submitButton = form.querySelector('button[type="submit"]');
+
+function showMessage(message, type = "error") {
+  messageBox.textContent = message;
+  messageBox.className = `seller-login-message ${type}`;
+  messageBox.hidden = false;
+}
+
+function clearMessage() {
+  messageBox.textContent = "";
+  messageBox.className = "seller-login-message";
+  messageBox.hidden = true;
+}
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   clearMessage();
 
-  const email = document
-    .getElementById("sellerLoginEmail")
-    .value
-    .trim()
-    .toLowerCase();
+  const email = emailInput.value.trim().toLowerCase();
+  const password = passwordInput.value;
 
-  const password = document.getElementById("sellerLoginPassword").value;
+  if (!email || !password) {
+    showMessage("Ingresa tu correo electrónico y contraseña.");
+    return;
+  }
 
   submitButton.disabled = true;
   submitButton.textContent = "Verificando cuenta...";
@@ -34,81 +50,43 @@ form.addEventListener("submit", async (event) => {
       password
     );
 
-    const sellerReference = doc(
+    const applicationReference = doc(
       db,
       "sellerApplications",
       credential.user.uid
     );
 
-    const sellerSnapshot = await getDoc(sellerReference);
+    const applicationSnapshot = await getDoc(applicationReference);
 
-    if (!sellerSnapshot.exists()) {
+    if (!applicationSnapshot.exists()) {
       await signOut(auth);
-      showMessage(
-        "Esta cuenta no tiene una solicitud de vendedor registrada.",
-        "error"
-      );
+      showMessage("Esta cuenta no tiene una solicitud de vendedor registrada.");
       return;
     }
 
-    const seller = sellerSnapshot.data();
+    showMessage("Acceso correcto. Abriendo tu panel...", "success");
 
-    if (seller.status === "pending") {
-      showMessage(
-        `Bienvenido, ${seller.businessName}. Tu solicitud está pendiente de revisión por VIGNA.`,
-        "success"
-      );
-      return;
-    }
-
-    if (seller.status === "approved") {
-      showMessage(
-        `Bienvenido, ${seller.businessName}. Tu cuenta de vendedor está aprobada.`,
-        "success"
-      );
-      return;
-    }
-
-    if (seller.status === "rejected") {
-      showMessage(
-        "Tu solicitud requiere correcciones. VIGNA se comunicará contigo.",
-        "error"
-      );
-      return;
-    }
-
-    showMessage(
-      "Tu cuenta fue identificada, pero el estado de la solicitud requiere revisión.",
-      "error"
-    );
+    window.setTimeout(() => {
+      window.location.replace("panel-vendedor");
+    }, 600);
   } catch (error) {
-    const messages = {
-      "auth/invalid-email": "El correo electrónico no es válido.",
-      "auth/invalid-credential": "El correo o la contraseña son incorrectos.",
-      "auth/wrong-password": "El correo o la contraseña son incorrectos.",
-      "auth/user-not-found": "El correo o la contraseña son incorrectos.",
-      "auth/too-many-requests": "Demasiados intentos. Espera unos minutos.",
-      "auth/network-request-failed": "No se pudo conectar con Firebase."
-    };
-
-    showMessage(
-      messages[error.code] || "No fue posible iniciar sesión.",
-      "error"
-    );
-
     console.error("Error de acceso del vendedor:", error);
+
+    if (
+      error.code === "auth/invalid-credential" ||
+      error.code === "auth/wrong-password" ||
+      error.code === "auth/user-not-found"
+    ) {
+      showMessage("El correo o la contraseña son incorrectos.");
+    } else if (error.code === "auth/too-many-requests") {
+      showMessage("Se realizaron demasiados intentos. Espera unos minutos.");
+    } else if (error.code === "auth/network-request-failed") {
+      showMessage("No se pudo conectar con Firebase. Revisa tu conexión.");
+    } else {
+      showMessage("No fue posible iniciar sesión. Inténtalo nuevamente.");
+    }
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Ingresar como vendedor";
   }
 });
-
-function showMessage(message, type) {
-  messageBox.textContent = message;
-  messageBox.className = `seller-login-message ${type}`;
-}
-
-function clearMessage() {
-  messageBox.textContent = "";
-  messageBox.className = "seller-login-message";
-}
