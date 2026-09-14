@@ -32,35 +32,52 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
 
       allow read: if request.auth != null
-      && (
-        request.auth.uid == userId
-        || request.auth.token.email == "vignahome@vignahome.com"
-      );
+        && (
+          request.auth.uid == userId
+          || request.auth.token.email == "vignahome@vignahome.com"
+        );
 
-    allow update: if request.auth != null
-      && request.auth.token.email == "vignahome@vignahome.com"
-      && request.resource.data.diff(resource.data).affectedKeys()
-        .hasOnly(["status", "reviewedAt", "reviewedBy"])
-      && request.resource.data.status in ["pending", "approved", "rejected"]
-      && request.resource.data.reviewedAt == request.time
-      && request.resource.data.reviewedBy == request.auth.token.email;
+      allow update: if request.auth != null
+        && request.auth.token.email == "vignahome@vignahome.com"
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(["status", "reviewedAt", "reviewedBy"])
+        && request.resource.data.status in [
+          "pending",
+          "approved",
+          "rejected",
+          "suspended"
+        ]
+        && request.resource.data.reviewedAt == request.time
+        && request.resource.data.reviewedBy == request.auth.token.email;
 
-    allow delete: if false;
+      allow delete: if false;
     }
 
     match /products/{productId} {
-      allow read: if resource.data.status == "published"
-        || (
+      allow read: if (
           request.auth != null
           && (
             resource.data.sellerId == request.auth.uid
             || request.auth.token.email == "vignahome@vignahome.com"
           )
+        )
+        || (
+          resource.data.status == "published"
+          && exists(
+            /databases/$(database)/documents/sellerApplications/$(resource.data.sellerId)
+          )
+          && get(
+            /databases/$(database)/documents/sellerApplications/$(resource.data.sellerId)
+          ).data.status == "approved"
         );
 
       allow create: if request.auth != null
-        && exists(/databases/$(database)/documents/sellerApplications/$(request.auth.uid))
-        && get(/databases/$(database)/documents/sellerApplications/$(request.auth.uid)).data.status == "approved"
+        && exists(
+          /databases/$(database)/documents/sellerApplications/$(request.auth.uid)
+        )
+        && get(
+          /databases/$(database)/documents/sellerApplications/$(request.auth.uid)
+        ).data.status == "approved"
         && request.resource.data.keys().hasOnly([
           "sellerId",
           "sellerName",
@@ -77,43 +94,100 @@ service cloud.firestore {
           "imagePath"
         ])
         && request.resource.data.sellerId == request.auth.uid
-        && request.resource.data.sellerName is string
+        && request.resource.data.sellerName
+          == get(
+            /databases/$(database)/documents/sellerApplications/$(request.auth.uid)
+          ).data.businessName
         && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
         && request.resource.data.sku is string
+        && request.resource.data.sku.size() > 0
         && request.resource.data.category is string
         && request.resource.data.description is string
-        && request.resource.data.price is number
+        && (
+          request.resource.data.price is int
+          || request.resource.data.price is float
+        )
         && request.resource.data.price >= 0
         && request.resource.data.stock is int
         && request.resource.data.stock >= 0
         && request.resource.data.status == "draft"
         && request.resource.data.createdAt == request.time
-        && request.resource.data.updatedAt == request.time;
+        && request.resource.data.updatedAt == request.time
+        && (
+          !("imageUrl" in request.resource.data)
+          || request.resource.data.imageUrl is string
+        )
+        && (
+          !("imagePath" in request.resource.data)
+          || request.resource.data.imagePath is string
+        );
 
       allow update: if request.auth != null
         && resource.data.sellerId == request.auth.uid
-        && get(/databases/$(database)/documents/sellerApplications/$(request.auth.uid)).data.status == "approved"
+        && exists(
+          /databases/$(database)/documents/sellerApplications/$(request.auth.uid)
+        )
+        && get(
+          /databases/$(database)/documents/sellerApplications/$(request.auth.uid)
+        ).data.status == "approved"
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly([
+            "sellerName",
+            "name",
+            "sku",
+            "category",
+            "description",
+            "price",
+            "stock",
+            "status",
+            "updatedAt",
+            "imageUrl",
+            "imagePath"
+          ])
         && request.resource.data.sellerId == resource.data.sellerId
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.status == resource.data.status
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          "sellerName",
-          "name",
-          "sku",
-          "category",
-          "description",
-          "price",
-          "stock",
-          "updatedAt",
-          "imageUrl",
-          "imagePath"
-        ])
-        && request.resource.data.updatedAt == request.time;
+        && request.resource.data.sellerName
+          == get(
+            /databases/$(database)/documents/sellerApplications/$(request.auth.uid)
+          ).data.businessName
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.sku is string
+        && request.resource.data.sku.size() > 0
+        && request.resource.data.category is string
+        && request.resource.data.description is string
+        && (
+          request.resource.data.price is int
+          || request.resource.data.price is float
+        )
+        && request.resource.data.price >= 0
+        && request.resource.data.stock is int
+        && request.resource.data.stock >= 0
+        && request.resource.data.status in ["draft", "published"]
+        && request.resource.data.updatedAt == request.time
+        && (
+          request.resource.data.status != "published"
+          || (
+            "imageUrl" in request.resource.data
+            && request.resource.data.imageUrl is string
+            && request.resource.data.imageUrl.size() > 0
+            && "imagePath" in request.resource.data
+            && request.resource.data.imagePath is string
+            && request.resource.data.imagePath.size() > 0
+          )
+        );
 
       allow delete: if request.auth != null
         && resource.data.sellerId == request.auth.uid
-        && resource.data.status == "draft";
+        && exists(
+          /databases/$(database)/documents/sellerApplications/$(request.auth.uid)
+        )
+        && get(
+          /databases/$(database)/documents/sellerApplications/$(request.auth.uid)
+        ).data.status == "approved"
+        && resource.data.status in ["draft", "published"];
     }
+
     match /{document=**} {
       allow read, write: if false;
     }

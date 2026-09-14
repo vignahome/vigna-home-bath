@@ -362,7 +362,7 @@ async function loadProducts() {
             <strong>SKU: ${escapeHtml(product.sku)}</strong>
           </div>
 
-          <span class="estado">Borrador</span>
+          <span class="estado">${product.status === "published" ? "PUBLICADO" : "BORRADOR"}</span>
         </div>
 
         <div class="detalles">
@@ -375,23 +375,23 @@ async function loadProducts() {
           <button
             type="button"
             data-edit-id="${escapeHtml(product.id)}"
-            style="
-              padding:12px 18px;
-              border:0;
-              border-radius:10px;
-              background:#21df8b;
-              color:#00130b;
-              font-weight:700;
-              cursor:pointer;
-            ">
+            style="padding:12px 18px; border:0; border-radius:10px; background:#21df8b; color:#00130b; font-weight:700; cursor:pointer;">
             Editar producto
+          </button>
+
+          <button
+            type="button"
+            data-status-id="${escapeHtml(product.id)}"
+            data-next-status="${product.status === "published" ? "draft" : "published"}"
+            style="padding:12px 18px; border:0; border-radius:10px; background:#d4af37; color:#080b09; font-weight:700; cursor:pointer;">
+            ${product.status === "published" ? "Retirar del catálogo" : "Publicar producto"}
           </button>
 
           <button
             class="eliminar"
             type="button"
             data-delete-id="${escapeHtml(product.id)}">
-            Eliminar borrador
+            Eliminar producto
           </button>
         </div>
       </article>
@@ -702,6 +702,56 @@ productsList.addEventListener("click", async (event) => {
     return;
   }
 
+  const statusButton = event.target.closest(
+    "button[data-status-id]"
+  );
+
+  if (statusButton) {
+    const productId = statusButton.dataset.statusId;
+    const nextStatus = statusButton.dataset.nextStatus;
+    const product = loadedProducts.find(
+      (item) => item.id === productId
+    );
+
+    if (!product) return;
+
+    if (nextStatus === "published" && !product.imageUrl) {
+      window.alert(
+        "Debes agregar una imagen antes de publicar el producto."
+      );
+      return;
+    }
+
+    const confirmationMessage = nextStatus === "published"
+      ? "¿Deseas publicar este producto en el catálogo?"
+      : "¿Deseas retirar este producto del catálogo público?";
+
+    if (!window.confirm(confirmationMessage)) {
+      return;
+    }
+
+    statusButton.disabled = true;
+
+    try {
+      await updateDoc(doc(db, "products", productId), {
+        status: nextStatus,
+        updatedAt: serverTimestamp()
+      });
+
+      await loadProducts();
+    } catch (error) {
+      console.error(
+        "Error al cambiar el estado del producto:",
+        error
+      );
+      window.alert(
+        "No fue posible cambiar el estado del producto."
+      );
+      statusButton.disabled = false;
+    }
+
+    return;
+  }
   const deleteButton = event.target.closest(
     "button[data-delete-id]"
   );
