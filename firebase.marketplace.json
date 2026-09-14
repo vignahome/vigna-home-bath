@@ -3,6 +3,9 @@
     "rules": "firestore.marketplace.rules",
     "indexes": "firestore.marketplace.indexes.json"
   },
+  "storage": {
+    "rules": "storage.marketplace.rules"
+  },
   "hosting": {
     "public": "hosting-marketplace",
     "ignore": [

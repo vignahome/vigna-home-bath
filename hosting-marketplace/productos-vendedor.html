@@ -253,6 +253,66 @@
         letter-spacing: 1px;
       }
     }
+
+    .campo-imagen {
+      display: grid;
+      gap: 10px;
+      margin: 18px 0 24px;
+    }
+
+    .campo-imagen input[type="file"] {
+      width: 100%;
+      padding: 13px;
+      color: #ffffff;
+      background: #030806;
+      border: 1px solid #314139;
+      border-radius: 10px;
+      box-sizing: border-box;
+    }
+
+    .campo-imagen input[type="file"]::file-selector-button {
+      margin-right: 12px;
+      padding: 10px 14px;
+      color: #00150d;
+      font-weight: 700;
+      background: #18df8b;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .ayuda-imagen {
+      color: #aebbb5;
+      line-height: 1.45;
+    }
+
+    .vista-previa-imagen {
+      grid-template-columns: 110px 1fr;
+      align-items: center;
+      gap: 16px;
+      padding: 12px;
+      background: #06100b;
+      border: 1px solid #1b8d5d;
+      border-radius: 12px;
+    }
+
+    .vista-previa-imagen:not([hidden]) {
+      display: grid;
+    }
+
+    .vista-previa-imagen img {
+      width: 110px;
+      height: 110px;
+      object-fit: contain;
+      background: #ffffff;
+      border-radius: 8px;
+    }
+
+    .vista-previa-imagen span {
+      color: #18df8b;
+      font-size: 14px;
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
@@ -341,7 +401,26 @@
             placeholder="Describe las características principales del producto."
             required></textarea>
 
-          <button class="guardar" type="submit">
+                  <div class="campo-imagen">
+          <label for="productImage">Imagen principal del producto</label>
+
+          <input
+            id="productImage"
+            name="productImage"
+            type="file"
+            accept="image/jpeg,image/png,image/webp">
+
+          <small class="ayuda-imagen">
+            Formatos permitidos: JPG, PNG o WebP. Máximo 5 MB.
+            La imagen se comprimirá automáticamente antes de subirla.
+          </small>
+
+          <div id="imagePreview" class="vista-previa-imagen" hidden>
+            <img id="imagePreviewPhoto" alt="Vista previa del producto">
+            <span id="imagePreviewInfo"></span>
+          </div>
+        </div>
+        <button class="guardar" type="submit">
             Guardar producto como borrador
           </button>
 

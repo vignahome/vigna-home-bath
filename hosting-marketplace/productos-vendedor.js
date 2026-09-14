@@ -1,4 +1,4 @@
-import { auth, db } from "./firebase-config.js";
+import { auth, db, storage } from "./firebase-config.js";
 
 import {
   onAuthStateChanged
@@ -17,6 +17,18 @@ import {
   where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+import {
+  deleteObject,
+  getDownloadURL,
+  ref,
+  uploadBytes
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
+
+const MAX_ORIGINAL_IMAGE_BYTES = 5 * 1024 * 1024;
+const TARGET_IMAGE_BYTES = 500 * 1024;
+const MAX_IMAGE_DIMENSION = 1200;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 const form = document.getElementById("productForm");
 const formMessage = document.getElementById("formMessage");
 const productsList = document.getElementById("productsList");
@@ -24,10 +36,20 @@ const productsSection = document.getElementById("productsSection");
 const sellerNameBox = document.getElementById("sellerName");
 const submitButton = form.querySelector('button[type="submit"]');
 
+const imageInput = document.getElementById("productImage");
+const imagePreview = document.getElementById("imagePreview");
+const imagePreviewPhoto = document.getElementById("imagePreviewPhoto");
+const imagePreviewInfo = document.getElementById("imagePreviewInfo");
+
 let currentUser = null;
 let sellerApplication = null;
 let editingProductId = null;
 let loadedProducts = [];
+
+let selectedImageBlob = null;
+let selectedImageObjectUrl = null;
+let imageProcessing = false;
+let imageSelectionVersion = 0;
 
 const cancelEditButton = document.createElement("button");
 cancelEditButton.type = "button";
@@ -59,9 +81,192 @@ function showMessage(message, type) {
   formMessage.hidden = false;
 }
 
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
+
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  return `${Math.round(bytes / 1024)} KB`;
+}
+
+function revokeSelectedImageUrl() {
+  if (selectedImageObjectUrl) {
+    URL.revokeObjectURL(selectedImageObjectUrl);
+    selectedImageObjectUrl = null;
+  }
+}
+
+function resetImageField() {
+  imageSelectionVersion += 1;
+  imageProcessing = false;
+  selectedImageBlob = null;
+  revokeSelectedImageUrl();
+
+  imageInput.value = "";
+  imagePreview.hidden = true;
+  imagePreviewPhoto.removeAttribute("src");
+  imagePreviewInfo.textContent = "";
+}
+
+function showExistingImage(product) {
+  resetImageField();
+
+  if (!product.imageUrl) return;
+
+  imagePreviewPhoto.src = product.imageUrl;
+  imagePreviewInfo.textContent =
+    "Esta es la imagen actual. Selecciona otra solamente si deseas reemplazarla.";
+  imagePreview.hidden = false;
+}
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const temporaryUrl = URL.createObjectURL(file);
+    const image = new Image();
+
+    image.onload = () => {
+      URL.revokeObjectURL(temporaryUrl);
+      resolve(image);
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(temporaryUrl);
+      reject(new Error("No fue posible leer la imagen seleccionada."));
+    };
+
+    image.src = temporaryUrl;
+  });
+}
+
+function canvasToWebp(canvas, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error("No fue posible comprimir la imagen."));
+          return;
+        }
+
+        resolve(blob);
+      },
+      "image/webp",
+      quality
+    );
+  });
+}
+
+async function compressImage(file) {
+  const sourceImage = await loadImage(file);
+
+  let width = sourceImage.naturalWidth;
+  let height = sourceImage.naturalHeight;
+
+  if (!width || !height) {
+    throw new Error("La imagen no tiene dimensiones válidas.");
+  }
+
+  const initialScale = Math.min(
+    1,
+    MAX_IMAGE_DIMENSION / Math.max(width, height)
+  );
+
+  width = Math.max(1, Math.round(width * initialScale));
+  height = Math.max(1, Math.round(height * initialScale));
+
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d", {
+    alpha: true
+  });
+
+  if (!context) {
+    throw new Error("El navegador no pudo preparar la compresión.");
+  }
+
+  let quality = 0.82;
+  let compressedBlob = null;
+
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    canvas.width = width;
+    canvas.height = height;
+
+    context.clearRect(0, 0, width, height);
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.drawImage(sourceImage, 0, 0, width, height);
+
+    compressedBlob = await canvasToWebp(canvas, quality);
+
+    if (compressedBlob.size <= TARGET_IMAGE_BYTES) {
+      break;
+    }
+
+    if (quality > 0.5) {
+      quality = Math.max(0.5, quality - 0.07);
+      continue;
+    }
+
+    if (Math.max(width, height) > 640) {
+      width = Math.max(1, Math.round(width * 0.85));
+      height = Math.max(1, Math.round(height * 0.85));
+      quality = 0.7;
+      continue;
+    }
+
+    break;
+  }
+
+  if (!compressedBlob) {
+    throw new Error("No fue posible generar la imagen comprimida.");
+  }
+
+  if (compressedBlob.size > MAX_ORIGINAL_IMAGE_BYTES) {
+    throw new Error("La imagen comprimida continúa siendo demasiado pesada.");
+  }
+
+  return compressedBlob;
+}
+
+async function uploadProductImage(productId, imageBlob) {
+  const imagePath =
+    `product-images/${currentUser.uid}/${productId}/main-${Date.now()}.webp`;
+
+  const imageReference = ref(storage, imagePath);
+
+  await uploadBytes(imageReference, imageBlob, {
+    contentType: "image/webp",
+    cacheControl: "public,max-age=31536000,immutable",
+    customMetadata: {
+      sellerId: currentUser.uid,
+      productId
+    }
+  });
+
+  const imageUrl = await getDownloadURL(imageReference);
+
+  return {
+    imagePath,
+    imageUrl
+  };
+}
+
+async function removeStoredImage(imagePath) {
+  if (!imagePath) return;
+
+  try {
+    await deleteObject(ref(storage, imagePath));
+  } catch (error) {
+    if (error?.code !== "storage/object-not-found") {
+      console.warn("No fue posible eliminar la imagen anterior:", error);
+    }
+  }
+}
+
 function finishEditing() {
   editingProductId = null;
   form.reset();
+  resetImageField();
   submitButton.textContent = "Guardar producto como borrador";
   cancelEditButton.hidden = true;
 }
@@ -77,7 +282,10 @@ function startEditing(productId) {
   document.getElementById("productCategory").value = product.category || "";
   document.getElementById("productPrice").value = product.price ?? "";
   document.getElementById("productStock").value = product.stock ?? "";
-  document.getElementById("productDescription").value = product.description || "";
+  document.getElementById("productDescription").value =
+    product.description || "";
+
+  showExistingImage(product);
 
   submitButton.textContent = "Guardar cambios";
   cancelEditButton.hidden = false;
@@ -90,7 +298,8 @@ function startEditing(productId) {
 }
 
 async function loadProducts() {
-  productsList.innerHTML = '<div class="vacio">Cargando productos...</div>';
+  productsList.innerHTML =
+    '<div class="vacio">Cargando productos...</div>';
 
   try {
     const productsQuery = query(
@@ -113,6 +322,40 @@ async function loadProducts() {
 
     productsList.innerHTML = loadedProducts.map((product) => `
       <article class="producto">
+        ${
+          product.imageUrl
+            ? `
+              <img
+                src="${escapeHtml(product.imageUrl)}"
+                alt="${escapeHtml(product.name)}"
+                loading="lazy"
+                style="
+                  display:block;
+                  width:100%;
+                  height:220px;
+                  margin-bottom:18px;
+                  object-fit:contain;
+                  background:#ffffff;
+                  border-radius:12px;
+                ">
+            `
+            : `
+              <div style="
+                display:grid;
+                place-items:center;
+                width:100%;
+                height:150px;
+                margin-bottom:18px;
+                color:#829087;
+                background:#06100b;
+                border:1px dashed #314139;
+                border-radius:12px;
+              ">
+                Producto sin imagen
+              </div>
+            `
+        }
+
         <div class="producto-cabecera">
           <div>
             <h3>${escapeHtml(product.name)}</h3>
@@ -132,7 +375,15 @@ async function loadProducts() {
           <button
             type="button"
             data-edit-id="${escapeHtml(product.id)}"
-            style="padding:12px 18px; border:0; border-radius:10px; background:#21df8b; color:#00130b; font-weight:700; cursor:pointer;">
+            style="
+              padding:12px 18px;
+              border:0;
+              border-radius:10px;
+              background:#21df8b;
+              color:#00130b;
+              font-weight:700;
+              cursor:pointer;
+            ">
             Editar producto
           </button>
 
@@ -151,6 +402,72 @@ async function loadProducts() {
       '<div class="mensaje error">No fue posible cargar tus productos.</div>';
   }
 }
+
+imageInput.addEventListener("change", async () => {
+  const file = imageInput.files?.[0] || null;
+  const requestVersion = ++imageSelectionVersion;
+
+  selectedImageBlob = null;
+  revokeSelectedImageUrl();
+
+  if (!file) {
+    imagePreview.hidden = true;
+    imagePreviewPhoto.removeAttribute("src");
+    imagePreviewInfo.textContent = "";
+    return;
+  }
+
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    imageInput.value = "";
+    showMessage(
+      "Selecciona una imagen JPG, PNG o WebP.",
+      "error"
+    );
+    return;
+  }
+
+  if (file.size > MAX_ORIGINAL_IMAGE_BYTES) {
+    imageInput.value = "";
+    showMessage(
+      "La imagen original supera el máximo permitido de 5 MB.",
+      "error"
+    );
+    return;
+  }
+
+  imageProcessing = true;
+  formMessage.hidden = true;
+  imagePreviewPhoto.removeAttribute("src");
+  imagePreviewInfo.textContent = "Comprimiendo imagen automáticamente...";
+  imagePreview.hidden = false;
+
+  try {
+    const compressedBlob = await compressImage(file);
+
+    if (requestVersion !== imageSelectionVersion) return;
+
+    selectedImageBlob = compressedBlob;
+    selectedImageObjectUrl = URL.createObjectURL(compressedBlob);
+    imagePreviewPhoto.src = selectedImageObjectUrl;
+    imagePreviewInfo.textContent =
+      `Imagen preparada: ${formatBytes(file.size)} → ` +
+      `${formatBytes(compressedBlob.size)} en formato WebP.`;
+  } catch (error) {
+    if (requestVersion !== imageSelectionVersion) return;
+
+    console.error("Error al comprimir imagen:", error);
+    imageInput.value = "";
+    imagePreview.hidden = true;
+    showMessage(
+      error.message || "No fue posible preparar la imagen.",
+      "error"
+    );
+  } finally {
+    if (requestVersion === imageSelectionVersion) {
+      imageProcessing = false;
+    }
+  }
+});
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -201,8 +518,29 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  const price = Number(document.getElementById("productPrice").value);
-  const stock = Number(document.getElementById("productStock").value);
+  if (imageProcessing) {
+    showMessage(
+      "Espera unos segundos mientras termina la compresión de la imagen.",
+      "error"
+    );
+    return;
+  }
+
+  if (!editingProductId && !selectedImageBlob) {
+    showMessage(
+      "Selecciona la imagen principal del producto.",
+      "error"
+    );
+    return;
+  }
+
+  const price = Number(
+    document.getElementById("productPrice").value
+  );
+
+  const stock = Number(
+    document.getElementById("productStock").value
+  );
 
   if (!Number.isFinite(price) || price < 0) {
     showMessage("Ingresa un precio válido.", "error");
@@ -210,46 +548,123 @@ form.addEventListener("submit", async (event) => {
   }
 
   if (!Number.isInteger(stock) || stock < 0) {
-    showMessage("Ingresa una cantidad de stock válida.", "error");
+    showMessage(
+      "Ingresa una cantidad de stock válida.",
+      "error"
+    );
     return;
   }
 
   const productData = {
     sellerName: sellerApplication.businessName,
     name: document.getElementById("productName").value.trim(),
-    sku: document.getElementById("productSku").value.trim().toUpperCase(),
+    sku: document.getElementById("productSku").value
+      .trim()
+      .toUpperCase(),
     category: document.getElementById("productCategory").value,
-    description: document.getElementById("productDescription").value.trim(),
+    description: document.getElementById("productDescription").value
+      .trim(),
     price,
     stock,
     updatedAt: serverTimestamp()
   };
 
+  const productIdBeingEdited = editingProductId;
+
+  const existingProduct = loadedProducts.find(
+    (product) => product.id === productIdBeingEdited
+  );
+
   submitButton.disabled = true;
-  submitButton.textContent = editingProductId
+  imageInput.disabled = true;
+
+  submitButton.textContent = productIdBeingEdited
     ? "Guardando cambios..."
-    : "Guardando producto...";
+    : "Comprimiendo y subiendo producto...";
 
   try {
-    if (editingProductId) {
-      await updateDoc(
-        doc(db, "products", editingProductId),
-        productData
-      );
+    if (productIdBeingEdited) {
+      let uploadedImage = null;
+
+      if (selectedImageBlob) {
+        uploadedImage = await uploadProductImage(
+          productIdBeingEdited,
+          selectedImageBlob
+        );
+      }
+
+      try {
+        await updateDoc(
+          doc(db, "products", productIdBeingEdited),
+          {
+            ...productData,
+            ...(uploadedImage || {})
+          }
+        );
+      } catch (error) {
+        if (uploadedImage?.imagePath) {
+          await removeStoredImage(uploadedImage.imagePath);
+        }
+
+        throw error;
+      }
+
+      if (
+        uploadedImage?.imagePath &&
+        existingProduct?.imagePath &&
+        existingProduct.imagePath !== uploadedImage.imagePath
+      ) {
+        await removeStoredImage(existingProduct.imagePath);
+      }
 
       finishEditing();
-      showMessage("Producto actualizado correctamente.", "success");
+      showMessage(
+        uploadedImage
+          ? "Producto e imagen actualizados correctamente."
+          : "Producto actualizado correctamente.",
+        "success"
+      );
     } else {
-      await addDoc(collection(db, "products"), {
-        sellerId: currentUser.uid,
-        ...productData,
-        status: "draft",
-        createdAt: serverTimestamp()
-      });
+      let createdProductReference = null;
+      let uploadedImage = null;
+
+      try {
+        createdProductReference = await addDoc(
+          collection(db, "products"),
+          {
+            sellerId: currentUser.uid,
+            ...productData,
+            status: "draft",
+            createdAt: serverTimestamp()
+          }
+        );
+
+        uploadedImage = await uploadProductImage(
+          createdProductReference.id,
+          selectedImageBlob
+        );
+
+        await updateDoc(createdProductReference, {
+          ...uploadedImage,
+          updatedAt: serverTimestamp()
+        });
+      } catch (error) {
+        if (uploadedImage?.imagePath) {
+          await removeStoredImage(uploadedImage.imagePath);
+        }
+
+        if (createdProductReference) {
+          await deleteDoc(createdProductReference).catch(() => {});
+        }
+
+        throw error;
+      }
 
       form.reset();
+      resetImageField();
+
       showMessage(
-        "Producto guardado correctamente como borrador.",
+        "Producto e imagen guardados correctamente como borrador.",
         "success"
       );
     }
@@ -257,14 +672,17 @@ form.addEventListener("submit", async (event) => {
     await loadProducts();
   } catch (error) {
     console.error("Error al guardar producto:", error);
+
     showMessage(
-      editingProductId
+      productIdBeingEdited
         ? "No fue posible actualizar el producto."
-        : "No fue posible guardar el producto.",
+        : "No fue posible guardar el producto y su imagen.",
       "error"
     );
   } finally {
     submitButton.disabled = false;
+    imageInput.disabled = false;
+
     submitButton.textContent = editingProductId
       ? "Guardar cambios"
       : "Guardar producto como borrador";
@@ -284,21 +702,32 @@ productsList.addEventListener("click", async (event) => {
     return;
   }
 
-  const deleteButton = event.target.closest("button[data-delete-id]");
+  const deleteButton = event.target.closest(
+    "button[data-delete-id]"
+  );
+
   if (!deleteButton) return;
 
   if (!window.confirm("¿Confirmas que deseas eliminar este borrador?")) {
     return;
   }
 
+  const productId = deleteButton.dataset.deleteId;
+
+  const productToDelete = loadedProducts.find(
+    (product) => product.id === productId
+  );
+
   deleteButton.disabled = true;
 
   try {
-    await deleteDoc(
-      doc(db, "products", deleteButton.dataset.deleteId)
-    );
+    await deleteDoc(doc(db, "products", productId));
 
-    if (editingProductId === deleteButton.dataset.deleteId) {
+    if (productToDelete?.imagePath) {
+      await removeStoredImage(productToDelete.imagePath);
+    }
+
+    if (editingProductId === productId) {
       finishEditing();
     }
 
@@ -308,4 +737,8 @@ productsList.addEventListener("click", async (event) => {
     window.alert("No fue posible eliminar el borrador.");
     deleteButton.disabled = false;
   }
+});
+
+window.addEventListener("beforeunload", () => {
+  revokeSelectedImageUrl();
 });

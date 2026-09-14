@@ -1,0 +1,50 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && request.auth.token.email == "vignahome@vignahome.com";
+    }
+
+    function isApprovedSeller(userId) {
+      return signedIn()
+        && request.auth.uid == userId
+        && firestore.exists(
+          /databases/(default)/documents/sellerApplications/$(userId)
+        )
+        && firestore.get(
+          /databases/(default)/documents/sellerApplications/$(userId)
+        ).data.status == "approved";
+    }
+
+    function productIsPublished(productId) {
+      return firestore.exists(
+          /databases/(default)/documents/products/$(productId)
+        )
+        && firestore.get(
+          /databases/(default)/documents/products/$(productId)
+        ).data.status == "published";
+    }
+
+    match /product-images/{userId}/{productId}/{fileName} {
+      allow read: if isAdmin()
+        || (signedIn() && request.auth.uid == userId)
+        || productIsPublished(productId);
+
+      allow create, update: if isApprovedSeller(userId)
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+
+      allow delete: if isApprovedSeller(userId);
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

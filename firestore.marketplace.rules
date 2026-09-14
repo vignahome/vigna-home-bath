@@ -72,7 +72,9 @@ service cloud.firestore {
           "stock",
           "status",
           "createdAt",
-          "updatedAt"
+          "updatedAt",
+          "imageUrl",
+          "imagePath"
         ])
         && request.resource.data.sellerId == request.auth.uid
         && request.resource.data.sellerName is string
@@ -102,7 +104,9 @@ service cloud.firestore {
           "description",
           "price",
           "stock",
-          "updatedAt"
+          "updatedAt",
+          "imageUrl",
+          "imagePath"
         ])
         && request.resource.data.updatedAt == request.time;
 
