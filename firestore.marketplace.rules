@@ -70,6 +70,7 @@ service cloud.firestore {
             /databases/$(database)/documents/sellerApplications/$(resource.data.sellerId)
           ).data.status == "approved"
         );
+      allow list: if resource.data.status == "published";
 
       allow create: if request.auth != null
         && exists(
